@@ -1,0 +1,330 @@
+import { InlineKeyboard } from "grammy";
+import {
+  CATEGORY_EMOJI,
+  availableLocales,
+  currentMonthKey,
+  escapeHtml,
+  formatDate,
+  formatDateTime,
+  formatMoney,
+  formatMonth,
+  formatPercent,
+  languageName,
+  shiftMonthKey,
+  t,
+  type Category,
+  type Insights,
+  type MonthlySummary,
+  type RecurringPayment,
+  type Reminder,
+  type Transaction,
+} from "@budgie/core";
+import type { Scope } from "./context.js";
+
+export const COMMON_CURRENCIES = ["USD", "EUR", "UZS", "RUB", "KZT", "KGS", "TJS", "UAH", "TRY", "GBP", "AED", "INR"];
+export const COMMON_TIMEZONES = [
+  "Asia/Tashkent", "Europe/Moscow", "Asia/Almaty", "Asia/Bishkek", "Asia/Dushanbe", "Europe/Kyiv",
+  "Europe/Istanbul", "Europe/Berlin", "Europe/London", "Asia/Dubai", "America/New_York", "UTC",
+];
+
+export function money(scope: Scope, amount: number, currency = scope.currency): string {
+  return formatMoney(amount, currency, scope.locale);
+}
+
+export function catLabel(scope: Scope, category: string): string {
+  const emoji = CATEGORY_EMOJI[category as Category] ?? "📦";
+  const key = `cat.${category}` as Parameters<typeof t>[1];
+  return `${emoji} ${t(scope.locale, key)}`;
+}
+
+export function kindLabel(scope: Scope, kind: "expense" | "income"): string {
+  return t(scope.locale, kind === "expense" ? "kind.expense" : "kind.income");
+}
+
+export function prefixOf(scope: Scope): string {
+  return scope.household.triggers.prefix ?? "+";
+}
+
+function noteLine(note: string): string {
+  return note ? `\n<i>${escapeHtml(note)}</i>` : "";
+}
+
+export function txText(scope: Scope, tx: Transaction, options: { rateMissing?: boolean } = {}): string {
+  const amount = money(scope, tx.amount, tx.currency);
+  let converted = "";
+  if (tx.currency !== scope.currency && tx.amountBase !== null) {
+    converted = t(scope.locale, "confirm.tx_converted", { base: money(scope, tx.amountBase) });
+  }
+  const base = t(scope.locale, "confirm.tx", { kind: kindLabel(scope, tx.kind), amount: amount + converted, category: catLabel(scope, tx.category) });
+  const missing = options.rateMissing || (tx.currency !== scope.currency && tx.amountBase === null)
+    ? t(scope.locale, "confirm.tx_rate_missing", { currency: tx.currency })
+    : "";
+  return base + noteLine(tx.note) + missing;
+}
+
+export function txPendingText(scope: Scope, tx: Transaction): string {
+  return (
+    t(scope.locale, "confirm.tx_pending", {
+      kind: kindLabel(scope, tx.kind).toLowerCase(),
+      amount: money(scope, tx.amount, tx.currency),
+      category: catLabel(scope, tx.category),
+    }) + noteLine(tx.note)
+  );
+}
+
+export function txKeyboard(scope: Scope, tx: Transaction): InlineKeyboard {
+  if (tx.status === "pending") {
+    return new InlineKeyboard().text(t(scope.locale, "btn.yes"), `tx:yes:${tx.id}`).text(t(scope.locale, "btn.no"), `tx:no:${tx.id}`);
+  }
+  return new InlineKeyboard().text(t(scope.locale, "btn.edit"), `tx:edit:${tx.id}`).text(t(scope.locale, "btn.delete"), `tx:del:${tx.id}`);
+}
+
+export function deletedText(scope: Scope, original: string): string {
+  const plain = original.replace(/<[^>]+>/g, "");
+  return t(scope.locale, "confirm.deleted", { text: escapeHtml(plain) });
+}
+
+export function reminderText(scope: Scope, reminder: Reminder): string {
+  return t(scope.locale, "confirm.reminder", {
+    when: formatDateTime(reminder.dueAt, scope.tz, scope.locale),
+    title: escapeHtml(reminder.title),
+  });
+}
+
+export function reminderKeyboard(scope: Scope, reminder: Reminder): InlineKeyboard {
+  return new InlineKeyboard().text(t(scope.locale, "btn.cancel"), `rem:del:${reminder.id}`);
+}
+
+export function recurringText(scope: Scope, rp: RecurringPayment): string {
+  const days = rp.remindDaysBefore ?? scope.household.remindDaysBefore;
+  if (rp.amount !== null) {
+    return t(scope.locale, "confirm.recurring", {
+      name: escapeHtml(rp.name),
+      amount: money(scope, rp.amount, rp.currency),
+      day: rp.dayOfMonth,
+      days,
+    });
+  }
+  return t(scope.locale, "confirm.recurring_no_amount", { name: escapeHtml(rp.name), day: rp.dayOfMonth, days });
+}
+
+export function recurringKeyboard(scope: Scope, rp: RecurringPayment): InlineKeyboard {
+  return new InlineKeyboard().text(t(scope.locale, "btn.delete"), `rp:del:${rp.id}`);
+}
+
+export function paidText(scope: Scope, name: string, amount: number | null, currency: string): string {
+  return t(scope.locale, "confirm.paid", { name: escapeHtml(name), amount: amount !== null ? money(scope, amount, currency) : "—" });
+}
+
+export function alertText(scope: Scope, reminder: Reminder, rp?: RecurringPayment): string {
+  const amount = rp?.amount !== null && rp?.amount !== undefined ? money(scope, rp.amount, rp.currency) : "";
+  if (reminder.kind === "payment_due") {
+    return t(scope.locale, "alert.payment_due", { name: escapeHtml(reminder.title), amount });
+  }
+  if (reminder.kind === "payment_upcoming") {
+    const days = rp?.remindDaysBefore ?? scope.household.remindDaysBefore;
+    const date = reminder.period && rp ? formatDate(`${reminder.period}-${String(rp.dayOfMonth).padStart(2, "0")}`, scope.locale) : "";
+    return t(scope.locale, "alert.payment_upcoming", { days, date, name: escapeHtml(reminder.title), amount });
+  }
+  return t(scope.locale, "alert.reminder", { title: escapeHtml(reminder.title) });
+}
+
+export function alertKeyboard(scope: Scope, reminder: Reminder): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  if (reminder.recurringPaymentId && reminder.period) {
+    kb.text(t(scope.locale, "btn.paid"), `rp:paid:${reminder.recurringPaymentId}:${reminder.period}`);
+    kb.text(t(scope.locale, "btn.snooze_1d"), `rem:snz:${reminder.id}:1440`);
+  } else {
+    kb.text(t(scope.locale, "btn.done"), `rem:done:${reminder.id}`);
+    kb.text(t(scope.locale, "btn.snooze_1h"), `rem:snz:${reminder.id}:60`);
+    kb.text(t(scope.locale, "btn.snooze_1d"), `rem:snz:${reminder.id}:1440`);
+  }
+  return kb;
+}
+
+export function lastRecordsText(scope: Scope, rows: Transaction[]): string {
+  if (!rows.length) return t(scope.locale, "last.empty", { prefix: prefixOf(scope) });
+  const lines = rows.map((tx) => {
+    const sign = tx.kind === "income" ? "+" : "−";
+    const pending = tx.status === "pending" ? " 🤔" : "";
+    return `${formatDate(tx.occurredOn, scope.locale)} · ${sign}${money(scope, tx.amount, tx.currency)} · ${catLabel(scope, tx.category)}${tx.note ? ` · <i>${escapeHtml(tx.note)}</i>` : ""}${pending}`;
+  });
+  return `${t(scope.locale, "last.title")}\n\n${lines.join("\n")}`;
+}
+
+export function remindersListText(scope: Scope, rows: Reminder[]): string {
+  const own = rows.filter((r) => r.kind === "reminder");
+  if (!own.length) return t(scope.locale, "reminders.empty");
+  const lines = own.map((r) => `${formatDateTime(r.dueAt, scope.tz, scope.locale)} · ${escapeHtml(r.title)}`);
+  return `${t(scope.locale, "reminders.title")}\n\n${lines.join("\n")}`;
+}
+
+export function paymentsListText(scope: Scope, rows: { payment: RecurringPayment; date: string; period: string }[]): string {
+  if (!rows.length) return t(scope.locale, "payments.empty");
+  const lines = rows.map(({ payment, date }) =>
+    t(scope.locale, "payments.line", {
+      name: escapeHtml(payment.name),
+      amount: payment.amount !== null ? money(scope, payment.amount, payment.currency) : "—",
+      day: payment.dayOfMonth,
+      next: formatDate(date, scope.locale),
+    }),
+  );
+  return `${t(scope.locale, "payments.title")}\n\n${lines.join("\n")}`;
+}
+
+function deltaSuffix(scope: Scope, pct: number | null, month: string): string {
+  if (pct === null) return "";
+  return t(scope.locale, "summary.delta_vs", { pct: formatPercent(pct, scope.locale), month: formatMonth(month, scope.locale) });
+}
+
+export function summaryText(scope: Scope, s: MonthlySummary, insights?: Insights | null): string {
+  const L = scope.locale;
+  const monthName = formatMonth(s.month, L);
+  if (s.recordCount === 0) return t(L, "summary.empty", { month: monthName, prefix: prefixOf(scope) });
+  const lines: string[] = [];
+  lines.push(t(L, "summary.title", { month: monthName }));
+  lines.push(t(L, "summary.expenses", { amount: money(scope, s.expense), delta: deltaSuffix(scope, s.expenseDeltaPct, s.prevMonth) }));
+  if (s.income > 0 || s.prevIncome > 0) {
+    lines.push(t(L, "summary.income", { amount: money(scope, s.income), delta: deltaSuffix(scope, s.incomeDeltaPct, s.prevMonth) }));
+    lines.push(t(L, "summary.net", { amount: (s.net >= 0 ? "+" : "") + money(scope, s.net) }));
+  }
+  if (s.isCurrentMonth && s.daysElapsed >= 3 && s.projected !== null) {
+    lines.push(t(L, "summary.avg_day", { avg: money(scope, s.avgPerDay), projected: money(scope, s.projected) }));
+  }
+  if (s.categories.length) {
+    lines.push("");
+    lines.push(t(L, "summary.by_category"));
+    for (const c of s.categories.slice(0, 10)) {
+      const delta = c.deltaPct !== null ? ` (${formatPercent(c.deltaPct, L)})` : "";
+      lines.push(
+        t(L, "summary.category_line", {
+          emoji: c.emoji,
+          category: t(L, `cat.${c.category}` as Parameters<typeof t>[1]),
+          amount: money(scope, c.amount),
+          share: c.share,
+          delta,
+        }),
+      );
+    }
+  }
+  const extras: string[] = [];
+  if (s.topGrowth && s.topGrowth.deltaPct !== null) {
+    extras.push(
+      t(L, "summary.top_growth", {
+        category: t(L, `cat.${s.topGrowth.category}` as Parameters<typeof t>[1]),
+        pct: formatPercent(s.topGrowth.deltaPct, L),
+        month: formatMonth(s.prevMonth, L),
+      }),
+    );
+  }
+  if (s.topDrop && s.topDrop.deltaPct !== null) {
+    extras.push(
+      t(L, "summary.top_drop", {
+        category: t(L, `cat.${s.topDrop.category}` as Parameters<typeof t>[1]),
+        pct: formatPercent(s.topDrop.deltaPct, L),
+        month: formatMonth(s.prevMonth, L),
+      }),
+    );
+  }
+  if (s.biggest.length) {
+    extras.push(t(L, "summary.biggest", { list: s.biggest.map((b) => `${escapeHtml(b.note)} ${money(scope, b.amount)}`).join(", ") }));
+  }
+  if (extras.length) {
+    lines.push("");
+    lines.push(...extras);
+  }
+  if (s.upcomingPayments.length) {
+    lines.push("");
+    lines.push(t(L, "summary.upcoming"));
+    for (const p of s.upcomingPayments.slice(0, 5)) {
+      const amount = p.amount !== null ? ` · ${money(scope, p.amount, p.currency)}` : "";
+      lines.push(`💳 ${escapeHtml(p.name)}${amount} · ${formatDate(p.date, L)}`);
+    }
+  }
+  const footer: string[] = [];
+  if (s.openReminders > 0) footer.push(t(L, "summary.open_reminders", { count: s.openReminders }));
+  if (s.pendingCount > 0) footer.push(t(L, "summary.pending", { count: s.pendingCount }));
+  if (s.unconverted.length) {
+    footer.push(t(L, "summary.unconverted", { list: s.unconverted.map((u) => money(scope, u.amount, u.currency)).join(", ") }));
+  }
+  if (footer.length) {
+    lines.push("");
+    lines.push(...footer);
+  }
+  if (insights && (insights.highlights.length || insights.tips.length)) {
+    if (insights.highlights.length) {
+      lines.push("");
+      lines.push(t(L, "summary.insights"));
+      for (const h of insights.highlights) lines.push(`• ${escapeHtml(h)}`);
+    }
+    if (insights.tips.length) {
+      lines.push("");
+      lines.push(t(L, "summary.tips"));
+      for (const tip of insights.tips) lines.push(`• ${escapeHtml(tip)}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+export function summaryKeyboard(scope: Scope, month: string, options: { dashboardUrl?: string; dashboardLink?: string; isPrivate: boolean }): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  const prev = shiftMonthKey(month, -1);
+  kb.text(t(scope.locale, "btn.prev_month", { month: formatMonth(prev, scope.locale) }), `sum:${prev}`);
+  const next = shiftMonthKey(month, 1);
+  if (month < currentMonthKey(scope.tz)) {
+    kb.text(t(scope.locale, "btn.next_month", { month: formatMonth(next, scope.locale) }), `sum:${next}`);
+  }
+  kb.row();
+  if (options.isPrivate && options.dashboardUrl) {
+    kb.webApp(t(scope.locale, "btn.open_dashboard"), `${options.dashboardUrl}?month=${month}`);
+  } else if (options.dashboardLink) {
+    kb.url(t(scope.locale, "btn.open_dashboard"), `${options.dashboardLink}?startapp=${scope.household.id}_${month}`);
+  }
+  return kb;
+}
+
+export function settingsText(scope: Scope): string {
+  const h = scope.household;
+  return t(scope.locale, "settings.title", {
+    currency: h.baseCurrency,
+    timezone: h.timezone,
+    language: languageName(h.locale, h.locale),
+    days: h.remindDaysBefore,
+    prefix: escapeHtml(prefixOf(scope)),
+  });
+}
+
+export function settingsKeyboard(scope: Scope): InlineKeyboard {
+  return new InlineKeyboard()
+    .text(t(scope.locale, "settings.btn_currency"), "set:cur")
+    .text(t(scope.locale, "settings.btn_timezone"), "set:tz")
+    .row()
+    .text(t(scope.locale, "settings.btn_language"), "set:lang");
+}
+
+export function currencyKeyboard(): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  COMMON_CURRENCIES.forEach((code, i) => {
+    kb.text(code, `set:cur:${code}`);
+    if (i % 4 === 3) kb.row();
+  });
+  return kb;
+}
+
+export function timezoneKeyboard(): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  COMMON_TIMEZONES.forEach((tz, i) => {
+    kb.text(tz, `set:tz:${tz}`);
+    if (i % 2 === 1) kb.row();
+  });
+  return kb;
+}
+
+export function languageKeyboard(): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  availableLocales().forEach((code, i) => {
+    kb.text(languageName(code, code), `set:lang:${code}`);
+    if (i % 3 === 2) kb.row();
+  });
+  return kb;
+}

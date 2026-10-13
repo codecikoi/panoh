@@ -1,0 +1,28 @@
+{
+  "name": "budgie",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Budgie \u2014 a friendly family finance assistant for Telegram (bot + API + dashboard)",
+  "packageManager": "pnpm@11.1.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --stream dev",
+    "dev:bot": "pnpm --filter @budgie/bot dev",
+    "dev:api": "pnpm --filter @budgie/api dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "db:generate": "pnpm --filter @budgie/core db:generate",
+    "db:migrate": "pnpm --filter @budgie/core db:migrate",
+    "locales:translate": "pnpm --filter @budgie/core locales:translate",
+    "simulate": "pnpm --filter @budgie/core simulate"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.4"
+  }
+}

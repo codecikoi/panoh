@@ -1,0 +1,32 @@
+{
+  "name": "@budgie/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate-cli.ts",
+    "locales:translate": "tsx --env-file-if-exists=../../.env scripts/translate-locales.ts",
+    "simulate": "tsx --env-file-if-exists=../../.env scripts/simulate.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
+    "@electric-sql/pglite": "^0.5.9",
+    "drizzle-orm": "^0.45.4",
+    "luxon": "^3.7.0",
+    "postgres": "^3.4.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.6.0",
+    "drizzle-kit": "^0.31.0"
+  }
+}

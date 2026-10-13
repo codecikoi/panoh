@@ -1,0 +1,24 @@
+{
+  "name": "@budgie/bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@budgie/core": "workspace:*",
+    "@hono/node-server": "^2.1.4",
+    "grammy": "^1.38.0",
+    "hono": "^4.9.0",
+    "luxon": "^3.7.2"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.7.6",
+    "tsup": "^8.5.0"
+  }
+}

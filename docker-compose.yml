@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: budgie
+      POSTGRES_PASSWORD: budgie
+      POSTGRES_DB: budgie
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U budgie"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  bot:
+    build:
+      context: .
+      dockerfile: apps/bot/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://budgie:budgie@db:5432/budgie
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://budgie:budgie@db:5432/budgie
+      PORT: "8081"
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
