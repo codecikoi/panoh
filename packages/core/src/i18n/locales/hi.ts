@@ -128,4 +128,10 @@ export const hi: LocaleStrings = {
   "cat.gift": "उपहार",
   "cat.refund": "रिफ़ंड",
   "cat.other_income": "अन्य आमदनी",
+  "confirm.reminder_default_time": "⏰ याद दिलाऊँगा: <b>{when}</b> · डिफ़ॉल्ट समय\n{title}\n\n🕒 दूसरा समय चाहिए? इस संदेश पर रिप्लाई करें, जैसे «3 बजे», या बटन दबाएँ।",
+  "btn.change_time": "🕒 समय बदलें",
+  "hint.pick_time": "🕒 «{title}» के लिए समय चुनें या सटीक समय लिखकर रिप्लाई करें, जैसे «15:30 बजे»।",
+  "settings.reminder_time_line": "रिमाइंडर का डिफ़ॉल्ट समय: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 रिमाइंडर का समय",
+  "settings.choose_reminder_time": "🕒 उन रिमाइंडर और भुगतानों के लिए डिफ़ॉल्ट समय चुनें जिनमें तारीख तो है पर समय नहीं।",
 };

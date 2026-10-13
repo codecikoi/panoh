@@ -1,4 +1,5 @@
-import { and, asc, desc, eq, gte, inArray, lt, lte, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt, lte, ne, or } from "drizzle-orm";
+import { DateTime } from "luxon";
 import type { Db } from "../db/client.js";
 import { reminders, type NewReminder, type Reminder } from "../db/schema.js";
 
@@ -111,4 +112,29 @@ export async function lastReminderForHousehold(db: Db, householdId: number): Pro
     .orderBy(desc(reminders.createdAt))
     .limit(1);
   return rows[0];
+}
+
+/**
+ * Moves every scheduled reminder that sits on the household default time (payment reminders and
+ * one-off reminders created without an explicit time) to a new hour of the day, same local date.
+ */
+export async function rescheduleDefaultHour(db: Db, householdId: number, tz: string, hour: number): Promise<number> {
+  const rows = await db
+    .select()
+    .from(reminders)
+    .where(
+      and(
+        eq(reminders.householdId, householdId),
+        eq(reminders.status, "scheduled"),
+        or(ne(reminders.kind, "reminder"), eq(reminders.defaultTime, true)),
+      ),
+    );
+  let changed = 0;
+  for (const row of rows) {
+    const due = DateTime.fromJSDate(row.dueAt).setZone(tz).set({ hour, minute: 0, second: 0, millisecond: 0 }).toJSDate();
+    if (due.getTime() === row.dueAt.getTime()) continue;
+    await updateReminder(db, row.id, { dueAt: due });
+    changed++;
+  }
+  return changed;
 }

@@ -128,4 +128,10 @@ export const tr: LocaleStrings = {
   "cat.gift": "Hediye",
   "cat.refund": "İade",
   "cat.other_income": "Diğer gelir",
+  "confirm.reminder_default_time": "⏰ Hatırlatacağım: <b>{when}</b> · varsayılan saat\n{title}\n\n🕒 Başka bir saat mi? Bu mesaja yanıt ver, örn. «15:00'te», ya da düğmeye bas.",
+  "btn.change_time": "🕒 Saati değiştir",
+  "hint.pick_time": "🕒 «{title}» için bir saat seç ya da tam saatle yanıt ver, örn. «15:30'da».",
+  "settings.reminder_time_line": "Varsayılan hatırlatma saati: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Hatırlatma saati",
+  "settings.choose_reminder_time": "🕒 Tarihi olan ama saati belirtilmemiş hatırlatma ve ödemeler için varsayılan saati seç.",
 };

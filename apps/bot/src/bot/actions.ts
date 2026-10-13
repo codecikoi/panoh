@@ -1,6 +1,5 @@
 import { DateTime } from "luxon";
 import {
-  atLocalTime,
   cancelReminder,
   createRecurring,
   createReminder,
@@ -52,14 +51,14 @@ export async function resolveReplyTarget(db: Db, chatId: number, messageId: numb
   return undefined;
 }
 
-export function describeTarget(target: ReplyTarget): string {
+export function describeTarget(target: ReplyTarget, tz = "UTC"): string {
   switch (target.type) {
     case "transaction": {
       const r = target.row;
       return `${r.kind} record: amount ${r.amount} ${r.currency}, category ${r.category}, note "${r.note}", date ${r.occurredOn}`;
     }
     case "reminder":
-      return `reminder: "${target.row.title}" due ${target.row.dueAt.toISOString()}`;
+      return `reminder: "${target.row.title}" due ${DateTime.fromJSDate(target.row.dueAt).setZone(tz).toFormat("yyyy-LL-dd HH:mm")} (local time)`;
     case "recurring":
       return `recurring payment: "${target.row.name}" ${target.row.amount ?? "?"} ${target.row.currency} on day ${target.row.dayOfMonth}`;
   }
@@ -164,16 +163,21 @@ async function handleReminder(ctx: BotContext, item: ExtractedItem, meta: ApplyM
     await ctx.reply(t(scope.locale, "ask.when", { title: escapeHtml(title) }), replyOpts(meta));
     return true;
   }
+  const defaultTime = !item.timeSpecified;
   const reminder = await createReminder(ctx.deps.db, {
     householdId: scope.household.id,
     userId: scope.user?.id ?? null,
     kind: "reminder",
     title,
     dueAt: item.dueAt,
+    defaultTime,
     sourceChatId: meta.chatId,
     sourceMessageId: meta.sourceMessageId,
   });
-  const sent = await ctx.reply(R.reminderText(scope, reminder), replyOpts(meta, { reply_markup: R.reminderKeyboard(scope, reminder) }));
+  const sent = await ctx.reply(
+    R.reminderText(scope, reminder, { defaultTime }),
+    replyOpts(meta, { reply_markup: R.reminderKeyboard(scope, reminder, { offerTime: defaultTime }) }),
+  );
   await updateReminder(ctx.deps.db, reminder.id, { botMessageId: sent.message_id });
   return true;
 }
@@ -287,10 +291,35 @@ async function handleCorrection(ctx: BotContext, item: ExtractedItem, meta: Appl
   }
   if (target.type === "reminder") {
     const row = target.row;
-    const dueAt = item.dueAt ?? (c.date ? atLocalTime(c.date, scope.household.reminderHour, scope.tz) : row.dueAt);
-    const updated = await updateReminder(db, row.id, { title: c.note ?? row.title, dueAt, status: "scheduled" });
+    if (row.status === "done" || row.status === "cancelled") {
+      await ctx.reply(t(scope.locale, "hint.not_found"), replyOpts(meta));
+      return false;
+    }
+    const orig = DateTime.fromJSDate(row.dueAt).setZone(scope.tz);
+    let dueAt = row.dueAt;
+    let defaultTime = row.defaultTime;
+    if (item.dueAt && item.timeSpecified) {
+      // Explicit time (possibly with a new date): take it as is.
+      dueAt = item.dueAt;
+      defaultTime = false;
+    } else if (item.dueAt || c.date) {
+      // Only the date moved: keep the time of day the reminder already had (default or explicit).
+      const newDate = item.dueAt ? DateTime.fromJSDate(item.dueAt).setZone(scope.tz) : DateTime.fromISO(c.date!, { zone: scope.tz });
+      const hour = row.defaultTime ? scope.household.reminderHour : orig.hour;
+      const minute = row.defaultTime ? 0 : orig.minute;
+      dueAt = newDate.set({ hour, minute, second: 0, millisecond: 0 }).toJSDate();
+    }
+    const updated = await updateReminder(db, row.id, { title: c.note ?? row.title, dueAt, defaultTime, status: "scheduled" });
     if (!updated) return false;
-    await refreshConfirmation(ctx.api, scope, meta.chatId, row.botMessageId, R.reminderText(scope, updated), R.reminderKeyboard(scope, updated), meta);
+    await refreshConfirmation(
+      ctx.api,
+      scope,
+      meta.chatId,
+      row.botMessageId,
+      R.reminderText(scope, updated, { defaultTime }),
+      R.reminderKeyboard(scope, updated, { offerTime: defaultTime }),
+      meta,
+    );
     return true;
   }
   const row = target.row;

@@ -128,4 +128,10 @@ export const th: LocaleStrings = {
   "cat.gift": "ของขวัญ",
   "cat.refund": "เงินคืน",
   "cat.other_income": "รายรับอื่น",
+  "confirm.reminder_default_time": "⏰ จะเตือน <b>{when}</b> · เวลาเริ่มต้น\n{title}\n\n🕒 อยากได้เวลาอื่น? ตอบกลับข้อความนี้ เช่น «ตอน 15:00» หรือกดปุ่ม",
+  "btn.change_time": "🕒 เปลี่ยนเวลา",
+  "hint.pick_time": "🕒 เลือกเวลาสำหรับ «{title}» หรือตอบกลับด้วยเวลาที่แน่นอน เช่น «ตอน 15:30»",
+  "settings.reminder_time_line": "เวลาเตือนเริ่มต้น: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 เวลาแจ้งเตือน",
+  "settings.choose_reminder_time": "🕒 เลือกเวลาเริ่มต้นสำหรับการแจ้งเตือนและรายจ่ายที่มีวันที่แต่ไม่ได้ระบุเวลา",
 };

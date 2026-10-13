@@ -128,4 +128,10 @@ export const id: LocaleStrings = {
   "cat.gift": "Hadiah",
   "cat.refund": "Pengembalian",
   "cat.other_income": "Pemasukan lain",
+  "confirm.reminder_default_time": "⏰ Kuingatkan <b>{when}</b> · jam bawaan\n{title}\n\n🕒 Mau jam lain? Balas pesan ini, misalnya «jam 15:00», atau ketuk tombolnya.",
+  "btn.change_time": "🕒 Ubah jam",
+  "hint.pick_time": "🕒 Pilih jam untuk «{title}» atau balas dengan jam pastinya, misalnya «jam 15:30».",
+  "settings.reminder_time_line": "Jam bawaan pengingat: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Jam pengingat",
+  "settings.choose_reminder_time": "🕒 Pilih jam bawaan untuk pengingat dan tagihan yang punya tanggal tapi tidak ada jamnya.",
 };

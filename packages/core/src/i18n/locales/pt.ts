@@ -128,4 +128,10 @@ export const pt: LocaleStrings = {
   "cat.gift": "Presente",
   "cat.refund": "Reembolso",
   "cat.other_income": "Outras receitas",
+  "confirm.reminder_default_time": "⏰ Vou te lembrar em <b>{when}</b> · horário padrão\n{title}\n\n🕒 Quer outro horário? Responda a esta mensagem, por ex. «às 15:00», ou toque no botão.",
+  "btn.change_time": "🕒 Mudar horário",
+  "hint.pick_time": "🕒 Escolha um horário para «{title}» ou responda com um exato, por ex. «às 15:30».",
+  "settings.reminder_time_line": "Horário padrão dos lembretes: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Horário dos lembretes",
+  "settings.choose_reminder_time": "🕒 Escolha o horário padrão para lembretes e contas que têm data mas não têm horário.",
 };

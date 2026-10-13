@@ -128,4 +128,10 @@ export const ky: LocaleStrings = {
   "cat.gift": "Белек",
   "cat.refund": "Кайтаруу",
   "cat.other_income": "Башка киреше",
+  "confirm.reminder_default_time": "⏰ Эскертем: <b>{when}</b> · демейки убакыт\n{title}\n\n🕒 Башка убакыт керекпи? Бул билдирүүгө жооп бер, мисалы «саат 15:00», же баскычты бас.",
+  "btn.change_time": "🕒 Убакытты өзгөртүү",
+  "hint.pick_time": "🕒 «{title}» үчүн убакытты танда же так убакыт менен жооп бер, мисалы «саат 15:30».",
+  "settings.reminder_time_line": "Демейки эскертүү убактысы: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Эскертүү убактысы",
+  "settings.choose_reminder_time": "🕒 Күнү бар, бирок убактысы көрсөтүлбөгөн эскертүүлөр жана төлөмдөр үчүн демейки убакытты танда.",
 };

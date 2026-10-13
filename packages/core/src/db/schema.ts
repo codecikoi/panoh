@@ -157,6 +157,8 @@ export const reminders = pgTable(
     recurringPaymentId: integer("recurring_payment_id").references(() => recurringPayments.id, { onDelete: "cascade" }),
     period: text("period"),
     snoozeCount: integer("snooze_count").notNull().default(0),
+    /** True while the time of day is the household default (no explicit time given by the user). */
+    defaultTime: boolean("default_time").notNull().default(false),
     sourceChatId: tgId("source_chat_id"),
     sourceMessageId: tgId("source_message_id"),
     botMessageId: tgId("bot_message_id"),

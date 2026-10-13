@@ -128,4 +128,10 @@ export const nl: LocaleStrings = {
   "cat.gift": "Cadeau",
   "cat.refund": "Terugbetaling",
   "cat.other_income": "Overige inkomsten",
+  "confirm.reminder_default_time": "⏰ Ik herinner je <b>{when}</b> · standaardtijd\n{title}\n\n🕒 Andere tijd? Antwoord op dit bericht, bijv. „om 15:00”, of tik op de knop.",
+  "btn.change_time": "🕒 Tijd wijzigen",
+  "hint.pick_time": "🕒 Kies een tijd voor „{title}” of antwoord met een exacte tijd, bijv. „om 15:30”.",
+  "settings.reminder_time_line": "Standaardtijd voor herinneringen: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Herinneringstijd",
+  "settings.choose_reminder_time": "🕒 Kies de standaardtijd voor herinneringen en betalingen die wel een datum maar geen tijd hebben.",
 };

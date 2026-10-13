@@ -4,7 +4,7 @@ import { createTestDb, type DbHandle } from "../db/client.js";
 import { getOrCreateHousehold, upsertUser, ensureMember, isMember, listHouseholdsForTelegramUser, updateHousehold } from "./households.js";
 import { createTransaction, listTransactionsForMonth, softDeleteTransaction, listRecentTransactions } from "./transactions.js";
 import { createRecurring, ensureRemindersFor, markPaid, matchRecurringByName, nextDue, upcomingPayments } from "./recurring.js";
-import { createReminder, dueReminders, listOpenReminders, markReminderSent, snoozeReminder } from "./reminders.js";
+import { createReminder, dueReminders, getReminder, listOpenReminders, markReminderSent, rescheduleDefaultHour, snoozeReminder } from "./reminders.js";
 import { loadMonthlySummary } from "./summary.js";
 import { markProcessed } from "./processed.js";
 import { findLastRecord } from "./records.js";
@@ -96,6 +96,24 @@ describe("services (pglite)", () => {
     expect(snoozed?.snoozeCount).toBe(1);
     const last = await findLastRecord(handle.db, household.id);
     expect(last?.type).toBe("reminder");
+  });
+
+  it("re-times default-time reminders when the household hour changes", async () => {
+    const { household } = await getOrCreateHousehold(handle.db, { chatId: -1002, chatType: "supergroup" }, { locale: "ru", currency: "UZS", timezone: "Asia/Tashkent" });
+    const tz = household.timezone;
+    const day = DateTime.now().setZone(tz).plus({ days: 5 }).set({ hour: 9, minute: 0, second: 0, millisecond: 0 });
+    const rp = await createRecurring(handle.db, { householdId: household.id, name: "интернет", amount: 100000, currency: "UZS", dayOfMonth: day.day });
+    await ensureRemindersFor(handle.db, rp, household);
+    const soft = await createReminder(handle.db, { householdId: household.id, title: "default-time", dueAt: day.toJSDate(), defaultTime: true });
+    const hard = await createReminder(handle.db, { householdId: household.id, title: "explicit", dueAt: day.set({ hour: 15, minute: 30 }).toJSDate(), defaultTime: false });
+    const changed = await rescheduleDefaultHour(handle.db, household.id, tz, 20);
+    expect(changed).toBeGreaterThanOrEqual(2);
+    for (const r of await listOpenReminders(handle.db, household.id, 50)) {
+      const local = DateTime.fromJSDate(r.dueAt).setZone(tz);
+      if (r.id === hard.id) expect(local.toFormat("HH:mm")).toBe("15:30");
+      else expect(local.hour).toBe(20);
+    }
+    expect(DateTime.fromJSDate((await getReminder(handle.db, soft.id))!.dueAt).setZone(tz).toISODate()).toBe(day.toISODate());
   });
 
   it("deduplicates processed messages and updates settings", async () => {

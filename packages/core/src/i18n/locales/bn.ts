@@ -128,4 +128,10 @@ export const bn: LocaleStrings = {
   "cat.gift": "উপহার",
   "cat.refund": "ফেরত",
   "cat.other_income": "অন্যান্য আয়",
+  "confirm.reminder_default_time": "⏰ মনে করিয়ে দেব: <b>{when}</b> · ডিফল্ট সময়\n{title}\n\n🕒 অন্য সময় চান? এই মেসেজে রিপ্লাই দিন, যেমন «বিকেল 3টায়», বা বোতাম চাপুন।",
+  "btn.change_time": "🕒 সময় বদলান",
+  "hint.pick_time": "🕒 «{title}»-এর জন্য সময় বেছে নিন বা সঠিক সময় লিখে রিপ্লাই দিন, যেমন «15:30-এ»।",
+  "settings.reminder_time_line": "রিমাইন্ডারের ডিফল্ট সময়: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 রিমাইন্ডারের সময়",
+  "settings.choose_reminder_time": "🕒 যেসব রিমাইন্ডার ও পেমেন্টে তারিখ আছে কিন্তু সময় নেই, সেগুলোর ডিফল্ট সময় বেছে নিন।",
 };

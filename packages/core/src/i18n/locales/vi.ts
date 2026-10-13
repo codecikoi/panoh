@@ -128,4 +128,10 @@ export const vi: LocaleStrings = {
   "cat.gift": "Quà",
   "cat.refund": "Hoàn tiền",
   "cat.other_income": "Thu khác",
+  "confirm.reminder_default_time": "⏰ Mình sẽ nhắc <b>{when}</b> · giờ mặc định\n{title}\n\n🕒 Muốn giờ khác? Trả lời tin này, ví dụ «lúc 15:00», hoặc bấm nút.",
+  "btn.change_time": "🕒 Đổi giờ",
+  "hint.pick_time": "🕒 Chọn giờ cho «{title}» hoặc trả lời bằng giờ chính xác, ví dụ «lúc 15:30».",
+  "settings.reminder_time_line": "Giờ nhắc mặc định: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Giờ nhắc nhở",
+  "settings.choose_reminder_time": "🕒 Chọn giờ mặc định cho các nhắc nhở và khoản trả có ngày nhưng không có giờ.",
 };

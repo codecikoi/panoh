@@ -145,4 +145,10 @@ export const uz: LocaleStrings = {
   "cat.gift": "Sovg'a",
   "cat.refund": "Qaytarish",
   "cat.other_income": "Boshqa daromad",
+  "confirm.reminder_default_time": "⏰ Eslataman: <b>{when}</b> · standart vaqt\n{title}\n\n🕒 Boshqa vaqt kerakmi? Shu xabarga javob yozing, masalan «soat 15:00», yoki tugmani bosing.",
+  "btn.change_time": "🕒 Vaqtni o'zgartirish",
+  "hint.pick_time": "🕒 «{title}» uchun vaqtni tanlang yoki aniq vaqt bilan javob yozing, masalan «soat 15:30».",
+  "settings.reminder_time_line": "Standart eslatma vaqti: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Eslatma vaqti",
+  "settings.choose_reminder_time": "🕒 Sanasi bor, lekin vaqti ko'rsatilmagan eslatma va to'lovlar uchun standart vaqtni tanlang.",
 };

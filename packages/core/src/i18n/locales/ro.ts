@@ -128,4 +128,10 @@ export const ro: LocaleStrings = {
   "cat.gift": "Cadou",
   "cat.refund": "Rambursare",
   "cat.other_income": "Alte venituri",
+  "confirm.reminder_default_time": "⏰ Îți amintesc <b>{when}</b> · ora implicită\n{title}\n\n🕒 Vrei altă oră? Răspunde la acest mesaj, de ex. „la 15:00”, sau apasă butonul.",
+  "btn.change_time": "🕒 Schimbă ora",
+  "hint.pick_time": "🕒 Alege o oră pentru „{title}” sau răspunde cu una exactă, de ex. „la 15:30”.",
+  "settings.reminder_time_line": "Ora implicită a mementourilor: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Ora mementourilor",
+  "settings.choose_reminder_time": "🕒 Alege ora implicită pentru mementourile și plățile care au dată, dar nu și oră.",
 };

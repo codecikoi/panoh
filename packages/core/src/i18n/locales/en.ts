@@ -143,6 +143,12 @@ export const en = {
   "cat.gift": "Gift",
   "cat.refund": "Refund",
   "cat.other_income": "Other income",
+  "confirm.reminder_default_time": "⏰ I'll remind you <b>{when}</b> · default time\n{title}\n\n🕒 Need a different time? Reply to this message, e.g. «at 15:00», or tap the button.",
+  "btn.change_time": "🕒 Change time",
+  "hint.pick_time": "🕒 Pick a time for «{title}» or reply with an exact one, e.g. «at 15:30».",
+  "settings.reminder_time_line": "Default reminder time: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Reminder time",
+  "settings.choose_reminder_time": "🕒 Choose the default time for reminders and bills that have a date but no time.",
 } as const;
 
 export type LocaleStrings = { [K in keyof typeof en]: string };

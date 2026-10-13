@@ -13,6 +13,7 @@ import {
   listRecentTransactions,
   listRecurring,
   nextDue,
+  rescheduleDefaultHour,
   shiftMonthKey,
   t,
   updateHousehold,
@@ -114,6 +115,7 @@ export function registerCommands(bot: Bot<BotContext>): void {
     if (!isValidTimezone(tz)) return ctx.reply(t(scope.locale, "settings.timezone_invalid"));
     scope.household = await updateHousehold(ctx.deps.db, scope.household.id, { timezone: tz });
     scope.tz = tz;
+    await rescheduleDefaultHour(ctx.deps.db, scope.household.id, tz, scope.household.reminderHour);
     await ctx.reply(t(scope.locale, "settings.saved", { value: tz }));
   });
 

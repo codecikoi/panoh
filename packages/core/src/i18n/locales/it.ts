@@ -128,4 +128,10 @@ export const it: LocaleStrings = {
   "cat.gift": "Regalo",
   "cat.refund": "Rimborso",
   "cat.other_income": "Altre entrate",
+  "confirm.reminder_default_time": "⏰ Ti ricordo <b>{when}</b> · orario predefinito\n{title}\n\n🕒 Vuoi un altro orario? Rispondi a questo messaggio, ad es. «alle 15:00», oppure tocca il pulsante.",
+  "btn.change_time": "🕒 Cambia orario",
+  "hint.pick_time": "🕒 Scegli un orario per «{title}» o rispondi con uno preciso, ad es. «alle 15:30».",
+  "settings.reminder_time_line": "Orario predefinito dei promemoria: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Orario promemoria",
+  "settings.choose_reminder_time": "🕒 Scegli l'orario predefinito per promemoria e pagamenti che hanno una data ma non un orario.",
 };

@@ -31,6 +31,7 @@ const RawItem = z.object({
   day_of_month: z.number().int().nullable(),
   remind_days_before: z.number().int().nullable(),
   target: z.string().nullable(),
+  time_specified: z.boolean(),
   confidence: z.number(),
 });
 
@@ -54,6 +55,8 @@ export interface ExtractedItem {
   dayOfMonth: number | null;
   remindDaysBefore: number | null;
   target: string | null;
+  /** For reminders: whether the user stated a time of day (false = household default time was applied). */
+  timeSpecified: boolean;
   confidence: number;
   /** Fields explicitly set by a correction. */
   changed: Partial<{ amount: number; currency: string; category: Category; note: string; date: string }>;
@@ -65,6 +68,8 @@ export interface ExtractionContext {
   locale: string;
   timezone: string;
   baseCurrency: string;
+  /** Hour (0-23, household local time) used for reminders that come without a time of day. */
+  defaultReminderHour?: number;
   recurringPayments: { name: string; amount: number | null; currency: string; dayOfMonth: number }[];
   /** Short description of the bot message the user replied to, if any. */
   replyTo?: string;
@@ -86,7 +91,7 @@ Return nothing but the structured output.
 ## Item kinds
 - expense: money spent. Needs amount (number) and category from the expense list.
 - income: money received. Needs amount and category from the income list.
-- reminder: a one-off thing to do at a date/time. Needs due_at (local date-time, "YYYY-MM-DDTHH:mm") and note (what to do).
+- reminder: a one-off thing to do at a date/time. Needs due_at (local date-time, "YYYY-MM-DDTHH:mm"), note (what to do) and time_specified.
 - recurring_payment: a bill that repeats every month on a fixed day (loan, rent, kindergarten, internet...). Needs day_of_month, note (short name), optional amount, optional remind_days_before.
 - payment_done: the user says a KNOWN recurring payment (see the list in the user message) was paid. Set target to that payment's name exactly. Optional amount if stated.
 - correction: the message replies to a bot confirmation and changes something ("not 150, 115", "category transport", "it was yesterday", "in dollars"). Fill ONLY the changed fields; leave everything else null (note "" if unchanged).
@@ -98,7 +103,9 @@ Return nothing but the structured output.
 - A message can contain several items ("groceries 150k and taxi 30k" → two expenses). Return them in order.
 - Amounts: "150k"/"150к" = 150000; "2 млн"/"2 mln"/"2m" = 2000000; "1.5k" = 1500; "тыс" = thousands. Never invent an amount; if missing, amount = null and confidence ≤ 0.4.
 - Currency: return an ISO 4217 code when stated or implied by a symbol/word ("$" USD, "€" EUR, "₽"/"руб" RUB, "сум"/"so'm"/"sum" UZS, "тенге"/"тг" KZT, "сомони" TJS, "сом" → KGS if the household currency is KGS else TJS). Otherwise null (the household default applies).
-- Dates are resolved relative to NOW (given with timezone). "yesterday" → that date. Expense/income date: the day it happened, default today. For reminders without a time use 09:00; "tonight" 20:00; "morning" 09:00; "after lunch" 14:00. A reminder must be in the future: "on Friday" means the next Friday, "on the 20th" means the next 20th.
+- Dates are resolved relative to NOW (given with timezone). "yesterday" → that date. Expense/income date: the day it happened, default today. A reminder must be in the future: "on Friday" means the next Friday, "on the 20th" means the next 20th.
+- Reminder time of day: if the user states a time or a clear part of the day ("at 3", "tonight" 20:00, "morning" 09:00, "after lunch" 14:00), use it and set time_specified=true. If only a date or weekday is given, use the household default reminder time from the message and set time_specified=false. For every other kind time_specified=false.
+- A correction that only changes the time of a reminder keeps the original reminder date: return the full due_at with the new time and time_specified=true. A correction that moves a reminder to another date without naming a time returns due_at with the new date (keep the original time of day) and time_specified=false; the bot decides the final time.
 - Weekday names, months and relative words may be in any language.
 - note: short (≤ 40 chars), in the message's language, no amount or currency inside, lowercase unless it is a proper name. For recurring payments the note is the bill name ("кредит", "квартира", "internet").
 - category must be one of the lists below. Loan or mortgage instalments → loans. Taxi, fuel, bus → transport. Cafe, restaurant, delivery → dining. Supermarket, market, food at home → groceries. Pharmacy, doctor → health. Money sent to parents/relatives → family.
@@ -117,6 +124,7 @@ export function buildExtractionUserMessage(ctx: ExtractionContext): string {
   const lines: string[] = [];
   lines.push(`NOW: ${describeNow(ctx.timezone, ctx.locale)}`);
   lines.push(`Household base currency: ${ctx.baseCurrency}`);
+  lines.push(`Default reminder time when none is given: ${String(ctx.defaultReminderHour ?? 9).padStart(2, "0")}:00 (local)`);
   if (ctx.recurringPayments.length) {
     const list = ctx.recurringPayments
       .map((p) => `"${p.name}" (${p.amount ?? "amount unknown"} ${p.currency}, day ${p.dayOfMonth})`)
@@ -179,6 +187,7 @@ export function normalizeItems(raw: RawExtractedItem[], ctx: ExtractionContext):
       dayOfMonth,
       remindDaysBefore,
       target: r.target?.trim() || null,
+      timeSpecified: r.kind === "reminder" || r.kind === "correction" ? r.time_specified === true : true,
       confidence: clampConfidence(r.confidence),
       changed,
     });

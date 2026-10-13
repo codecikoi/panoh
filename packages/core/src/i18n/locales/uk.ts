@@ -128,4 +128,10 @@ export const uk: LocaleStrings = {
   "cat.gift": "Подарунок",
   "cat.refund": "Повернення",
   "cat.other_income": "Інший дохід",
+  "confirm.reminder_default_time": "⏰ Нагадаю <b>{when}</b> · час за замовчуванням\n{title}\n\n🕒 Потрібен інший час? Відповідай на це повідомлення, наприклад «о 15:00», або натисни кнопку.",
+  "btn.change_time": "🕒 Змінити час",
+  "hint.pick_time": "🕒 Обери час для «{title}» або відповідай точним часом, наприклад «о 15:30».",
+  "settings.reminder_time_line": "Час нагадувань за замовчуванням: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Час нагадувань",
+  "settings.choose_reminder_time": "🕒 Обери час за замовчуванням для нагадувань і платежів, у яких є дата, але не вказано час.",
 };

@@ -128,4 +128,10 @@ export const ms: LocaleStrings = {
   "cat.gift": "Hadiah",
   "cat.refund": "Bayaran balik",
   "cat.other_income": "Pendapatan lain",
+  "confirm.reminder_default_time": "⏰ Saya ingatkan <b>{when}</b> · masa lalai\n{title}\n\n🕒 Mahu masa lain? Balas mesej ini, cth. «pukul 15:00», atau ketik butang.",
+  "btn.change_time": "🕒 Tukar masa",
+  "hint.pick_time": "🕒 Pilih masa untuk «{title}» atau balas dengan masa tepat, cth. «pukul 15:30».",
+  "settings.reminder_time_line": "Masa lalai peringatan: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Masa peringatan",
+  "settings.choose_reminder_time": "🕒 Pilih masa lalai untuk peringatan dan bayaran yang ada tarikh tetapi tiada masa.",
 };

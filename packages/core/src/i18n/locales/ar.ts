@@ -128,4 +128,10 @@ export const ar: LocaleStrings = {
   "cat.gift": "هدية",
   "cat.refund": "استرداد",
   "cat.other_income": "دخل آخر",
+  "confirm.reminder_default_time": "⏰ سأذكّرك <b>{when}</b> · الوقت الافتراضي\n{title}\n\n🕒 تريد وقتًا آخر؟ رُدّ على هذه الرسالة، مثلًا «الساعة 15:00»، أو اضغط الزر.",
+  "btn.change_time": "🕒 تغيير الوقت",
+  "hint.pick_time": "🕒 اختر وقتًا لـ «{title}» أو رُدّ بوقت محدد، مثلًا «الساعة 15:30».",
+  "settings.reminder_time_line": "الوقت الافتراضي للتذكيرات: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 وقت التذكيرات",
+  "settings.choose_reminder_time": "🕒 اختر الوقت الافتراضي للتذكيرات والدفعات التي لها تاريخ بلا وقت.",
 };

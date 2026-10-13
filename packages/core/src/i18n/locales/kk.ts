@@ -128,4 +128,10 @@ export const kk: LocaleStrings = {
   "cat.gift": "Сыйлық",
   "cat.refund": "Қайтарым",
   "cat.other_income": "Басқа кіріс",
+  "confirm.reminder_default_time": "⏰ Еске саламын: <b>{when}</b> · әдепкі уақыт\n{title}\n\n🕒 Басқа уақыт керек пе? Осы хабарламаға жауап бер, мысалы «сағат 15:00», немесе түймені бас.",
+  "btn.change_time": "🕒 Уақытты өзгерту",
+  "hint.pick_time": "🕒 «{title}» үшін уақытты таңда немесе нақты уақытпен жауап бер, мысалы «сағат 15:30».",
+  "settings.reminder_time_line": "Әдепкі еске салу уақыты: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Еске салу уақыты",
+  "settings.choose_reminder_time": "🕒 Күні бар, бірақ уақыты көрсетілмеген еске салулар мен төлемдер үшін әдепкі уақытты таңда.",
 };

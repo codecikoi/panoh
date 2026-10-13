@@ -128,4 +128,10 @@ export const ja: LocaleStrings = {
   "cat.gift": "贈与",
   "cat.refund": "返金",
   "cat.other_income": "その他の収入",
+  "confirm.reminder_default_time": "⏰ <b>{when}</b> にお知らせします · 既定の時刻\n{title}\n\n🕒 別の時刻にしますか？このメッセージに返信（例：「15時に」）するか、ボタンを押してください。",
+  "btn.change_time": "🕒 時刻を変更",
+  "hint.pick_time": "🕒 「{title}」の時刻を選ぶか、正確な時刻で返信してください。例：「15:30に」",
+  "settings.reminder_time_line": "リマインダーの既定時刻: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 リマインド時刻",
+  "settings.choose_reminder_time": "🕒 日付だけで時刻のないリマインダーや支払いに使う既定の時刻を選んでください。",
 };

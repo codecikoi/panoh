@@ -128,4 +128,10 @@ export const fa: LocaleStrings = {
   "cat.gift": "هدیه",
   "cat.refund": "بازپرداخت",
   "cat.other_income": "سایر درآمدها",
+  "confirm.reminder_default_time": "⏰ یادآوری می‌کنم: <b>{when}</b> · ساعت پیش‌فرض\n{title}\n\n🕒 ساعت دیگری می‌خواهی؟ به این پیام پاسخ بده، مثلاً «ساعت 15:00»، یا دکمه را بزن.",
+  "btn.change_time": "🕒 تغییر ساعت",
+  "hint.pick_time": "🕒 برای «{title}» ساعتی انتخاب کن یا با ساعت دقیق پاسخ بده، مثلاً «ساعت 15:30».",
+  "settings.reminder_time_line": "ساعت پیش‌فرض یادآوری‌ها: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 ساعت یادآوری",
+  "settings.choose_reminder_time": "🕒 ساعت پیش‌فرض را برای یادآوری‌ها و پرداخت‌هایی که تاریخ دارند ولی ساعت ندارند انتخاب کن.",
 };

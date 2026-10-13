@@ -128,4 +128,10 @@ export const ur: LocaleStrings = {
   "cat.gift": "تحفہ",
   "cat.refund": "رقم کی واپسی",
   "cat.other_income": "دیگر آمدنی",
+  "confirm.reminder_default_time": "⏰ یاد دلاؤں گا: <b>{when}</b> · طے شدہ وقت\n{title}\n\n🕒 کوئی اور وقت چاہیے؟ اس پیغام پر جواب دیں، مثلاً «3 بجے»، یا بٹن دبائیں۔",
+  "btn.change_time": "🕒 وقت بدلیں",
+  "hint.pick_time": "🕒 «{title}» کے لیے وقت منتخب کریں یا صحیح وقت لکھ کر جواب دیں، مثلاً «15:30 بجے»۔",
+  "settings.reminder_time_line": "یاد دہانیوں کا طے شدہ وقت: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 یاد دہانی کا وقت",
+  "settings.choose_reminder_time": "🕒 ان یاد دہانیوں اور ادائیگیوں کے لیے طے شدہ وقت منتخب کریں جن کی تاریخ تو ہے مگر وقت نہیں۔",
 };

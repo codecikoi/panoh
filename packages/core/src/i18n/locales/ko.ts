@@ -128,4 +128,10 @@ export const ko: LocaleStrings = {
   "cat.gift": "선물 수입",
   "cat.refund": "환불",
   "cat.other_income": "기타 수입",
+  "confirm.reminder_default_time": "⏰ <b>{when}</b>에 알려 드릴게요 · 기본 시간\n{title}\n\n🕒 다른 시간을 원하시면 이 메시지에 답장하세요. 예: «15시에». 또는 버튼을 누르세요.",
+  "btn.change_time": "🕒 시간 변경",
+  "hint.pick_time": "🕒 «{title}»의 시간을 고르거나 정확한 시간으로 답장하세요. 예: «15:30에».",
+  "settings.reminder_time_line": "기본 알림 시간: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 알림 시간",
+  "settings.choose_reminder_time": "🕒 날짜만 있고 시간이 없는 알림과 결제에 쓸 기본 시간을 고르세요.",
 };

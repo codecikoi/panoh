@@ -145,4 +145,10 @@ export const ru: LocaleStrings = {
   "cat.gift": "Подарок",
   "cat.refund": "Возврат",
   "cat.other_income": "Другой доход",
+  "confirm.reminder_default_time": "⏰ Напомню <b>{when}</b> · время по умолчанию\n{title}\n\n🕒 Нужно другое время? Ответь на это сообщение, например «в 15:00», или нажми кнопку.",
+  "btn.change_time": "🕒 Изменить время",
+  "hint.pick_time": "🕒 Выбери время для «{title}» или ответь точным временем, например «в 15:30».",
+  "settings.reminder_time_line": "Время напоминаний по умолчанию: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Время напоминаний",
+  "settings.choose_reminder_time": "🕒 Выбери время по умолчанию для напоминаний и платежей, у которых есть дата, но не указано время.",
 };

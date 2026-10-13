@@ -27,6 +27,7 @@ Mini App ──▶ apps/api  (Hono, Telegram initData auth) ──▶ packages/c
 * **Numbers are computed in code.** The summary (totals, categories, month-over-month deltas, projections, upcoming bills) is calculated from the database; Claude only writes the short insights section from those numbers.
 * **Every record is confirmed in chat** with ✏️ / 🗑 buttons. Reply to a confirmation with "not 150, 115" or "category transport" to fix it; "undo" or /undo removes the last record. Low-confidence parses ask "record this?" before counting.
 * **Bills remind themselves.** A recurring payment reminds N days before and on the day, with a ✅ Paid button that also books the expense.
+* **Reminders without a time** get the household's default reminder time (09:00 unless changed in /settings) and a 🕒 button to pick another hour; replying «at 15:00» to the confirmation also moves it.
 * **Multi-currency.** Each household has a base currency; other currencies are converted with daily rates (open.er-api.com). Unconverted amounts are shown separately, never silently dropped.
 
 ## Repository layout
@@ -76,7 +77,7 @@ pnpm db:generate          # new SQL migration after changing packages/core/src/d
 | `/undo` | Delete the last record |
 | `/reminders` | Open reminders |
 | `/payments` | Recurring payments and their next due dates |
-| `/settings` | Currency, timezone, language (inline buttons); also `/currency EUR`, `/timezone Europe/Berlin`, `/language ru` |
+| `/settings` | Currency, timezone, language, default reminder time (inline buttons); also `/currency EUR`, `/timezone Europe/Berlin`, `/language ru` |
 | `/keywords` `[add \| remove words]` | Trigger words for this chat |
 | `/help` | Examples |
 

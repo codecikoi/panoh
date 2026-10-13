@@ -60,6 +60,12 @@ export function createScheduler(api: Api, deps: Deps): Scheduler {
       try {
         const sent = await api.sendMessage(h.telegramChatId, alertText(scope, reminder, rp), { reply_markup: alertKeyboard(scope, reminder) });
         await markReminderSent(deps.db, reminder.id, sent.message_id);
+        if (reminder.botMessageId) {
+          // The confirmation's "change time" / "cancel" buttons are meaningless once the alert is out.
+          await api
+            .editMessageReplyMarkup(reminder.sourceChatId ?? h.telegramChatId, reminder.botMessageId, { reply_markup: { inline_keyboard: [] } })
+            .catch(() => undefined);
+        }
       } catch (err) {
         if (isChatGone(err)) {
           await updateReminder(deps.db, reminder.id, { status: "cancelled" });

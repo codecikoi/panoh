@@ -84,15 +84,33 @@ export function deletedText(scope: Scope, original: string): string {
   return t(scope.locale, "confirm.deleted", { text: escapeHtml(plain) });
 }
 
-export function reminderText(scope: Scope, reminder: Reminder): string {
-  return t(scope.locale, "confirm.reminder", {
+export function reminderText(scope: Scope, reminder: Reminder, options: { defaultTime?: boolean } = {}): string {
+  return t(scope.locale, options.defaultTime ? "confirm.reminder_default_time" : "confirm.reminder", {
     when: formatDateTime(reminder.dueAt, scope.tz, scope.locale),
     title: escapeHtml(reminder.title),
   });
 }
 
-export function reminderKeyboard(scope: Scope, reminder: Reminder): InlineKeyboard {
-  return new InlineKeyboard().text(t(scope.locale, "btn.cancel"), `rem:del:${reminder.id}`);
+export function reminderKeyboard(scope: Scope, reminder: Reminder, options: { offerTime?: boolean } = {}): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  if (options.offerTime) kb.text(t(scope.locale, "btn.change_time"), `rem:time:${reminder.id}`);
+  return kb.text(t(scope.locale, "btn.cancel"), `rem:del:${reminder.id}`);
+}
+
+export const PICKER_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+
+export function formatHour(hour: number): string {
+  return `${String(hour).padStart(2, "0")}:00`;
+}
+
+/** Keyboard of whole hours; each button sends `${callbackPrefix}:${hour}`. */
+export function hourPickerKeyboard(callbackPrefix: string): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  PICKER_HOURS.forEach((hour, i) => {
+    kb.text(formatHour(hour), `${callbackPrefix}:${hour}`);
+    if (i % 4 === 3) kb.row();
+  });
+  return kb;
 }
 
 export function recurringText(scope: Scope, rp: RecurringPayment): string {
@@ -285,13 +303,14 @@ export function summaryKeyboard(scope: Scope, month: string, options: { dashboar
 
 export function settingsText(scope: Scope): string {
   const h = scope.household;
-  return t(scope.locale, "settings.title", {
+  const title = t(scope.locale, "settings.title", {
     currency: h.baseCurrency,
     timezone: h.timezone,
     language: languageName(h.locale, h.locale),
     days: h.remindDaysBefore,
     prefix: escapeHtml(prefixOf(scope)),
   });
+  return `${title}\n${t(scope.locale, "settings.reminder_time_line", { time: formatHour(h.reminderHour) })}`;
 }
 
 export function settingsKeyboard(scope: Scope): InlineKeyboard {
@@ -299,7 +318,8 @@ export function settingsKeyboard(scope: Scope): InlineKeyboard {
     .text(t(scope.locale, "settings.btn_currency"), "set:cur")
     .text(t(scope.locale, "settings.btn_timezone"), "set:tz")
     .row()
-    .text(t(scope.locale, "settings.btn_language"), "set:lang");
+    .text(t(scope.locale, "settings.btn_language"), "set:lang")
+    .text(t(scope.locale, "settings.btn_reminder_time"), "set:hour");
 }
 
 export function currencyKeyboard(): InlineKeyboard {

@@ -128,4 +128,10 @@ export const zh: LocaleStrings = {
   "cat.gift": "红包礼金",
   "cat.refund": "退款",
   "cat.other_income": "其他收入",
+  "confirm.reminder_default_time": "⏰ 我会在 <b>{when}</b> 提醒你 · 默认时间\n{title}\n\n🕒 想换个时间？回复这条消息，比如「15点」，或点下面的按钮。",
+  "btn.change_time": "🕒 修改时间",
+  "hint.pick_time": "🕒 给「{title}」选个时间，或者回复准确时间，比如「15:30」。",
+  "settings.reminder_time_line": "默认提醒时间：<b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 提醒时间",
+  "settings.choose_reminder_time": "🕒 为只有日期、没有时间的提醒和账单选择默认时间。",
 };

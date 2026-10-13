@@ -128,4 +128,10 @@ export const tg: LocaleStrings = {
   "cat.gift": "Тӯҳфа",
   "cat.refund": "Баргардонидан",
   "cat.other_income": "Даромади дигар",
+  "confirm.reminder_default_time": "⏰ Ёдрас мекунам: <b>{when}</b> · вақти пешфарз\n{title}\n\n🕒 Вақти дигар лозим аст? Ба ин паём ҷавоб диҳед, масалан «соати 15:00», ё тугмаро пахш кунед.",
+  "btn.change_time": "🕒 Тағйири вақт",
+  "hint.pick_time": "🕒 Барои «{title}» вақт интихоб кунед ё бо вақти дақиқ ҷавоб диҳед, масалан «соати 15:30».",
+  "settings.reminder_time_line": "Вақти пешфарзи ёдраскуниҳо: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Вақти ёдраскунӣ",
+  "settings.choose_reminder_time": "🕒 Вақти пешфарзро барои ёдраскуниҳо ва пардохтҳое, ки сана доранд, аммо вақт нишон дода нашудааст, интихоб кунед.",
 };

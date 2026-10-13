@@ -128,4 +128,10 @@ export const de: LocaleStrings = {
   "cat.gift": "Geschenk",
   "cat.refund": "Rückerstattung",
   "cat.other_income": "Sonstige Einnahmen",
+  "confirm.reminder_default_time": "⏰ Ich erinnere dich <b>{when}</b> · Standardzeit\n{title}\n\n🕒 Andere Uhrzeit? Antworte auf diese Nachricht, z. B. „um 15:00“, oder tippe auf den Button.",
+  "btn.change_time": "🕒 Uhrzeit ändern",
+  "hint.pick_time": "🕒 Wähle eine Uhrzeit für „{title}“ oder antworte mit einer genauen, z. B. „um 15:30“.",
+  "settings.reminder_time_line": "Standardzeit für Erinnerungen: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Erinnerungszeit",
+  "settings.choose_reminder_time": "🕒 Wähle die Standardzeit für Erinnerungen und Zahlungen, die ein Datum, aber keine Uhrzeit haben.",
 };

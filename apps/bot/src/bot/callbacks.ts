@@ -16,11 +16,13 @@ import {
   languageName,
   log,
   markReminderDone,
+  rescheduleDefaultHour,
   snoozeReminder,
   softDeleteTransaction,
   t,
   toBase,
   updateHousehold,
+  updateReminder,
   updateTransaction,
 } from "@budgie/core";
 import type { BotContext } from "./context.js";
@@ -81,6 +83,23 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
           await edit(R.deletedText(scope, currentText));
           return answer();
         }
+        if (action === "time") {
+          if (reminder.status === "done" || reminder.status === "cancelled") return answer(t(scope.locale, "hint.not_found"));
+          if (rest[1] === undefined) {
+            await edit(t(scope.locale, "hint.pick_time", { title: escapeHtml(reminder.title) }), R.hourPickerKeyboard(`rem:time:${id}`));
+            return answer();
+          }
+          if (!/^\d{1,2}$/.test(rest[1]) || Number(rest[1]) > 23) return answer();
+          const hour = Number(rest[1]);
+          const now = DateTime.now().setZone(scope.tz);
+          let due = DateTime.fromJSDate(reminder.dueAt).setZone(scope.tz).set({ hour, minute: 0, second: 0, millisecond: 0 });
+          // A stale date (already fired) moves to the next occurrence of that hour instead of the past.
+          if (due <= now) due = now.set({ hour, minute: 0, second: 0, millisecond: 0 });
+          if (due <= now) due = due.plus({ days: 1 });
+          const updated = await updateReminder(db, id, { dueAt: due.toJSDate(), defaultTime: false, status: "scheduled" });
+          if (updated) await edit(R.reminderText(scope, updated), R.reminderKeyboard(scope, updated));
+          return answer(t(scope.locale, "confirm.done"));
+        }
         if (action === "snz") {
           const minutes = Number(rest[1]) || 60;
           const until = minutes >= 1440
@@ -128,6 +147,10 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
           await edit(t(scope.locale, "settings.choose_language"), R.languageKeyboard());
           return answer();
         }
+        if (action === "hour" && !value) {
+          await edit(t(scope.locale, "settings.choose_reminder_time"), R.hourPickerKeyboard("set:hour"));
+          return answer();
+        }
         let saved = "";
         if (action === "cur" && /^[A-Z]{3}$/.test(value)) {
           scope.household = await updateHousehold(db, scope.household.id, { baseCurrency: value });
@@ -136,7 +159,12 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
         } else if (action === "tz" && isValidTimezone(value)) {
           scope.household = await updateHousehold(db, scope.household.id, { timezone: value });
           scope.tz = value;
+          await rescheduleDefaultHour(db, scope.household.id, value, scope.household.reminderHour);
           saved = value;
+        } else if (action === "hour" && /^\d{1,2}$/.test(value) && Number(value) >= 0 && Number(value) <= 23) {
+          scope.household = await updateHousehold(db, scope.household.id, { reminderHour: Number(value) });
+          await rescheduleDefaultHour(db, scope.household.id, scope.tz, Number(value));
+          saved = R.formatHour(Number(value));
         } else if (action === "lang" && hasLocale(value)) {
           scope.household = await updateHousehold(db, scope.household.id, { locale: value });
           scope.locale = value;

@@ -128,4 +128,10 @@ export const he: LocaleStrings = {
   "cat.gift": "מתנה",
   "cat.refund": "החזר",
   "cat.other_income": "הכנסה אחרת",
+  "confirm.reminder_default_time": "⏰ אזכיר לך <b>{when}</b> · שעת ברירת מחדל\n{title}\n\n🕒 רוצים שעה אחרת? הגיבו להודעה הזו, למשל «ב-15:00», או לחצו על הכפתור.",
+  "btn.change_time": "🕒 שינוי שעה",
+  "hint.pick_time": "🕒 בחרו שעה עבור «{title}» או הגיבו עם שעה מדויקת, למשל «ב-15:30».",
+  "settings.reminder_time_line": "שעת ברירת מחדל לתזכורות: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 שעת תזכורות",
+  "settings.choose_reminder_time": "🕒 בחרו שעת ברירת מחדל לתזכורות ותשלומים שיש להם תאריך אבל אין שעה.",
 };

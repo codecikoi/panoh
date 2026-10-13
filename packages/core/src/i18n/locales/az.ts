@@ -128,4 +128,10 @@ export const az: LocaleStrings = {
   "cat.gift": "Hədiyyə",
   "cat.refund": "Geri qaytarma",
   "cat.other_income": "Digər gəlir",
+  "confirm.reminder_default_time": "⏰ Xatırladacam: <b>{when}</b> · standart vaxt\n{title}\n\n🕒 Başqa vaxt lazımdır? Bu mesaja cavab yaz, məsələn «saat 15:00», və ya düyməni bas.",
+  "btn.change_time": "🕒 Vaxtı dəyiş",
+  "hint.pick_time": "🕒 «{title}» üçün vaxt seç və ya dəqiq vaxtla cavab yaz, məsələn «saat 15:30».",
+  "settings.reminder_time_line": "Standart xatırlatma vaxtı: <b>{time}</b>",
+  "settings.btn_reminder_time": "🕒 Xatırlatma vaxtı",
+  "settings.choose_reminder_time": "🕒 Tarixi olan, amma vaxtı göstərilməyən xatırlatma və ödənişlər üçün standart vaxtı seç.",
 };

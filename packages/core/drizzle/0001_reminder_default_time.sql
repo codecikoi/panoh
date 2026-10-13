@@ -1,0 +1,1 @@
+ALTER TABLE "reminders" ADD COLUMN "default_time" boolean DEFAULT false NOT NULL;

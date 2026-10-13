@@ -51,8 +51,9 @@ export function registerMessages(bot: Bot<BotContext>): void {
         locale: scope.locale,
         timezone: scope.tz,
         baseCurrency: scope.currency,
+        defaultReminderHour: scope.household.reminderHour,
         recurringPayments: recurring.map((p) => ({ name: p.name, amount: p.amount, currency: p.currency, dayOfMonth: p.dayOfMonth })),
-        replyTo: replyTarget ? describeTarget(replyTarget) : undefined,
+        replyTo: replyTarget ? describeTarget(replyTarget, scope.tz) : undefined,
         recent: recentByChat.get(chat.id),
       });
     } catch (err) {

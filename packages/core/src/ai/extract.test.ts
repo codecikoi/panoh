@@ -14,9 +14,9 @@ describe("normalizeItems", () => {
   it("applies defaults and validates categories", () => {
     const items = normalizeItems(
       [
-        { kind: "expense", amount: 150000, currency: null, category: "groceries", note: "продукты", date: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, confidence: 0.95 },
-        { kind: "expense", amount: -20000, currency: "сум", category: "spaceships", note: "такси", date: "2026-10-12", due_at: null, day_of_month: null, remind_days_before: null, target: null, confidence: 7 },
-        { kind: "none", amount: null, currency: null, category: null, note: "", date: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, confidence: 1 },
+        { kind: "expense", amount: 150000, currency: null, category: "groceries", note: "продукты", date: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.95 },
+        { kind: "expense", amount: -20000, currency: "сум", category: "spaceships", note: "такси", date: "2026-10-12", due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 7 },
+        { kind: "none", amount: null, currency: null, category: null, note: "", date: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 1 },
       ],
       ctx,
     );
@@ -27,23 +27,31 @@ describe("normalizeItems", () => {
 
   it("keeps only changed fields for corrections", () => {
     const [item] = normalizeItems(
-      [{ kind: "correction", amount: 115000, currency: null, category: null, note: "", date: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, confidence: 0.9 }],
+      [{ kind: "correction", amount: 115000, currency: null, category: null, note: "", date: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 }],
       ctx,
     );
     expect(item?.changed).toEqual({ amount: 115000 });
+    expect(item?.timeSpecified).toBe(false);
   });
 
-  it("converts reminder times from household timezone", () => {
+  it("converts reminder times from household timezone and keeps the time_specified flag", () => {
     const [item] = normalizeItems(
-      [{ kind: "reminder", amount: null, currency: null, category: null, note: "позвонить маме", date: null, due_at: "2026-10-15T10:00", day_of_month: null, remind_days_before: null, target: null, confidence: 0.9 }],
+      [{ kind: "reminder", amount: null, currency: null, category: null, note: "позвонить маме", date: null, due_at: "2026-10-15T10:00", day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 }],
       ctx,
     );
     expect(item?.dueAt?.toISOString()).toBe("2026-10-15T05:00:00.000Z");
+    expect(item?.timeSpecified).toBe(false);
+    const [explicit] = normalizeItems(
+      [{ kind: "reminder", amount: null, currency: null, category: null, note: "врач", date: null, due_at: "2026-10-15T15:30", day_of_month: null, remind_days_before: null, target: null, time_specified: true, confidence: 0.9 }],
+      ctx,
+    );
+    expect(explicit?.timeSpecified).toBe(true);
   });
 
   it("builds a prompt with household context", () => {
     const msg = buildExtractionUserMessage({ ...ctx, replyTo: "expense record: 150000 UZS" });
     expect(msg).toContain("Asia/Tashkent");
+    expect(msg).toContain("Default reminder time when none is given: 09:00");
     expect(msg).toContain('"кредит"');
     expect(msg).toContain("REPLY");
     expect(msg).toContain(ctx.text);

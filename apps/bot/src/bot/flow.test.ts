@@ -9,7 +9,8 @@ vi.mock("../../../../packages/core/src/ai/extract.ts", async (importOriginal) =>
 vi.mock("../../../../packages/core/src/ai/insights.ts", () => ({ generateInsights: vi.fn().mockResolvedValue(null) }));
 process.env.LOG_LEVEL = "warn";
 
-import { createTestDb, extractItems, listRecentTransactions, listOpenReminders, listRecurring, type DbHandle, type ExtractedItem } from "@budgie/core";
+import { createTestDb, extractItems, getHouseholdByChatId, getReminder, listRecentTransactions, listOpenReminders, listRecurring, markReminderDone, type DbHandle, type ExtractedItem } from "@budgie/core";
+import { DateTime } from "luxon";
 process.env.DEFAULT_LOCALE = "ru";
 process.env.DEFAULT_CURRENCY = "UZS";
 process.env.DEFAULT_TIMEZONE = "Asia/Tashkent";
@@ -39,7 +40,7 @@ let updateId = 1;
 function item(partial: Partial<ExtractedItem>): ExtractedItem {
   return {
     kind: "expense", amount: null, currency: "UZS", category: null, note: "", date: "2026-10-13", dueAt: null,
-    dayOfMonth: null, remindDaysBefore: null, target: null, confidence: 0.95, changed: {}, ...partial,
+    dayOfMonth: null, remindDaysBefore: null, target: null, timeSpecified: true, confidence: 0.95, changed: {}, ...partial,
   };
 }
 
@@ -164,6 +165,116 @@ describe("bot flow", () => {
     const [paid] = await listRecurring(handle.db, 1);
     expect(paid?.lastPaidPeriod).toMatch(/^\d{4}-\d{2}$/);
     expect((await listRecentTransactions(handle.db, 1))[0]).toMatchObject({ note: "кредит", amount: 2000000, recurringPaymentId: rp!.id });
+  });
+
+  it("offers a time picker when a reminder came without a time and applies the chosen hour", async () => {
+    const tomorrow9 = DateTime.now().setZone("Asia/Tashkent").plus({ days: 1 }).set({ hour: 9, minute: 0, second: 0, millisecond: 0 });
+    mockExtraction([item({ kind: "reminder", note: "запись к педиатру", dueAt: tomorrow9.toJSDate(), timeSpecified: false })]);
+    await sendText(bot, "напомни завтра про запись к педиатру");
+    const confirmation = lastSent();
+    expect(confirmation.payload.text).toContain("по умолчанию");
+    expect(JSON.stringify(confirmation.payload.reply_markup)).toContain("Изменить время");
+    const reminder = (await listOpenReminders(handle.db, 1)).find((r) => r.title === "запись к педиатру")!;
+    expect(reminder.botMessageId).toBeTypeOf("number");
+
+    await press(bot, `rem:time:${reminder.id}`, reminder.botMessageId!, "x");
+    const picker = calls.filter((c) => c.method === "editMessageText").at(-1)!;
+    expect(JSON.stringify(picker.payload.reply_markup)).toContain(`rem:time:${reminder.id}:14`);
+
+    await press(bot, `rem:time:${reminder.id}:14`, reminder.botMessageId!, "x");
+    const updated = (await getReminder(handle.db, reminder.id))!;
+    expect(DateTime.fromJSDate(updated.dueAt).setZone("Asia/Tashkent").hour).toBe(14);
+    expect(DateTime.fromJSDate(updated.dueAt).setZone("Asia/Tashkent").toISODate()).toBe(tomorrow9.toISODate());
+    const final = calls.filter((c) => c.method === "editMessageText").at(-1)!;
+    expect(final.payload.text).not.toContain("по умолчанию");
+    expect(final.payload.text).toContain("14:00");
+  });
+
+  it("moves a default-time reminder when the user replies with a time", async () => {
+    const tomorrow9 = DateTime.now().setZone("Asia/Tashkent").plus({ days: 1 }).set({ hour: 9, minute: 0, second: 0, millisecond: 0 });
+    mockExtraction([item({ kind: "reminder", note: "забрать посылку", dueAt: tomorrow9.toJSDate(), timeSpecified: false })]);
+    await sendText(bot, "напомни завтра забрать посылку");
+    const reminder = (await listOpenReminders(handle.db, 1)).find((r) => r.title === "забрать посылку")!;
+    mockExtraction([item({ kind: "correction", dueAt: tomorrow9.set({ hour: 16, minute: 30 }).toJSDate(), timeSpecified: true })]);
+    await sendText(bot, "в 16:30", { reply_to_message: { message_id: reminder.botMessageId, from: me, chat, date: 1, text: "x" } });
+    const updated = (await getReminder(handle.db, reminder.id))!;
+    const local = DateTime.fromJSDate(updated.dueAt).setZone("Asia/Tashkent");
+    expect(local.toFormat("HH:mm")).toBe("16:30");
+    expect(local.toISODate()).toBe(tomorrow9.toISODate());
+    const edited = calls.filter((c) => c.method === "editMessageText").at(-1)!;
+    expect(edited.payload.text).toContain("16:30");
+    expect(edited.payload.text).not.toContain("по умолчанию");
+    expect(reactions().at(-1)).toContain("👌");
+  });
+
+  it("keeps the default-time hint when a reminder is moved to another date without a time", async () => {
+    const base = DateTime.now().setZone("Asia/Tashkent").set({ hour: 9, minute: 0, second: 0, millisecond: 0 });
+    mockExtraction([item({ kind: "reminder", note: "сдать анализы", dueAt: base.plus({ days: 1 }).toJSDate(), timeSpecified: false })]);
+    await sendText(bot, "напомни завтра сдать анализы");
+    const reminder = (await listOpenReminders(handle.db, 1)).find((r) => r.title === "сдать анализы")!;
+    mockExtraction([item({ kind: "correction", dueAt: base.plus({ days: 2 }).toJSDate(), timeSpecified: false })]);
+    await sendText(bot, "перенеси на послезавтра", { reply_to_message: { message_id: reminder.botMessageId, from: me, chat, date: 1, text: "x" } });
+    const updated = (await getReminder(handle.db, reminder.id))!;
+    expect(DateTime.fromJSDate(updated.dueAt).setZone("Asia/Tashkent").toISODate()).toBe(base.plus({ days: 2 }).toISODate());
+    const edited = calls.filter((c) => c.method === "editMessageText").at(-1)!;
+    expect(edited.payload.text).toContain("по умолчанию");
+    expect(JSON.stringify(edited.payload.reply_markup)).toContain("Изменить время");
+  });
+
+  it("keeps an explicit time when a reminder is only moved to another date", async () => {
+    const day = DateTime.now().setZone("Asia/Tashkent").plus({ days: 3 }).set({ hour: 15, minute: 30, second: 0, millisecond: 0 });
+    mockExtraction([item({ kind: "reminder", note: "врач", dueAt: day.toJSDate(), timeSpecified: true })]);
+    await sendText(bot, "напомни через 3 дня в 15:30 врач");
+    const reminder = (await listOpenReminders(handle.db, 1)).find((r) => r.title === "врач")!;
+    expect(reminder.defaultTime).toBe(false);
+    mockExtraction([item({ kind: "correction", dueAt: day.plus({ days: 1 }).set({ hour: 9, minute: 0 }).toJSDate(), timeSpecified: false })]);
+    await sendText(bot, "перенеси на день позже", { reply_to_message: { message_id: reminder.botMessageId, from: me, chat, date: 1, text: "x" } });
+    const moved = DateTime.fromJSDate((await getReminder(handle.db, reminder.id))!.dueAt).setZone("Asia/Tashkent");
+    expect(moved.toISODate()).toBe(day.plus({ days: 1 }).toISODate());
+    expect(moved.toFormat("HH:mm")).toBe("15:30");
+    expect(calls.filter((c) => c.method === "editMessageText").at(-1)!.payload.text).not.toContain("по умолчанию");
+  });
+
+  it("rejects malformed hours and rolls a past hour over to the next day", async () => {
+    const now = DateTime.now().setZone("Asia/Tashkent");
+    mockExtraction([item({ kind: "reminder", note: "полить цветы", dueAt: now.plus({ minutes: 1 }).toJSDate(), timeSpecified: false })]);
+    await sendText(bot, "напомни сегодня полить цветы");
+    const reminder = (await listOpenReminders(handle.db, 1)).find((r) => r.title === "полить цветы")!;
+    for (const bad of ["99", "", "-5", "abc"]) {
+      await press(bot, `rem:time:${reminder.id}:${bad}`, reminder.botMessageId!, "x");
+      expect((await getReminder(handle.db, reminder.id))!.dueAt).toEqual(reminder.dueAt);
+    }
+    await press(bot, `rem:time:${reminder.id}:0`, reminder.botMessageId!, "x");
+    const rolled = DateTime.fromJSDate((await getReminder(handle.db, reminder.id))!.dueAt).setZone("Asia/Tashkent");
+    expect(rolled.toFormat("HH:mm")).toBe("00:00");
+    expect(rolled > now).toBe(true);
+    expect(rolled.toISODate()).toBe(now.plus({ days: 1 }).toISODate());
+  });
+
+  it("does not resurrect a finished reminder through the time picker", async () => {
+    const reminder = (await listOpenReminders(handle.db, 1)).find((r) => r.title === "забрать посылку")!;
+    await markReminderDone(handle.db, reminder.id);
+    await press(bot, `rem:time:${reminder.id}:12`, reminder.botMessageId!, "x");
+    expect((await getReminder(handle.db, reminder.id))?.status).toBe("done");
+    expect(calls.filter((c) => c.method === "editMessageText")).toHaveLength(0);
+    expect(calls.filter((c) => c.method === "answerCallbackQuery").at(-1)?.payload.text).toContain("уже нет");
+  });
+
+  it("changes the default reminder hour from settings and moves scheduled payment reminders", async () => {
+    mockExtraction([item({ kind: "recurring_payment", note: "интернет", amount: 200000, dayOfMonth: 28, category: "utilities" })]);
+    await sendText(bot, "+ интернет 200к каждое 28 число");
+    const before = (await listOpenReminders(handle.db, 1, 100)).filter((r) => r.kind !== "reminder" && r.status === "scheduled");
+    expect(before.length).toBeGreaterThan(0);
+    await press(bot, "set:hour", 556, "settings");
+    expect(JSON.stringify(calls.filter((c) => c.method === "editMessageText").at(-1)!.payload.reply_markup)).toContain("set:hour:10");
+    await press(bot, "set:hour:10", 556, "settings");
+    expect((await getHouseholdByChatId(handle.db, chat.id))?.reminderHour).toBe(10);
+    expect(calls.filter((c) => c.method === "editMessageText").at(-1)!.payload.text).toContain("10:00");
+    for (const r of before) {
+      const moved = (await getReminder(handle.db, r.id))!;
+      expect(DateTime.fromJSDate(moved.dueAt).setZone("Asia/Tashkent").hour).toBe(10);
+      expect(DateTime.fromJSDate(moved.dueAt).setZone("Asia/Tashkent").toISODate()).toBe(DateTime.fromJSDate(r.dueAt).setZone("Asia/Tashkent").toISODate());
+    }
   });
 
   it("replies with a summary on /summary and on a summary request", async () => {
