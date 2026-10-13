@@ -24,7 +24,7 @@ import {
   updateHousehold,
   updateReminder,
   updateTransaction,
-} from "@budgie/core";
+} from "@madat/core";
 import type { BotContext } from "./context.js";
 import * as R from "./render.js";
 import { recordPayment } from "./actions.js";

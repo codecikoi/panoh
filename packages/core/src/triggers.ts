@@ -147,6 +147,10 @@ export const BUILTIN_KEYWORDS: Record<string, string[]> = {
 /** Scripts without word separators (or with attached particles) use substring matching instead of word boundaries. */
 const SUBSTRING_LOCALES = new Set(["th", "ja", "zh", "ko"]);
 
+/** Names the bot answers to when a message starts with one of them (any case, Latin or Cyrillic spelling). */
+export const BOT_NAMES = ["madat", "мадат"];
+const NAME_PATTERN = new RegExp(`^(?:${BOT_NAMES.map(escapeRegExp).join("|")})(?![\\p{L}\\p{N}])[\\s,:;!.?\\-—–]*`, "iu");
+
 const MULTIPLIER = "(?:k|к|тыс\\.?|тысяч|млн\\.?|миллион[а-я]*|mln|ming|million|mil|rb|ribu|jt|juta|万|千|천|만|ล้าน|พัน)?";
 const CURRENCY_WORDS =
   "сум[а-я]*|sum|so'm|so‘m|soʻm|сўм|uzs|руб[а-я]*|р\\.|₽|rub|\\$|usd|доллар[а-я]*|dollars?|bucks|€|eur|euros?|евро|£|gbp|pounds?|₸|тенге|теңге|тг|kzt|сом[а-я]*|somoni|tjs|kgs|грн|₴|uah|₺|try|lira|lirası|лир[а-я]*|¥|jpy|yen|円|cny|yuan|元|块|₹|inr|rupees?|rupias?|रुपये|रुपए|₨|rs|टका|টাকা|taka|bdt|روپے|pkr|₩|krw|won|원|aed|дирхам[а-я]*|درهم|دينار|دولار|يورو|ريال|تومان|₪|ש\"ח|שקל|שקלים|ils|zł|złotych|zloty|pln|lei|leu|ron|₫|dong|đồng|vnd|฿|baht|บาท|thb|ringgit|rm|myr|rupiah|rp|idr|pesos?|mxn|ars|cop|reais|real|r\\$|brl|chf|franken|francs?|kr|sek|nok|dkk|azn|manat|cad|aud|nzd";
@@ -165,10 +169,10 @@ export interface TriggerInput {
 
 export interface TriggerResult {
   process: boolean;
-  reason: "private" | "mention" | "reply" | "prefix" | "keyword" | "money" | "none";
-  /** True when the user clearly addressed the bot (mention, reply or prefix). */
+  reason: "private" | "mention" | "reply" | "prefix" | "name" | "keyword" | "money" | "none";
+  /** True when the user clearly addressed the bot (mention, reply, prefix or name). */
   explicit: boolean;
-  /** Message text with the trigger prefix / mention stripped. */
+  /** Message text with the trigger prefix / mention / bot name stripped. */
   cleaned: string;
 }
 
@@ -181,6 +185,14 @@ export function effectiveKeywords(locale: string, config?: TriggerConfig | null)
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Text after a leading bot name ("мадат, продукты 150к" → "продукты 150к"), or undefined when the message does not start with the name. */
+function stripName(text: string): string | undefined {
+  const match = NAME_PATTERN.exec(text);
+  if (!match) return undefined;
+  const rest = text.slice(match[0].length).trim();
+  return rest.length > 0 ? rest : undefined;
 }
 
 function containsKeyword(text: string, keywords: string[], locale: string): boolean {
@@ -200,7 +212,8 @@ export function evaluateTrigger(input: TriggerInput): TriggerResult {
   const mentionEnabled = config.mention ?? true;
   const moneyEnabled = config.moneyPattern ?? true;
 
-  if (input.isPrivateChat) return { process: true, reason: "private", explicit: true, cleaned: text };
+  const named = stripName(text);
+  if (input.isPrivateChat) return { process: true, reason: "private", explicit: true, cleaned: named ?? text };
 
   if (mentionEnabled && input.botUsername) {
     const mention = new RegExp(`@${escapeRegExp(input.botUsername)}\\b`, "i");
@@ -212,6 +225,7 @@ export function evaluateTrigger(input: TriggerInput): TriggerResult {
   if (prefix && text.startsWith(prefix) && text.length > prefix.length) {
     return { process: true, reason: "prefix", explicit: true, cleaned: text.slice(prefix.length).trim() };
   }
+  if (named !== undefined) return { process: true, reason: "name", explicit: true, cleaned: named };
   if (containsKeyword(text, effectiveKeywords(input.locale, config), input.locale)) {
     return { process: true, reason: "keyword", explicit: false, cleaned: text };
   }

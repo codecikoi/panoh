@@ -2,7 +2,7 @@
 import type { LocaleStrings } from "./en.js";
 
 export const vi: LocaleStrings = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
   "cmd.start": "Bắt đầu / thiết lập",
   "cmd.help": "Cách dùng",
   "cmd.summary": "Tổng kết tháng",
@@ -13,7 +13,7 @@ export const vi: LocaleStrings = {
   "cmd.settings": "Tiền tệ, múi giờ, ngôn ngữ",
   "cmd.keywords": "Từ khóa",
   "welcome.private": "👋 Chào bạn, mình là {app}, trợ lý tài chính gia đình.\n\nCứ nhắn cho mình như nhắn cho một người bạn:\n• <i>đi chợ 45$</i>\n• <i>nhận lương 3000$</i>\n• <i>thứ sáu nhắc mình đóng tiền nhà trẻ</i>\n• <i>trả góp 300$ mỗi tháng ngày 15</i>\n\nMình ghi lại tất cả và gửi tổng kết tháng khi bạn gõ /summary.\n\n💡 Thêm mình vào nhóm với vợ/chồng bạn để quản lý ngân sách chung.",
-  "welcome.group": "👋 Chào cả nhà! Mình là {app}. Mình giúp nhóm này theo dõi chi tiêu, thu nhập, nhắc nhở và hóa đơn.\n\nMình chỉ phản hồi tin nhắn được đánh dấu:\n• bắt đầu bằng <b>{prefix}</b> → <i>{prefix} đi chợ 45$</i>\n• nhắc tên mình → <i>@{bot} thứ sáu nhắc đóng tiền nhà</i>\n• hoặc dùng từ khóa như <i>tiêu, trả, nhắc, lương</i>\n• tin nhắn có số tiền và đơn vị tiền tệ cũng được ghi\n\nMọi thứ khác trong nhóm đều bị bỏ qua và không bao giờ được lưu.\n\n⚙️ Tiền tệ: <b>{currency}</b> · Múi giờ: <b>{timezone}</b> · Ngôn ngữ: <b>{language}</b>\nĐổi bằng /settings. Xem tổng kết tháng bằng /summary.",
+  "welcome.group": "👋 Chào cả nhà! Mình là {app}. Mình giúp nhóm này theo dõi chi tiêu, thu nhập, nhắc nhở và hóa đơn.\n\nMình chỉ phản hồi tin nhắn được đánh dấu:\n• bắt đầu bằng <b>{prefix}</b> → <i>{prefix} đi chợ 45$</i>\n• nhắc tên mình → <i>@{bot} thứ sáu nhắc đóng tiền nhà</i>\n• hoặc gọi tên mình → <i>Madat thứ sáu nhắc đóng tiền nhà</i>\n• hoặc dùng từ khóa như <i>tiêu, trả, nhắc, lương</i>\n• tin nhắn có số tiền và đơn vị tiền tệ cũng được ghi\n\nMọi thứ khác trong nhóm đều bị bỏ qua và không bao giờ được lưu.\n\n⚙️ Tiền tệ: <b>{currency}</b> · Múi giờ: <b>{timezone}</b> · Ngôn ngữ: <b>{language}</b>\nĐổi bằng /settings. Xem tổng kết tháng bằng /summary.",
   "welcome.privacy_warning": "⚠️ Mình chưa đọc được tin nhắn thường trong nhóm này, nên từ khóa và tiền tố {prefix} sẽ không hoạt động. Mở @BotFather → /setprivacy → chọn <b>Disable</b> cho mình, rồi xóa mình khỏi nhóm và thêm lại. Nhắc tên và trả lời thì hoạt động ngay.",
   "help": "📖 <b>Cách mình hoạt động</b>\n\n<b>Chi tiêu & thu nhập</b>\n<i>{prefix} taxi 12$</i>, <i>tiêu 150k đi chợ</i>, <i>nhận lương 3000$</i>\n\n<b>Nhắc nhở</b>\n<i>mai 10h nhắc gọi bác sĩ</i>, <i>ngày 20 nhắc đóng tiền internet</i>\n\n<b>Khoản trả định kỳ</b>\n<i>trả góp 300$ mỗi tháng ngày 15</i>, <i>tiền nhà 500$ ngày 1</i>\nMình nhắc trước {days} ngày và đúng ngày. Nhắn <i>đã trả góp</i> để đánh dấu.\n\n<b>Sửa</b>\nTrả lời tin xác nhận của mình: <i>không phải 150, là 115</i>, <i>mục đi lại</i>, hoặc bấm ✏️.\n<i>hủy</i> hoặc /undo xóa ghi chép cuối.\n\n<b>Tổng kết</b>\n/summary — tháng này theo mục, so với tháng trước, kèm gợi ý.\n/last — ghi chép gần đây · /reminders · /payments\n\n<b>Cài đặt</b>\n/settings — tiền tệ, múi giờ, ngôn ngữ · /keywords — từ khóa",
   "settings.title": "⚙️ <b>Cài đặt</b>\n\nTiền tệ: <b>{currency}</b>\nMúi giờ: <b>{timezone}</b>\nNgôn ngữ: <b>{language}</b>\nNhắc thanh toán: <b>trước {days} ngày</b>\nTiền tố: <b>{prefix}</b>",

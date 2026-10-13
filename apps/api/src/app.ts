@@ -14,7 +14,7 @@ import {
   nextDue,
   type Db,
   type Household,
-} from "@budgie/core";
+} from "@madat/core";
 import { initDataAuth, type AuthVariables } from "./auth.js";
 
 export interface ApiOptions {

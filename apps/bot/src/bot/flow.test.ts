@@ -9,7 +9,7 @@ vi.mock("../../../../packages/core/src/ai/extract.ts", async (importOriginal) =>
 vi.mock("../../../../packages/core/src/ai/insights.ts", () => ({ generateInsights: vi.fn().mockResolvedValue(null) }));
 process.env.LOG_LEVEL = "warn";
 
-import { createTestDb, extractItems, getHouseholdByChatId, getReminder, listRecentTransactions, listOpenReminders, listRecurring, markReminderDone, type DbHandle, type ExtractedItem } from "@budgie/core";
+import { createTestDb, extractItems, getHouseholdByChatId, getReminder, listRecentTransactions, listOpenReminders, listRecurring, markReminderDone, type DbHandle, type ExtractedItem } from "@madat/core";
 import { DateTime } from "luxon";
 process.env.DEFAULT_LOCALE = "ru";
 process.env.DEFAULT_CURRENCY = "UZS";
@@ -21,8 +21,8 @@ import type { BotContext } from "./context.js";
 const me = {
   id: 999,
   is_bot: true,
-  first_name: "Budgie",
-  username: "BudgieTestBot",
+  first_name: "Madat",
+  username: "MadatTestBot",
   can_join_groups: true,
   can_read_all_group_messages: true,
   supports_inline_queries: false,
@@ -104,7 +104,7 @@ describe("bot flow", () => {
   it("sends the group welcome on /start", async () => {
     await sendText(bot, "/start", { entities: [{ type: "bot_command", offset: 0, length: 6 }] });
     expect(lastSent().payload.text).toContain("Привет");
-    expect(String(lastSent().payload.text)).toContain("@BudgieTestBot");
+    expect(String(lastSent().payload.text)).toContain("@MadatTestBot");
   });
 
   it("records an expense from a prefixed message and confirms it", async () => {
@@ -120,6 +120,14 @@ describe("bot flow", () => {
     const rows = await listRecentTransactions(handle.db, 1);
     expect(rows[0]).toMatchObject({ amount: 150000, category: "groceries", status: "confirmed" });
     expect(rows[0]?.botMessageId).toBeTypeOf("number");
+  });
+
+  it("records an expense when addressed by name", async () => {
+    mockExtraction([item({ amount: 25000, category: "transport", note: "такси" })]);
+    await sendText(bot, "Мадат, такси 25к");
+    expect(extractItems).toHaveBeenCalledWith(expect.objectContaining({ text: "такси 25к" }));
+    expect(lastSent().payload.text).toContain("Расход");
+    expect(reactions().at(-1)).toContain("✍");
   });
 
   it("asks for confirmation when the model is unsure, then confirms via button", async () => {
@@ -282,13 +290,13 @@ describe("bot flow", () => {
     expect(lastSent().payload.text).toContain("📊");
     expect(lastSent().payload.text).toContain("Кредиты");
     mockExtraction([item({ kind: "summary_request" })]);
-    await sendText(bot, "@BudgieTestBot сводка");
+    await sendText(bot, "@MadatTestBot сводка");
     expect(sent().some((c) => String(c.payload.text).includes("📊"))).toBe(true);
   });
 
   it("tells the user when nothing was found in an explicit request", async () => {
     mockExtraction([]);
-    await sendText(bot, "@BudgieTestBot как дела?");
+    await sendText(bot, "@MadatTestBot как дела?");
     expect(lastSent().payload.text).toContain("🤷");
   });
 

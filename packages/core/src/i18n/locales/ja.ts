@@ -2,7 +2,7 @@
 import type { LocaleStrings } from "./en.js";
 
 export const ja: LocaleStrings = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
   "cmd.start": "開始 / 設定",
   "cmd.help": "使い方",
   "cmd.summary": "今月のまとめ",
@@ -13,7 +13,7 @@ export const ja: LocaleStrings = {
   "cmd.settings": "通貨・タイムゾーン・言語",
   "cmd.keywords": "キーワード",
   "welcome.private": "👋 こんにちは、家計のおともの {app} です。\n\n人に話すように書いてください：\n• <i>食料品 45$</i>\n• <i>給料 3000$ 入った</i>\n• <i>金曜日に保育園の支払いをリマインドして</i>\n• <i>ローン 300$ 毎月15日</i>\n\n全部記録して、/summary で今月のまとめをお届けします。\n\n💡 パートナーとのグループに追加すると、家計を一緒に管理できます。",
-  "welcome.group": "👋 こんにちは！{app} です。このチャットの支出・収入・リマインダー・請求を管理します。\n\n反応するのは目印のあるメッセージだけ：\n• <b>{prefix}</b> で始める → <i>{prefix} 食料品 45$</i>\n• 私をメンション → <i>@{bot} 金曜日に家賃をリマインドして</i>\n• または <i>使った、払った、リマインド、給料</i> などのキーワード\n• 金額と通貨があるメッセージも記録します\n\nそれ以外のやり取りは無視され、保存もされません。\n\n⚙️ 通貨: <b>{currency}</b> · タイムゾーン: <b>{timezone}</b> · 言語: <b>{language}</b>\n変更は /settings、今月のまとめは /summary。",
+  "welcome.group": "👋 こんにちは！{app} です。このチャットの支出・収入・リマインダー・請求を管理します。\n\n反応するのは目印のあるメッセージだけ：\n• <b>{prefix}</b> で始める → <i>{prefix} 食料品 45$</i>\n• 私をメンション → <i>@{bot} 金曜日に家賃をリマインドして</i>\n• または名前で呼びかけ → <i>Madat 金曜日に家賃をリマインドして</i>\n• または <i>使った、払った、リマインド、給料</i> などのキーワード\n• 金額と通貨があるメッセージも記録します\n\nそれ以外のやり取りは無視され、保存もされません。\n\n⚙️ 通貨: <b>{currency}</b> · タイムゾーン: <b>{timezone}</b> · 言語: <b>{language}</b>\n変更は /settings、今月のまとめは /summary。",
   "welcome.privacy_warning": "⚠️ まだこのグループの通常メッセージが見えないため、キーワードと接頭辞 {prefix} は使えません。@BotFather → /setprivacy → 私を <b>Disable</b> にして、グループから外して再追加してください。メンションと返信はすぐ使えます。",
   "help": "📖 <b>使い方</b>\n\n<b>支出と収入</b>\n<i>{prefix} タクシー 12$</i>、<i>食料品に 150k 使った</i>、<i>給料 3000$ 入った</i>\n\n<b>リマインダー</b>\n<i>明日10時に病院に電話するようリマインドして</i>、<i>20日にネット代を払うようリマインドして</i>\n\n<b>定期支払い</b>\n<i>ローン 300$ 毎月15日</i>、<i>家賃 500$ 毎月1日</i>\n{days}日前と当日にお知らせします。<i>ローン払った</i> と書くと完了になります。\n\n<b>修正</b>\n確認メッセージに返信：<i>150じゃなくて115</i>、<i>カテゴリ 交通</i>、または ✏️ をタップ。\n<i>取り消し</i> または /undo で最後の記録を削除。\n\n<b>まとめ</b>\n/summary — 今月をカテゴリ別に、先月と比較、アドバイス付き。\n/last — 最近の記録 · /reminders · /payments\n\n<b>設定</b>\n/settings — 通貨・タイムゾーン・言語 · /keywords — キーワード",
   "settings.title": "⚙️ <b>設定</b>\n\n通貨: <b>{currency}</b>\nタイムゾーン: <b>{timezone}</b>\n言語: <b>{language}</b>\n支払いのお知らせ: <b>{days}日前</b>\n接頭辞: <b>{prefix}</b>",

@@ -7,42 +7,42 @@ Both apps are stateless Node services (one bundled `dist/index.js` each) that ne
 Why: HTTPS endpoints out of the box (webhook + API), managed Postgres with backups, scale-to-zero pricing (a family bot costs a few dollars a month), and everything in one console.
 
 ```bash
-PROJECT=my-budgie REGION=europe-west1
+PROJECT=my-madat REGION=europe-west1
 gcloud config set project $PROJECT
 
 # 1. Postgres
-gcloud sql instances create budgie-db --database-version=POSTGRES_16 --tier=db-f1-micro --region=$REGION
-gcloud sql databases create budgie --instance=budgie-db
-gcloud sql users create budgie --instance=budgie-db --password='STRONG_PASSWORD'
+gcloud sql instances create madat-db --database-version=POSTGRES_16 --tier=db-f1-micro --region=$REGION
+gcloud sql databases create madat --instance=madat-db
+gcloud sql users create madat --instance=madat-db --password='STRONG_PASSWORD'
 
 # 2. Secrets
 printf '%s' "$BOT_TOKEN" | gcloud secrets create BOT_TOKEN --data-file=-
 printf '%s' "$ANTHROPIC_API_KEY" | gcloud secrets create ANTHROPIC_API_KEY --data-file=-
-printf '%s' "postgres://budgie:STRONG_PASSWORD@localhost/budgie?host=/cloudsql/$PROJECT:$REGION:budgie-db" | gcloud secrets create DATABASE_URL --data-file=-
+printf '%s' "postgres://madat:STRONG_PASSWORD@localhost/madat?host=/cloudsql/$PROJECT:$REGION:madat-db" | gcloud secrets create DATABASE_URL --data-file=-
 
 # 3. Bot (webhook mode). Build from the repo root so the Dockerfile sees the workspace.
-gcloud run deploy budgie-bot --source . --region=$REGION \
-  --add-cloudsql-instances=$PROJECT:$REGION:budgie-db \
+gcloud run deploy madat-bot --source . --region=$REGION \
+  --add-cloudsql-instances=$PROJECT:$REGION:madat-db \
   --set-secrets=BOT_TOKEN=BOT_TOKEN:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,DATABASE_URL=DATABASE_URL:latest \
   --set-env-vars=BOT_MODE=webhook,WEBHOOK_SECRET=change-me,INTERNAL_TOKEN=change-me-too,DEFAULT_LOCALE=en,DEFAULT_CURRENCY=USD,DEFAULT_TIMEZONE=UTC \
   --min-instances=0 --max-instances=2 --allow-unauthenticated
 # Set WEBHOOK_URL to the service URL printed above + /telegram/webhook and redeploy (or set it in the console).
 
 # 4. Scheduler: wake the bot every minute so reminders fire even at zero instances
-gcloud scheduler jobs create http budgie-tick --schedule="* * * * *" --location=$REGION \
+gcloud scheduler jobs create http madat-tick --schedule="* * * * *" --location=$REGION \
   --uri="https://<bot-service-url>/internal/tick" --http-method=POST \
   --headers="Authorization=Bearer change-me-too"
 
 # 5. API (for the dashboard)
-gcloud run deploy budgie-api --source . --region=$REGION \
-  --add-cloudsql-instances=$PROJECT:$REGION:budgie-db \
+gcloud run deploy madat-api --source . --region=$REGION \
+  --add-cloudsql-instances=$PROJECT:$REGION:madat-db \
   --set-secrets=BOT_TOKEN=BOT_TOKEN:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,DATABASE_URL=DATABASE_URL:latest \
   --set-env-vars=DASHBOARD_ORIGIN=https://your-dashboard.example \
   --allow-unauthenticated
 ```
 
 Notes:
-* `--source .` uses the Dockerfile only if you point at it: pass `--dockerfile apps/bot/Dockerfile` with a recent gcloud, or build images yourself: `docker build -f apps/bot/Dockerfile -t gcr.io/$PROJECT/budgie-bot .` and deploy with `--image`.
+* `--source .` uses the Dockerfile only if you point at it: pass `--dockerfile apps/bot/Dockerfile` with a recent gcloud, or build images yourself: `docker build -f apps/bot/Dockerfile -t gcr.io/$PROJECT/madat-bot .` and deploy with `--image`.
 * Both services run the SQL migrations at startup (idempotent; the images ship `drizzle/`).
 * Keep `--min-instances=1` on the bot if you want the in-process scheduler instead of Cloud Scheduler; both can coexist (ticks are idempotent).
 * Cloud Run logs are JSON lines from the app, so `severity` filtering works out of the box.

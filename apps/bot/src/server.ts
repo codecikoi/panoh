@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { webhookCallback, type Bot } from "grammy";
-import { env, log } from "@budgie/core";
+import { env, log } from "@madat/core";
 import type { BotContext } from "./bot/context.js";
 import type { Scheduler } from "./scheduler.js";
 

@@ -30,7 +30,7 @@ import {
   type RecurringPayment,
   type Reminder,
   type Transaction,
-} from "@budgie/core";
+} from "@madat/core";
 import type { Api } from "grammy";
 import type { BotContext, Scope } from "./context.js";
 import * as R from "./render.js";

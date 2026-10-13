@@ -1,5 +1,5 @@
 import { serve } from "@hono/node-server";
-import { createDb, env, log, requireEnv } from "@budgie/core";
+import { createDb, env, log, requireEnv } from "@madat/core";
 import { createApp } from "./app.js";
 
 const e = env();

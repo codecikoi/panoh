@@ -1,5 +1,5 @@
 import { GrammyError, type Api, type InlineKeyboard } from "grammy";
-import { log } from "@budgie/core";
+import { log } from "@madat/core";
 import type { BotContext } from "./context.js";
 
 export type Reaction = Parameters<BotContext["react"]>[0];

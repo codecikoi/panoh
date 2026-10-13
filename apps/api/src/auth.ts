@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from "hono";
-import { env, validateInitData, type InitDataUser } from "@budgie/core";
+import { env, validateInitData, type InitDataUser } from "@madat/core";
 
 export type AuthVariables = { tgUser: InitDataUser };
 

@@ -1,5 +1,5 @@
 import type { Context } from "grammy";
-import type { Db, Household, User } from "@budgie/core";
+import type { Db, Household, User } from "@madat/core";
 
 export interface Scope {
   household: Household;

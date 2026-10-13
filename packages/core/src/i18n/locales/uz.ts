@@ -1,7 +1,7 @@
 import type { LocaleStrings } from "./en.js";
 
 export const uz: LocaleStrings = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
 
   "cmd.start": "Boshlash / sozlash",
   "cmd.help": "Qanday ishlataman",
@@ -16,7 +16,7 @@ export const uz: LocaleStrings = {
   "welcome.private":
     "👋 Salom, men {app} — oilaviy moliya yordamchisiman.\n\nMenga oddiy odamga yozgandek yozing:\n• <i>oziq-ovqat 150k</i>\n• <i>maosh 9 mln oldim</i>\n• <i>juma kuni bog'cha uchun to'lashni eslat</i>\n• <i>kredit 2 mln har oyning 15-sanasida</i>\n\nHammasini yozib boraman, /summary buyrug'i bilan oy yakunini ko'rsataman.\n\n💡 Umumiy byudjet uchun meni turmush o'rtog'ingiz bilan guruhga qo'shing.",
   "welcome.group":
-    "👋 Salom! Men {app}. Bu chatda xarajat, daromad, eslatma va to'lovlarni yuritishga yordam beraman.\n\nFaqat belgilangan xabarlarga javob beraman:\n• <b>{prefix}</b> bilan boshlang → <i>{prefix} oziq-ovqat 150k</i>\n• meni belgilang → <i>@{bot} juma kuni ijara uchun to'lashni eslat</i>\n• yoki <i>sarfladim, to'ladim, eslat, maosh</i> kabi so'zlarni ishlating\n• summa va valyutali xabarlarni ham ilib olaman\n\nQolgan yozishmalarni e'tiborsiz qoldiraman va hech qayerda saqlamayman.\n\n⚙️ Valyuta: <b>{currency}</b> · Vaqt zonasi: <b>{timezone}</b> · Til: <b>{language}</b>\nO'zgartirish: /settings. Oy yakuni: /summary.",
+    "👋 Salom! Men {app}. Bu chatda xarajat, daromad, eslatma va to'lovlarni yuritishga yordam beraman.\n\nFaqat belgilangan xabarlarga javob beraman:\n• <b>{prefix}</b> bilan boshlang → <i>{prefix} oziq-ovqat 150k</i>\n• meni belgilang → <i>@{bot} juma kuni ijara uchun to'lashni eslat</i>\n• yoki ismimni yozing → <i>Madat juma kuni ijara uchun to'lashni eslat</i>\n• yoki <i>sarfladim, to'ladim, eslat, maosh</i> kabi so'zlarni ishlating\n• summa va valyutali xabarlarni ham ilib olaman\n\nQolgan yozishmalarni e'tiborsiz qoldiraman va hech qayerda saqlamayman.\n\n⚙️ Valyuta: <b>{currency}</b> · Vaqt zonasi: <b>{timezone}</b> · Til: <b>{language}</b>\nO'zgartirish: /settings. Oy yakuni: /summary.",
   "welcome.privacy_warning":
     "⚠️ Hozircha bu guruhdagi oddiy xabarlarni ko'ra olmayman, shuning uchun kalit so'zlar va {prefix} prefiksi ishlamaydi. @BotFather → /setprivacy → men uchun <b>Disable</b> qiling, so'ng meni guruhdan chiqarib qayta qo'shing. Belgilash va javob berish darhol ishlaydi.",
   "help":

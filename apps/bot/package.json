@@ -1,5 +1,5 @@
 {
-  "name": "@budgie/bot",
+  "name": "@madat/bot",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@budgie/core": "workspace:*",
+    "@madat/core": "workspace:*",
     "@hono/node-server": "^2.1.4",
     "grammy": "^1.38.0",
     "hono": "^4.9.0",

@@ -1,5 +1,5 @@
 export const en = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
 
   "cmd.start": "Start / setup",
   "cmd.help": "How to use",
@@ -14,7 +14,7 @@ export const en = {
   "welcome.private":
     "👋 Hi, I'm {app}, your family finance buddy.\n\nJust write to me like you'd write to a person:\n• <i>groceries 45$</i>\n• <i>salary 3000$ received</i>\n• <i>remind me on Friday to pay for the kindergarten</i>\n• <i>loan 300$ every month on the 15th</i>\n\nI'll keep track of everything and give you a monthly summary with /summary.\n\n💡 Add me to a group with your partner to track a shared budget.",
   "welcome.group":
-    "👋 Hi! I'm {app}. I'll help this chat keep track of expenses, income, reminders and bills.\n\nI only react to marked messages:\n• start with <b>{prefix}</b> → <i>{prefix} groceries 45$</i>\n• mention me → <i>@{bot} remind me on Friday to pay the rent</i>\n• or use keywords like <i>spent, paid, remind, salary</i>\n• messages with an amount and currency are also picked up\n\nEverything else in the chat is ignored and never stored.\n\n⚙️ Currency: <b>{currency}</b> · Timezone: <b>{timezone}</b> · Language: <b>{language}</b>\nChange with /settings. Get your monthly overview with /summary.",
+    "👋 Hi! I'm {app}. I'll help this chat keep track of expenses, income, reminders and bills.\n\nI only react to marked messages:\n• start with <b>{prefix}</b> → <i>{prefix} groceries 45$</i>\n• mention me → <i>@{bot} remind me on Friday to pay the rent</i>\n• or call me by name → <i>Madat remind me on Friday to pay the rent</i>\n• or use keywords like <i>spent, paid, remind, salary</i>\n• messages with an amount and currency are also picked up\n\nEverything else in the chat is ignored and never stored.\n\n⚙️ Currency: <b>{currency}</b> · Timezone: <b>{timezone}</b> · Language: <b>{language}</b>\nChange with /settings. Get your monthly overview with /summary.",
   "welcome.privacy_warning":
     "⚠️ I can't see regular messages in this group yet, so keywords and the {prefix} prefix won't work. Open @BotFather → /setprivacy → <b>Disable</b> for me, then remove and re-add me to the group. Mentions and replies work right away.",
   "help":

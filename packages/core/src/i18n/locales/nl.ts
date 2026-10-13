@@ -2,7 +2,7 @@
 import type { LocaleStrings } from "./en.js";
 
 export const nl: LocaleStrings = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
   "cmd.start": "Start / instellen",
   "cmd.help": "Hoe werkt het",
   "cmd.summary": "Maandoverzicht",
@@ -13,7 +13,7 @@ export const nl: LocaleStrings = {
   "cmd.settings": "Valuta, tijdzone, taal",
   "cmd.keywords": "Trefwoorden",
   "welcome.private": "👋 Hoi, ik ben {app}, je maatje voor de gezinsfinanciën.\n\nSchrijf me gewoon zoals je een mens zou schrijven:\n• <i>boodschappen 45$</i>\n• <i>salaris 3000$ ontvangen</i>\n• <i>herinner me vrijdag aan de kinderopvang</i>\n• <i>lening 300$ elke maand op de 15e</i>\n\nIk houd alles bij en geef je met /summary het maandoverzicht.\n\n💡 Voeg me toe aan een groep met je partner voor een gezamenlijk budget.",
-  "welcome.group": "👋 Hoi! Ik ben {app}. Ik help deze chat om uitgaven, inkomsten, herinneringen en rekeningen bij te houden.\n\nIk reageer alleen op gemarkeerde berichten:\n• begin met <b>{prefix}</b> → <i>{prefix} boodschappen 45$</i>\n• noem me → <i>@{bot} herinner me vrijdag aan de huur</i>\n• of gebruik trefwoorden zoals <i>uitgegeven, betaald, herinner, salaris</i>\n• berichten met een bedrag en valuta pik ik ook op\n\nAl het andere in de chat wordt genegeerd en nooit opgeslagen.\n\n⚙️ Valuta: <b>{currency}</b> · Tijdzone: <b>{timezone}</b> · Taal: <b>{language}</b>\nWijzigen met /settings. Je maandoverzicht met /summary.",
+  "welcome.group": "👋 Hoi! Ik ben {app}. Ik help deze chat om uitgaven, inkomsten, herinneringen en rekeningen bij te houden.\n\nIk reageer alleen op gemarkeerde berichten:\n• begin met <b>{prefix}</b> → <i>{prefix} boodschappen 45$</i>\n• noem me → <i>@{bot} herinner me vrijdag aan de huur</i>\n• of spreek me aan met mijn naam → <i>Madat herinner me vrijdag aan de huur</i>\n• of gebruik trefwoorden zoals <i>uitgegeven, betaald, herinner, salaris</i>\n• berichten met een bedrag en valuta pik ik ook op\n\nAl het andere in de chat wordt genegeerd en nooit opgeslagen.\n\n⚙️ Valuta: <b>{currency}</b> · Tijdzone: <b>{timezone}</b> · Taal: <b>{language}</b>\nWijzigen met /settings. Je maandoverzicht met /summary.",
   "welcome.privacy_warning": "⚠️ Ik kan gewone berichten in deze groep nog niet zien, dus trefwoorden en het voorvoegsel {prefix} werken niet. Open @BotFather → /setprivacy → <b>Disable</b> voor mij, verwijder me en voeg me opnieuw toe aan de groep. Vermeldingen en antwoorden werken meteen.",
   "help": "📖 <b>Hoe ik werk</b>\n\n<b>Uitgaven en inkomsten</b>\n<i>{prefix} taxi 12$</i>, <i>150k uitgegeven aan boodschappen</i>, <i>salaris 3000$ ontvangen</i>\n\n<b>Herinneringen</b>\n<i>herinner me morgen om 10 uur de dokter te bellen</i>, <i>herinner me op de 20e aan de internetrekening</i>\n\n<b>Terugkerende betalingen</b>\n<i>lening 300$ elke maand op de 15e</i>, <i>huur 500$ op de 1e</i>\nIk herinner je {days} dagen van tevoren en op de dag zelf. Zeg <i>lening betaald</i> om af te vinken.\n\n<b>Correcties</b>\nAntwoord op mijn bevestiging: <i>niet 150, 115</i>, <i>categorie vervoer</i>, of tik op ✏️.\n<i>ongedaan</i> of /undo verwijdert het laatste record.\n\n<b>Overzicht</b>\n/summary — deze maand per categorie, vergeleken met vorige maand, met tips.\n/last — laatste records · /reminders · /payments\n\n<b>Instellingen</b>\n/settings — valuta, tijdzone, taal · /keywords — trefwoorden",
   "settings.title": "⚙️ <b>Instellingen</b>\n\nValuta: <b>{currency}</b>\nTijdzone: <b>{timezone}</b>\nTaal: <b>{language}</b>\nBetalingsherinnering: <b>{days} dagen van tevoren</b>\nVoorvoegsel: <b>{prefix}</b>",

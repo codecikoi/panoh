@@ -39,7 +39,7 @@ async function translate(locale: string): Promise<Record<string, string>> {
     fallbacks: "default",
     system: `You translate UI strings of a friendly Telegram bot for family budgeting from English into ${name} (${locale}).
 Rules: keep every {placeholder} exactly as is; keep emoji, HTML tags (<b>, <i>, <code>, <s>) and newlines; keep bot commands like /summary untouched;
-keep "Budgie" as the product name; use natural, warm, concise wording a native speaker would use in a chat app; keep "HTML entities" unchanged.
+keep "Madat" as the product name; use natural, warm, concise wording a native speaker would use in a chat app; keep "HTML entities" unchanged.
 Return every key exactly once.`,
     messages: [{ role: "user", content: JSON.stringify(source) }],
     output_config: { effort: "medium", format: betaZodOutputFormat(Schema) },

@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 vi.mock("../../../packages/core/src/ai/insights.ts", () => ({ generateInsights: vi.fn().mockResolvedValue({ highlights: ["ok"], tips: [], mood: "neutral" }) }));
 process.env.LOG_LEVEL = "warn";
 
-import { createTestDb, createTransaction, ensureMember, getOrCreateHousehold, signInitData, upsertUser, type DbHandle } from "@budgie/core";
+import { createTestDb, createTransaction, ensureMember, getOrCreateHousehold, signInitData, upsertUser, type DbHandle } from "@madat/core";
 import { createApp } from "./app.js";
 
 const token = "123:ABC";

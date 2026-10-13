@@ -2,7 +2,7 @@
 import type { LocaleStrings } from "./en.js";
 
 export const id: LocaleStrings = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
   "cmd.start": "Mulai / pengaturan",
   "cmd.help": "Cara pakai",
   "cmd.summary": "Ringkasan bulanan",
@@ -13,7 +13,7 @@ export const id: LocaleStrings = {
   "cmd.settings": "Mata uang, zona waktu, bahasa",
   "cmd.keywords": "Kata kunci",
   "welcome.private": "👋 Hai, aku {app}, teman keuangan keluargamu.\n\nTulis saja seperti ke orang biasa:\n• <i>belanja 45$</i>\n• <i>gaji 3000$ masuk</i>\n• <i>ingatkan hari Jumat bayar daycare</i>\n• <i>cicilan 300$ tiap bulan tanggal 15</i>\n\nAku catat semuanya dan kasih ringkasan bulanan lewat /summary.\n\n💡 Tambahkan aku ke grup bersama pasanganmu untuk anggaran bersama.",
-  "welcome.group": "👋 Hai! Aku {app}. Aku bantu chat ini mencatat pengeluaran, pemasukan, pengingat, dan tagihan.\n\nAku hanya merespons pesan yang ditandai:\n• mulai dengan <b>{prefix}</b> → <i>{prefix} belanja 45$</i>\n• sebut aku → <i>@{bot} ingatkan hari Jumat bayar sewa</i>\n• atau pakai kata kunci seperti <i>habis, bayar, ingatkan, gaji</i>\n• pesan dengan jumlah dan mata uang juga ikut tercatat\n\nSisanya diabaikan dan tidak pernah disimpan.\n\n⚙️ Mata uang: <b>{currency}</b> · Zona waktu: <b>{timezone}</b> · Bahasa: <b>{language}</b>\nUbah lewat /settings. Ringkasan bulanan lewat /summary.",
+  "welcome.group": "👋 Hai! Aku {app}. Aku bantu chat ini mencatat pengeluaran, pemasukan, pengingat, dan tagihan.\n\nAku hanya merespons pesan yang ditandai:\n• mulai dengan <b>{prefix}</b> → <i>{prefix} belanja 45$</i>\n• sebut aku → <i>@{bot} ingatkan hari Jumat bayar sewa</i>\n• atau panggil namaku → <i>Madat ingatkan hari Jumat bayar sewa</i>\n• atau pakai kata kunci seperti <i>habis, bayar, ingatkan, gaji</i>\n• pesan dengan jumlah dan mata uang juga ikut tercatat\n\nSisanya diabaikan dan tidak pernah disimpan.\n\n⚙️ Mata uang: <b>{currency}</b> · Zona waktu: <b>{timezone}</b> · Bahasa: <b>{language}</b>\nUbah lewat /settings. Ringkasan bulanan lewat /summary.",
   "welcome.privacy_warning": "⚠️ Aku belum bisa melihat pesan biasa di grup ini, jadi kata kunci dan prefiks {prefix} tidak akan jalan. Buka @BotFather → /setprivacy → <b>Disable</b> untukku, lalu keluarkan dan tambahkan aku lagi ke grup. Sebutan dan balasan langsung jalan.",
   "help": "📖 <b>Cara kerjaku</b>\n\n<b>Pengeluaran & pemasukan</b>\n<i>{prefix} taksi 12$</i>, <i>habis 150k buat belanja</i>, <i>gaji 3000$ masuk</i>\n\n<b>Pengingat</b>\n<i>ingatkan besok jam 10 telepon dokter</i>, <i>ingatkan tanggal 20 bayar internet</i>\n\n<b>Pembayaran rutin</b>\n<i>cicilan 300$ tiap bulan tanggal 15</i>, <i>sewa 500$ tanggal 1</i>\nAku ingatkan {days} hari sebelumnya dan pada harinya. Bilang <i>cicilan sudah dibayar</i> untuk menandai.\n\n<b>Koreksi</b>\nBalas konfirmasiku: <i>bukan 150, 115</i>, <i>kategori transportasi</i>, atau ketuk ✏️.\n<i>batal</i> atau /undo menghapus catatan terakhir.\n\n<b>Ringkasan</b>\n/summary — bulan ini per kategori, dibandingkan bulan lalu, dengan tips.\n/last — catatan terakhir · /reminders · /payments\n\n<b>Pengaturan</b>\n/settings — mata uang, zona waktu, bahasa · /keywords — kata kunci",
   "settings.title": "⚙️ <b>Pengaturan</b>\n\nMata uang: <b>{currency}</b>\nZona waktu: <b>{timezone}</b>\nBahasa: <b>{language}</b>\nPengingat pembayaran: <b>{days} hari sebelumnya</b>\nPrefiks: <b>{prefix}</b>",

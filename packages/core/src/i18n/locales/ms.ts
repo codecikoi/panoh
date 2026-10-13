@@ -2,7 +2,7 @@
 import type { LocaleStrings } from "./en.js";
 
 export const ms: LocaleStrings = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
   "cmd.start": "Mula / persediaan",
   "cmd.help": "Cara guna",
   "cmd.summary": "Ringkasan bulanan",
@@ -13,7 +13,7 @@ export const ms: LocaleStrings = {
   "cmd.settings": "Mata wang, zon masa, bahasa",
   "cmd.keywords": "Kata kunci",
   "welcome.private": "👋 Hai, saya {app}, rakan kewangan keluarga anda.\n\nTulis saja seperti kepada orang biasa:\n• <i>barang dapur 45$</i>\n• <i>gaji 3000$ masuk</i>\n• <i>ingatkan hari Jumaat bayar yuran taska</i>\n• <i>pinjaman 300$ setiap bulan pada 15 hb</i>\n\nSaya catat semuanya dan beri ringkasan bulanan dengan /summary.\n\n💡 Tambah saya ke kumpulan bersama pasangan anda untuk bajet bersama.",
-  "welcome.group": "👋 Hai! Saya {app}. Saya bantu sembang ini menjejak perbelanjaan, pendapatan, peringatan dan bil.\n\nSaya hanya bertindak balas pada mesej bertanda:\n• mulakan dengan <b>{prefix}</b> → <i>{prefix} barang dapur 45$</i>\n• sebut saya → <i>@{bot} ingatkan hari Jumaat bayar sewa</i>\n• atau guna kata kunci seperti <i>belanja, bayar, ingatkan, gaji</i>\n• mesej dengan jumlah dan mata wang juga direkod\n\nYang lain diabaikan dan tidak pernah disimpan.\n\n⚙️ Mata wang: <b>{currency}</b> · Zon masa: <b>{timezone}</b> · Bahasa: <b>{language}</b>\nTukar dengan /settings. Ringkasan bulanan dengan /summary.",
+  "welcome.group": "👋 Hai! Saya {app}. Saya bantu sembang ini menjejak perbelanjaan, pendapatan, peringatan dan bil.\n\nSaya hanya bertindak balas pada mesej bertanda:\n• mulakan dengan <b>{prefix}</b> → <i>{prefix} barang dapur 45$</i>\n• sebut saya → <i>@{bot} ingatkan hari Jumaat bayar sewa</i>\n• atau panggil nama saya → <i>Madat ingatkan hari Jumaat bayar sewa</i>\n• atau guna kata kunci seperti <i>belanja, bayar, ingatkan, gaji</i>\n• mesej dengan jumlah dan mata wang juga direkod\n\nYang lain diabaikan dan tidak pernah disimpan.\n\n⚙️ Mata wang: <b>{currency}</b> · Zon masa: <b>{timezone}</b> · Bahasa: <b>{language}</b>\nTukar dengan /settings. Ringkasan bulanan dengan /summary.",
   "welcome.privacy_warning": "⚠️ Saya belum dapat melihat mesej biasa dalam kumpulan ini, jadi kata kunci dan awalan {prefix} tidak akan berfungsi. Buka @BotFather → /setprivacy → <b>Disable</b> untuk saya, kemudian keluarkan dan tambah saya semula ke kumpulan. Sebutan dan balasan berfungsi serta-merta.",
   "help": "📖 <b>Cara saya berfungsi</b>\n\n<b>Perbelanjaan & pendapatan</b>\n<i>{prefix} teksi 12$</i>, <i>belanja 150k untuk barang dapur</i>, <i>gaji 3000$ masuk</i>\n\n<b>Peringatan</b>\n<i>ingatkan esok pukul 10 telefon doktor</i>, <i>ingatkan pada 20 hb bayar internet</i>\n\n<b>Bayaran berulang</b>\n<i>pinjaman 300$ setiap bulan pada 15 hb</i>, <i>sewa 500$ pada 1 hb</i>\nSaya ingatkan {days} hari sebelum dan pada hari itu. Tulis <i>pinjaman dah bayar</i> untuk menandanya.\n\n<b>Pembetulan</b>\nBalas pengesahan saya: <i>bukan 150, 115</i>, <i>kategori pengangkutan</i>, atau ketik ✏️.\n<i>batal</i> atau /undo memadam rekod terakhir.\n\n<b>Ringkasan</b>\n/summary — bulan ini mengikut kategori, dibandingkan dengan bulan lepas, dengan tip.\n/last — rekod terkini · /reminders · /payments\n\n<b>Tetapan</b>\n/settings — mata wang, zon masa, bahasa · /keywords — kata kunci",
   "settings.title": "⚙️ <b>Tetapan</b>\n\nMata wang: <b>{currency}</b>\nZon masa: <b>{timezone}</b>\nBahasa: <b>{language}</b>\nPeringatan bayaran: <b>{days} hari sebelum</b>\nAwalan: <b>{prefix}</b>",

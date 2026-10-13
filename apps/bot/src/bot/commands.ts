@@ -18,7 +18,7 @@ import {
   t,
   updateHousehold,
   type LocaleKey,
-} from "@budgie/core";
+} from "@madat/core";
 import type { BotContext } from "./context.js";
 import * as R from "./render.js";
 import { undoLast } from "./actions.js";

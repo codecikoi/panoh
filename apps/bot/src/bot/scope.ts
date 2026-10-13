@@ -1,5 +1,5 @@
 import type { Middleware } from "grammy";
-import { ensureMember, env, getOrCreateHousehold, guessDefaults, upsertUser } from "@budgie/core";
+import { ensureMember, env, getOrCreateHousehold, guessDefaults, upsertUser } from "@madat/core";
 import { scopeFromHousehold, type BotContext, type Deps } from "./context.js";
 
 /** Resolves the household (chat) and member (user) for every update and attaches them to the context. */

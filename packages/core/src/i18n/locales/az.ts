@@ -2,7 +2,7 @@
 import type { LocaleStrings } from "./en.js";
 
 export const az: LocaleStrings = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
   "cmd.start": "Başla / quraşdırma",
   "cmd.help": "Necə istifadə etməli",
   "cmd.summary": "Ayın xülasəsi",
@@ -13,7 +13,7 @@ export const az: LocaleStrings = {
   "cmd.settings": "Valyuta, saat qurşağı, dil",
   "cmd.keywords": "Açar sözlər",
   "welcome.private": "👋 Salam, mən {app} — ailə maliyyəsi üzrə köməkçinəm.\n\nMənə adi adama yazdığın kimi yaz:\n• <i>ərzaq 45$</i>\n• <i>maaş 3000$ gəldi</i>\n• <i>cümə günü uşaq bağçasının pulunu ödəməyi xatırlat</i>\n• <i>kredit 300$ hər ay 15-də</i>\n\nHər şeyi qeyd edəcəm, /summary ilə ayın xülasəsini göstərəcəm.\n\n💡 Ortaq büdcə üçün məni həyat yoldaşınla birlikdə qrupa əlavə et.",
-  "welcome.group": "👋 Salam! Mən {app}. Bu çatda xərcləri, gəlirləri, xatırlatmaları və ödənişləri izləməyə kömək edirəm.\n\nYalnız işarələnmiş mesajlara cavab verirəm:\n• <b>{prefix}</b> ilə başla → <i>{prefix} ərzaq 45$</i>\n• məni qeyd et → <i>@{bot} cümə günü kirayəni ödəməyi xatırlat</i>\n• və ya <i>xərclədim, ödədim, xatırlat, maaş</i> kimi açar sözlərdən istifadə et\n• məbləğ və valyuta olan mesajları da tuturam\n\nQalan yazışmalara fikir vermirəm və heç yerdə saxlamıram.\n\n⚙️ Valyuta: <b>{currency}</b> · Saat qurşağı: <b>{timezone}</b> · Dil: <b>{language}</b>\nDəyişmək: /settings. Ayın xülasəsi: /summary.",
+  "welcome.group": "👋 Salam! Mən {app}. Bu çatda xərcləri, gəlirləri, xatırlatmaları və ödənişləri izləməyə kömək edirəm.\n\nYalnız işarələnmiş mesajlara cavab verirəm:\n• <b>{prefix}</b> ilə başla → <i>{prefix} ərzaq 45$</i>\n• məni qeyd et → <i>@{bot} cümə günü kirayəni ödəməyi xatırlat</i>\n• və ya adımla müraciət et → <i>Madat cümə günü kirayəni ödəməyi xatırlat</i>\n• və ya <i>xərclədim, ödədim, xatırlat, maaş</i> kimi açar sözlərdən istifadə et\n• məbləğ və valyuta olan mesajları da tuturam\n\nQalan yazışmalara fikir vermirəm və heç yerdə saxlamıram.\n\n⚙️ Valyuta: <b>{currency}</b> · Saat qurşağı: <b>{timezone}</b> · Dil: <b>{language}</b>\nDəyişmək: /settings. Ayın xülasəsi: /summary.",
   "welcome.privacy_warning": "⚠️ Hələlik bu qrupdakı adi mesajları görmürəm, ona görə açar sözlər və {prefix} prefiksi işləməyəcək. @BotFather → /setprivacy → mənim üçün <b>Disable</b> seç, sonra məni qrupdan çıxarıb yenidən əlavə et. Qeyd etmə və cavablar dərhal işləyir.",
   "help": "📖 <b>Mən necə işləyirəm</b>\n\n<b>Xərclər və gəlirlər</b>\n<i>{prefix} taksi 12$</i>, <i>ərzağa 150k xərclədik</i>, <i>maaş 3000$ gəldi</i>\n\n<b>Xatırlatmalar</b>\n<i>sabah saat 10-da həkimə zəng etməyi xatırlat</i>, <i>ayın 20-də interneti ödəməyi xatırlat</i>\n\n<b>Müntəzəm ödənişlər</b>\n<i>kredit 300$ hər ay 15-də</i>, <i>kirayə 500$ ayın 1-də</i>\n{days} gün əvvəl və ödəniş günü xatırladacam. İşarələmək üçün <i>krediti ödədik</i> yaz.\n\n<b>Düzəlişlər</b>\nTəsdiqimə cavab yaz: <i>150 yox, 115</i>, <i>kateqoriya nəqliyyat</i> və ya ✏️ bas.\n<i>ləğv et</i> və ya /undo son qeydi silir.\n\n<b>Xülasə</b>\n/summary — bu ay kateqoriyalar üzrə, keçən ayla müqayisə, məsləhətlər.\n/last — son qeydlər · /reminders · /payments\n\n<b>Ayarlar</b>\n/settings — valyuta, saat qurşağı, dil · /keywords — açar sözlər",
   "settings.title": "⚙️ <b>Ayarlar</b>\n\nValyuta: <b>{currency}</b>\nSaat qurşağı: <b>{timezone}</b>\nDil: <b>{language}</b>\nÖdəniş xatırlatması: <b>{days} gün əvvəl</b>\nPrefiks: <b>{prefix}</b>",

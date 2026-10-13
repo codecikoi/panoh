@@ -1,5 +1,5 @@
 import type { Api } from "grammy";
-import { getInsights, loadMonthlySummary, log } from "@budgie/core";
+import { getInsights, loadMonthlySummary, log } from "@madat/core";
 import type { Deps, Scope } from "./context.js";
 import { summaryKeyboard, summaryText } from "./render.js";
 import { safeEdit } from "./telegram.js";

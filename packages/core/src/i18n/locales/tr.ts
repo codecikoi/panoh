@@ -2,7 +2,7 @@
 import type { LocaleStrings } from "./en.js";
 
 export const tr: LocaleStrings = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
   "cmd.start": "Başlat / kurulum",
   "cmd.help": "Nasıl kullanılır",
   "cmd.summary": "Aylık özet",
@@ -13,7 +13,7 @@ export const tr: LocaleStrings = {
   "cmd.settings": "Para birimi, saat dilimi, dil",
   "cmd.keywords": "Anahtar kelimeler",
   "welcome.private": "👋 Merhaba, ben {app}, aile bütçesi yardımcın.\n\nBana bir insana yazar gibi yaz:\n• <i>market 45$</i>\n• <i>maaş 3000$ geldi</i>\n• <i>cuma günü kreş ücretini hatırlat</i>\n• <i>kredi 300$ her ayın 15'inde</i>\n\nHer şeyi kaydederim, /summary ile aylık özeti veririm.\n\n💡 Ortak bütçe için beni eşinle birlikte bir gruba ekle.",
-  "welcome.group": "👋 Merhaba! Ben {app}. Bu sohbette harcamaları, gelirleri, hatırlatmaları ve faturaları takip etmeye yardım ederim.\n\nSadece işaretli mesajlara tepki veririm:\n• <b>{prefix}</b> ile başla → <i>{prefix} market 45$</i>\n• beni etiketle → <i>@{bot} cuma günü kirayı hatırlat</i>\n• ya da <i>harcadım, ödedim, hatırlat, maaş</i> gibi anahtar kelimeler kullan\n• tutar ve para birimi içeren mesajlar da kaydedilir\n\nSohbetteki diğer her şey yok sayılır ve asla saklanmaz.\n\n⚙️ Para birimi: <b>{currency}</b> · Saat dilimi: <b>{timezone}</b> · Dil: <b>{language}</b>\n/settings ile değiştir. Aylık özetin için /summary.",
+  "welcome.group": "👋 Merhaba! Ben {app}. Bu sohbette harcamaları, gelirleri, hatırlatmaları ve faturaları takip etmeye yardım ederim.\n\nSadece işaretli mesajlara tepki veririm:\n• <b>{prefix}</b> ile başla → <i>{prefix} market 45$</i>\n• beni etiketle → <i>@{bot} cuma günü kirayı hatırlat</i>\n• ya da adımla seslen → <i>Madat cuma günü kirayı hatırlat</i>\n• ya da <i>harcadım, ödedim, hatırlat, maaş</i> gibi anahtar kelimeler kullan\n• tutar ve para birimi içeren mesajlar da kaydedilir\n\nSohbetteki diğer her şey yok sayılır ve asla saklanmaz.\n\n⚙️ Para birimi: <b>{currency}</b> · Saat dilimi: <b>{timezone}</b> · Dil: <b>{language}</b>\n/settings ile değiştir. Aylık özetin için /summary.",
   "welcome.privacy_warning": "⚠️ Bu gruptaki normal mesajları henüz göremiyorum, bu yüzden anahtar kelimeler ve {prefix} öneki çalışmayacak. @BotFather → /setprivacy → benim için <b>Disable</b> seç, sonra beni gruptan çıkarıp yeniden ekle. Etiketlemeler ve yanıtlar hemen çalışır.",
   "help": "📖 <b>Nasıl çalışırım</b>\n\n<b>Harcamalar ve gelirler</b>\n<i>{prefix} taksi 12$</i>, <i>markete 150k harcadım</i>, <i>maaş 3000$ geldi</i>\n\n<b>Hatırlatmalar</b>\n<i>yarın 10'da doktoru aramayı hatırlat</i>, <i>ayın 20'sinde interneti ödemeyi hatırlat</i>\n\n<b>Düzenli ödemeler</b>\n<i>kredi 300$ her ayın 15'inde</i>, <i>kira 500$ ayın 1'inde</i>\n{days} gün önce ve ödeme günü hatırlatırım. İşaretlemek için <i>krediyi ödedim</i> de.\n\n<b>Düzeltmeler</b>\nOnayıma yanıt ver: <i>150 değil, 115</i>, <i>kategori ulaşım</i> ya da ✏️ simgesine dokun.\n<i>geri al</i> veya /undo son kaydı siler.\n\n<b>Özet</b>\n/summary — bu ay kategorilere göre, geçen ayla karşılaştırmalı, ipuçlarıyla.\n/last — son kayıtlar · /reminders · /payments\n\n<b>Ayarlar</b>\n/settings — para birimi, saat dilimi, dil · /keywords — anahtar kelimeler",
   "settings.title": "⚙️ <b>Ayarlar</b>\n\nPara birimi: <b>{currency}</b>\nSaat dilimi: <b>{timezone}</b>\nDil: <b>{language}</b>\nÖdeme hatırlatması: <b>{days} gün önce</b>\nÖnek: <b>{prefix}</b>",

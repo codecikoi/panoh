@@ -1,6 +1,6 @@
-# Budgie
+# Madat
 
-A friendly family-finance assistant that lives in your Telegram chat. Mention an expense, an income, a bill or a reminder in your own words and Budgie keeps the books, nudges you about payments and sends a monthly summary with insights.
+A friendly family-finance assistant that lives in your Telegram chat. Mention an expense, an income, a bill or a reminder in your own words and Madat keeps the books, nudges you about payments and sends a monthly summary with insights.
 
 ```
 + groceries 45$                      → ✍ Expense · $45 · 🛒 Groceries
@@ -23,7 +23,7 @@ Telegram ──▶ apps/bot ──▶ packages/core ──▶ Postgres
 Mini App ──▶ apps/api  (Hono, Telegram initData auth) ──▶ packages/core
 ```
 
-* **Only marked messages are processed.** In groups the bot reacts to messages that start with the prefix (`+` by default), mention the bot, reply to it, contain a trigger keyword (`spent`, `paid`, `remind`, `потратил`, `оплатил`, `напомни`, `sarfladim`, …) or contain an amount with a currency. Everything else is ignored and never stored. Private chats process every message.
+* **Only marked messages are processed.** In groups the bot reacts to messages that start with the prefix (`+` by default), start with the bot's name (`madat …` or `мадат …`, any case), mention the bot, reply to it, contain a trigger keyword (`spent`, `paid`, `remind`, `потратил`, `оплатил`, `напомни`, `sarfladim`, …) or contain an amount with a currency. Everything else is ignored and never stored. Private chats process every message.
 * **Numbers are computed in code.** The summary (totals, categories, month-over-month deltas, projections, upcoming bills) is calculated from the database; Claude only writes the short insights section from those numbers.
 * **Every record is confirmed in chat** with ✏️ / 🗑 buttons. Reply to a confirmation with "not 150, 115" or "category transport" to fix it; "undo" or /undo removes the last record. Low-confidence parses ask "record this?" before counting.
 * **Bills remind themselves.** A recurring payment reminds N days before and on the day, with a ✅ Paid button that also books the expense.
@@ -55,7 +55,7 @@ pnpm dev:api        # optional, on PORT=8081
 
 4. Write to the bot in a private chat, or add it to a group with your partner and send `/start`.
 
-PGlite is single-process: run either the bot or the API against it, not both at once. To develop both together use Postgres (`docker compose up db` and set `DATABASE_URL=postgres://budgie:budgie@localhost:5432/budgie`).
+PGlite is single-process: run either the bot or the API against it, not both at once. To develop both together use Postgres (`docker compose up db` and set `DATABASE_URL=postgres://madat:madat@localhost:5432/madat`).
 
 Useful commands:
 

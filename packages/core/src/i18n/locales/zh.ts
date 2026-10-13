@@ -2,7 +2,7 @@
 import type { LocaleStrings } from "./en.js";
 
 export const zh: LocaleStrings = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
   "cmd.start": "开始 / 设置",
   "cmd.help": "使用说明",
   "cmd.summary": "月度总结",
@@ -13,7 +13,7 @@ export const zh: LocaleStrings = {
   "cmd.settings": "货币、时区、语言",
   "cmd.keywords": "关键词",
   "welcome.private": "👋 你好，我是 {app}，你的家庭记账小助手。\n\n像跟人聊天一样跟我说就行：\n• <i>买菜 45$</i>\n• <i>发工资 3000$</i>\n• <i>周五提醒我交幼儿园费</i>\n• <i>贷款 300$ 每月15号</i>\n\n我会记下一切，发 /summary 就能看到当月总结。\n\n💡 把我拉进你和另一半的群，就能一起管家庭预算。",
-  "welcome.group": "👋 大家好！我是 {app}。我帮这个群记录支出、收入、提醒和账单。\n\n我只响应带标记的消息：\n• 以 <b>{prefix}</b> 开头 → <i>{prefix} 买菜 45$</i>\n• @我 → <i>@{bot} 周五提醒我交房租</i>\n• 或者用关键词，比如 <i>花了、付了、提醒、工资</i>\n• 带金额和货币的消息也会被记录\n\n群里其他聊天一律忽略，绝不保存。\n\n⚙️ 货币：<b>{currency}</b> · 时区：<b>{timezone}</b> · 语言：<b>{language}</b>\n用 /settings 修改，用 /summary 看月度总结。",
+  "welcome.group": "👋 大家好！我是 {app}。我帮这个群记录支出、收入、提醒和账单。\n\n我只响应带标记的消息：\n• 以 <b>{prefix}</b> 开头 → <i>{prefix} 买菜 45$</i>\n• @我 → <i>@{bot} 周五提醒我交房租</i>\n• 或者叫我的名字 → <i>Madat 周五提醒我交房租</i>\n• 或者用关键词，比如 <i>花了、付了、提醒、工资</i>\n• 带金额和货币的消息也会被记录\n\n群里其他聊天一律忽略，绝不保存。\n\n⚙️ 货币：<b>{currency}</b> · 时区：<b>{timezone}</b> · 语言：<b>{language}</b>\n用 /settings 修改，用 /summary 看月度总结。",
   "welcome.privacy_warning": "⚠️ 我目前看不到这个群的普通消息，所以关键词和前缀 {prefix} 暂时不起作用。请打开 @BotFather → /setprivacy → 为我选择 <b>Disable</b>，然后把我移出群再重新拉进来。@我和回复我是立即生效的。",
   "help": "📖 <b>我是怎么工作的</b>\n\n<b>支出和收入</b>\n<i>{prefix} 打车 12$</i>、<i>买菜花了 150k</i>、<i>发工资 3000$</i>\n\n<b>提醒</b>\n<i>明天10点提醒我给医生打电话</i>、<i>20号提醒我交网费</i>\n\n<b>固定支出</b>\n<i>贷款 300$ 每月15号</i>、<i>房租 500$ 每月1号</i>\n我会提前 {days} 天和当天提醒。说 <i>贷款付了</i> 就标记为已付。\n\n<b>修改</b>\n回复我的确认消息：<i>不是150，是115</i>、<i>分类 交通</i>，或点 ✏️。\n<i>撤销</i> 或 /undo 删除最后一条记录。\n\n<b>总结</b>\n/summary — 本月分类汇总，与上月对比，附建议。\n/last — 最近记录 · /reminders · /payments\n\n<b>设置</b>\n/settings — 货币、时区、语言 · /keywords — 关键词",
   "settings.title": "⚙️ <b>设置</b>\n\n货币：<b>{currency}</b>\n时区：<b>{timezone}</b>\n语言：<b>{language}</b>\n付款提醒：<b>提前 {days} 天</b>\n前缀：<b>{prefix}</b>",

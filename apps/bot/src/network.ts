@@ -3,7 +3,7 @@ import https from "node:https";
 import { isIP } from "node:net";
 import type { LookupFunction } from "node:net";
 import { HttpsProxyAgent } from "https-proxy-agent";
-import { log } from "@budgie/core";
+import { log } from "@madat/core";
 
 /**
  * Networking for the Telegram client (grammY uses node-fetch with an https.Agent).

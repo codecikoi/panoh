@@ -2,7 +2,7 @@
 import type { LocaleStrings } from "./en.js";
 
 export const pl: LocaleStrings = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
   "cmd.start": "Start / konfiguracja",
   "cmd.help": "Jak korzystać",
   "cmd.summary": "Podsumowanie miesiąca",
@@ -13,7 +13,7 @@ export const pl: LocaleStrings = {
   "cmd.settings": "Waluta, strefa czasowa, język",
   "cmd.keywords": "Słowa kluczowe",
   "welcome.private": "👋 Cześć, jestem {app}, Twój pomocnik od domowych finansów.\n\nPisz do mnie jak do człowieka:\n• <i>zakupy 45$</i>\n• <i>wypłata 3000$ wpłynęła</i>\n• <i>przypomnij mi w piątek o opłacie za przedszkole</i>\n• <i>kredyt 300$ co miesiąc 15-tego</i>\n\nWszystko zapiszę, a po /summary dam podsumowanie miesiąca.\n\n💡 Dodaj mnie do grupy z partnerem, żeby prowadzić wspólny budżet.",
-  "welcome.group": "👋 Cześć! Jestem {app}. Pomagam tej grupie śledzić wydatki, przychody, przypomnienia i rachunki.\n\nReaguję tylko na oznaczone wiadomości:\n• zacznij od <b>{prefix}</b> → <i>{prefix} zakupy 45$</i>\n• oznacz mnie → <i>@{bot} przypomnij mi w piątek o czynszu</i>\n• albo użyj słów kluczowych, np. <i>wydałem, zapłaciłem, przypomnij, wypłata</i>\n• wiadomości z kwotą i walutą też łapię\n\nResztę rozmowy ignoruję i nigdy nie zapisuję.\n\n⚙️ Waluta: <b>{currency}</b> · Strefa czasowa: <b>{timezone}</b> · Język: <b>{language}</b>\nZmień przez /settings. Podsumowanie miesiąca: /summary.",
+  "welcome.group": "👋 Cześć! Jestem {app}. Pomagam tej grupie śledzić wydatki, przychody, przypomnienia i rachunki.\n\nReaguję tylko na oznaczone wiadomości:\n• zacznij od <b>{prefix}</b> → <i>{prefix} zakupy 45$</i>\n• oznacz mnie → <i>@{bot} przypomnij mi w piątek o czynszu</i>\n• albo zwróć się do mnie po imieniu → <i>Madat przypomnij mi w piątek o czynszu</i>\n• albo użyj słów kluczowych, np. <i>wydałem, zapłaciłem, przypomnij, wypłata</i>\n• wiadomości z kwotą i walutą też łapię\n\nResztę rozmowy ignoruję i nigdy nie zapisuję.\n\n⚙️ Waluta: <b>{currency}</b> · Strefa czasowa: <b>{timezone}</b> · Język: <b>{language}</b>\nZmień przez /settings. Podsumowanie miesiąca: /summary.",
   "welcome.privacy_warning": "⚠️ Nie widzę jeszcze zwykłych wiadomości w tej grupie, więc słowa kluczowe i prefiks {prefix} nie zadziałają. Otwórz @BotFather → /setprivacy → <b>Disable</b> dla mnie, potem usuń mnie i dodaj ponownie do grupy. Oznaczenia i odpowiedzi działają od razu.",
   "help": "📖 <b>Jak działam</b>\n\n<b>Wydatki i przychody</b>\n<i>{prefix} taksówka 12$</i>, <i>wydałem 150k na zakupy</i>, <i>wypłata 3000$ wpłynęła</i>\n\n<b>Przypomnienia</b>\n<i>przypomnij mi jutro o 10 zadzwonić do lekarza</i>, <i>przypomnij 20-tego o opłacie za internet</i>\n\n<b>Płatności cykliczne</b>\n<i>kredyt 300$ co miesiąc 15-tego</i>, <i>czynsz 500$ 1-szego</i>\nPrzypomnę {days} dni przed i w dniu płatności. Napisz <i>zapłaciłem kredyt</i>, żeby odhaczyć.\n\n<b>Poprawki</b>\nOdpowiedz na moje potwierdzenie: <i>nie 150, tylko 115</i>, <i>kategoria transport</i> albo kliknij ✏️.\n<i>cofnij</i> lub /undo usuwa ostatni wpis.\n\n<b>Podsumowanie</b>\n/summary — ten miesiąc według kategorii, porównanie z poprzednim, wskazówki.\n/last — ostatnie wpisy · /reminders · /payments\n\n<b>Ustawienia</b>\n/settings — waluta, strefa czasowa, język · /keywords — słowa kluczowe",
   "settings.title": "⚙️ <b>Ustawienia</b>\n\nWaluta: <b>{currency}</b>\nStrefa czasowa: <b>{timezone}</b>\nJęzyk: <b>{language}</b>\nPrzypomnienie o płatnościach: <b>{days} dni przed</b>\nPrefiks: <b>{prefix}</b>",

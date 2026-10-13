@@ -3,7 +3,7 @@ import { BUILTIN_KEYWORDS, evaluateTrigger } from "./triggers.js";
 import { SUPPORTED_LOCALES } from "./i18n/index.js";
 
 describe("evaluateTrigger", () => {
-  const base = { locale: "ru", botUsername: "BudgieBot" };
+  const base = { locale: "ru", botUsername: "MadatBot" };
 
   it("processes everything in private chats", () => {
     const r = evaluateTrigger({ ...base, text: "привет", isPrivateChat: true });
@@ -25,9 +25,22 @@ describe("evaluateTrigger", () => {
   });
 
   it("triggers on mention and strips it", () => {
-    const r = evaluateTrigger({ ...base, text: "@BudgieBot напомни завтра позвонить маме" });
+    const r = evaluateTrigger({ ...base, text: "@MadatBot напомни завтра позвонить маме" });
     expect(r.reason).toBe("mention");
     expect(r.cleaned).toBe("напомни завтра позвонить маме");
+  });
+
+  it("triggers on the bot name at the start of a message and strips it", () => {
+    for (const text of ["мадат продукты 150к", "Мадат, продукты 150к", "madat продукты 150к", "MADAT: продукты 150к", "Мадат — продукты 150к"]) {
+      const r = evaluateTrigger({ ...base, text });
+      expect(r.reason, text).toBe("name");
+      expect(r.explicit, text).toBe(true);
+      expect(r.cleaned, text).toBe("продукты 150к");
+    }
+    expect(evaluateTrigger({ ...base, text: "мадат" }).process).toBe(false);
+    expect(evaluateTrigger({ ...base, text: "мадатов видел?" }).process).toBe(false);
+    expect(evaluateTrigger({ ...base, text: "скажи мадат привет" }).process).toBe(false);
+    expect(evaluateTrigger({ ...base, text: "Мадат, привет", isPrivateChat: true }).cleaned).toBe("привет");
   });
 
   it("triggers on reply to the bot", () => {

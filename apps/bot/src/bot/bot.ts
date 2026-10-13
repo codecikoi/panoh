@@ -1,5 +1,5 @@
 import { Bot, type BotConfig } from "grammy";
-import { log } from "@budgie/core";
+import { log } from "@madat/core";
 import type { BotContext, Deps } from "./context.js";
 import { scopeMiddleware } from "./scope.js";
 import { registerCommands } from "./commands.js";

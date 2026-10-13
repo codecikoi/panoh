@@ -1,23 +1,23 @@
 {
-  "name": "budgie",
+  "name": "madat",
   "private": true,
   "version": "0.1.0",
-  "description": "Budgie \u2014 a friendly family finance assistant for Telegram (bot + API + dashboard)",
+  "description": "Madat \u2014 a friendly family finance assistant for Telegram (bot + API + dashboard)",
   "packageManager": "pnpm@11.1.2",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
     "dev": "pnpm -r --parallel --stream dev",
-    "dev:bot": "pnpm --filter @budgie/bot dev",
-    "dev:api": "pnpm --filter @budgie/api dev",
+    "dev:bot": "pnpm --filter @madat/bot dev",
+    "dev:api": "pnpm --filter @madat/api dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "db:generate": "pnpm --filter @budgie/core db:generate",
-    "db:migrate": "pnpm --filter @budgie/core db:migrate",
-    "locales:translate": "pnpm --filter @budgie/core locales:translate",
-    "simulate": "pnpm --filter @budgie/core simulate"
+    "db:generate": "pnpm --filter @madat/core db:generate",
+    "db:migrate": "pnpm --filter @madat/core db:migrate",
+    "locales:translate": "pnpm --filter @madat/core locales:translate",
+    "simulate": "pnpm --filter @madat/core simulate"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

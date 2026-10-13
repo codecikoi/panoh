@@ -2,7 +2,7 @@
 import type { LocaleStrings } from "./en.js";
 
 export const pt: LocaleStrings = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
   "cmd.start": "Início / configuração",
   "cmd.help": "Como usar",
   "cmd.summary": "Resumo do mês",
@@ -13,7 +13,7 @@ export const pt: LocaleStrings = {
   "cmd.settings": "Moeda, fuso horário, idioma",
   "cmd.keywords": "Palavras-chave",
   "welcome.private": "👋 Oi, eu sou o {app}, seu ajudante para as finanças da família.\n\nFale comigo como falaria com uma pessoa:\n• <i>mercado 45$</i>\n• <i>recebi o salário 3000$</i>\n• <i>me lembra na sexta de pagar a creche</i>\n• <i>empréstimo 300$ todo mês no dia 15</i>\n\nEu anoto tudo e com /summary mostro o resumo do mês.\n\n💡 Me adicione a um grupo com seu par para cuidar do orçamento em conjunto.",
-  "welcome.group": "👋 Oi! Eu sou o {app}. Ajudo este chat a acompanhar gastos, receitas, lembretes e contas.\n\nSó reajo a mensagens marcadas:\n• comece com <b>{prefix}</b> → <i>{prefix} mercado 45$</i>\n• me mencione → <i>@{bot} me lembra na sexta de pagar o aluguel</i>\n• ou use palavras-chave como <i>gastei, paguei, lembra, salário</i>\n• mensagens com valor e moeda também são registradas\n\nTodo o resto do chat é ignorado e nunca é guardado.\n\n⚙️ Moeda: <b>{currency}</b> · Fuso horário: <b>{timezone}</b> · Idioma: <b>{language}</b>\nMude com /settings. Seu resumo mensal com /summary.",
+  "welcome.group": "👋 Oi! Eu sou o {app}. Ajudo este chat a acompanhar gastos, receitas, lembretes e contas.\n\nSó reajo a mensagens marcadas:\n• comece com <b>{prefix}</b> → <i>{prefix} mercado 45$</i>\n• me mencione → <i>@{bot} me lembra na sexta de pagar o aluguel</i>\n• ou me chame pelo nome → <i>Madat me lembra na sexta de pagar o aluguel</i>\n• ou use palavras-chave como <i>gastei, paguei, lembra, salário</i>\n• mensagens com valor e moeda também são registradas\n\nTodo o resto do chat é ignorado e nunca é guardado.\n\n⚙️ Moeda: <b>{currency}</b> · Fuso horário: <b>{timezone}</b> · Idioma: <b>{language}</b>\nMude com /settings. Seu resumo mensal com /summary.",
   "welcome.privacy_warning": "⚠️ Ainda não consigo ver as mensagens normais deste grupo, então as palavras-chave e o prefixo {prefix} não vão funcionar. Abra o @BotFather → /setprivacy → <b>Disable</b> para mim, depois me remova e me adicione de novo ao grupo. Menções e respostas funcionam na hora.",
   "help": "📖 <b>Como eu funciono</b>\n\n<b>Gastos e receitas</b>\n<i>{prefix} táxi 12$</i>, <i>gastei 150k no mercado</i>, <i>recebi o salário 3000$</i>\n\n<b>Lembretes</b>\n<i>me lembra amanhã às 10 de ligar para o médico</i>, <i>me lembra no dia 20 de pagar a internet</i>\n\n<b>Pagamentos recorrentes</b>\n<i>empréstimo 300$ todo mês no dia 15</i>, <i>aluguel 500$ no dia 1</i>\nAviso {days} dias antes e no dia. Diga <i>paguei o empréstimo</i> para marcar.\n\n<b>Correções</b>\nResponda à minha confirmação: <i>não 150, 115</i>, <i>categoria transporte</i>, ou toque em ✏️.\n<i>desfazer</i> ou /undo apaga o último registro.\n\n<b>Resumo</b>\n/summary — este mês por categoria, comparado com o anterior, com dicas.\n/last — últimos registros · /reminders · /payments\n\n<b>Configurações</b>\n/settings — moeda, fuso horário, idioma · /keywords — palavras-chave",
   "settings.title": "⚙️ <b>Configurações</b>\n\nMoeda: <b>{currency}</b>\nFuso horário: <b>{timezone}</b>\nIdioma: <b>{language}</b>\nAviso de pagamentos: <b>{days} dias antes</b>\nPrefixo: <b>{prefix}</b>",

@@ -19,7 +19,7 @@ import {
   updateHousehold,
   updateReminder,
   type Household,
-} from "@budgie/core";
+} from "@madat/core";
 import { scopeFromHousehold, type Deps } from "./bot/context.js";
 import { alertKeyboard, alertText } from "./bot/render.js";
 import { sendSummary } from "./bot/summary.js";

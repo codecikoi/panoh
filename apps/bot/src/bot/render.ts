@@ -18,7 +18,7 @@ import {
   type RecurringPayment,
   type Reminder,
   type Transaction,
-} from "@budgie/core";
+} from "@madat/core";
 import type { Scope } from "./context.js";
 
 export const COMMON_CURRENCIES = ["USD", "EUR", "UZS", "RUB", "KZT", "KGS", "TJS", "UAH", "TRY", "GBP", "AED", "INR"];

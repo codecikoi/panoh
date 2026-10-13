@@ -1,4 +1,4 @@
-import { createDb, env, log, requireEnv } from "@budgie/core";
+import { createDb, env, log, requireEnv } from "@madat/core";
 import { createBot } from "./bot/bot.js";
 import { setCommands } from "./bot/commands.js";
 import { createScheduler } from "./scheduler.js";

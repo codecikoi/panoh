@@ -8,7 +8,7 @@ COPY apps/api/package.json apps/api/
 COPY packages/core/package.json packages/core/
 RUN pnpm install --frozen-lockfile
 COPY . .
-RUN pnpm --filter @budgie/api build
+RUN pnpm --filter @madat/api build
 
 FROM node:22-alpine
 ENV NODE_ENV=production

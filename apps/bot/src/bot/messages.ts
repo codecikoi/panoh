@@ -1,5 +1,5 @@
 import type { Bot } from "grammy";
-import { currentMonthKey, evaluateTrigger, extractItems, listRecurring, log, markProcessed, t, type ExtractionResult } from "@budgie/core";
+import { currentMonthKey, evaluateTrigger, extractItems, listRecurring, log, markProcessed, t, type ExtractionResult } from "@madat/core";
 import type { BotContext } from "./context.js";
 import { applyItems, describeTarget, resolveReplyTarget } from "./actions.js";
 import { sendSummary } from "./summary.js";

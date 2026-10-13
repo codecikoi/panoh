@@ -23,12 +23,12 @@ importers:
 
   apps/api:
     dependencies:
-      '@budgie/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@hono/node-server':
         specifier: ^2.1.4
         version: 2.1.4(hono@4.13.13)
+      '@madat/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       hono:
         specifier: ^4.9.0
         version: 4.13.13
@@ -39,12 +39,12 @@ importers:
 
   apps/bot:
     dependencies:
-      '@budgie/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@hono/node-server':
         specifier: ^2.1.4
         version: 2.1.4(hono@4.13.13)
+      '@madat/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       grammy:
         specifier: ^1.38.0
         version: 1.46.0

@@ -2,15 +2,15 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: budgie
-      POSTGRES_PASSWORD: budgie
-      POSTGRES_DB: budgie
+      POSTGRES_USER: madat
+      POSTGRES_PASSWORD: madat
+      POSTGRES_DB: madat
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U budgie"]
+      test: ["CMD-SHELL", "pg_isready -U madat"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -21,7 +21,7 @@ services:
       dockerfile: apps/bot/Dockerfile
     env_file: .env
     environment:
-      DATABASE_URL: postgres://budgie:budgie@db:5432/budgie
+      DATABASE_URL: postgres://madat:madat@db:5432/madat
       PORT: "8080"
     ports:
       - "8080:8080"
@@ -35,7 +35,7 @@ services:
       dockerfile: apps/api/Dockerfile
     env_file: .env
     environment:
-      DATABASE_URL: postgres://budgie:budgie@db:5432/budgie
+      DATABASE_URL: postgres://madat:madat@db:5432/madat
       PORT: "8081"
     ports:
       - "8081:8081"

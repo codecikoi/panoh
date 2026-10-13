@@ -2,7 +2,7 @@
 import type { LocaleStrings } from "./en.js";
 
 export const ro: LocaleStrings = {
-  "app.name": "Budgie",
+  "app.name": "Madat",
   "cmd.start": "Start / configurare",
   "cmd.help": "Cum funcționează",
   "cmd.summary": "Rezumatul lunii",
@@ -13,7 +13,7 @@ export const ro: LocaleStrings = {
   "cmd.settings": "Monedă, fus orar, limbă",
   "cmd.keywords": "Cuvinte-cheie",
   "welcome.private": "👋 Salut, sunt {app}, ajutorul tău pentru finanțele familiei.\n\nScrie-mi ca unui om:\n• <i>cumpărături 45$</i>\n• <i>am primit salariul 3000$</i>\n• <i>amintește-mi vineri să plătesc grădinița</i>\n• <i>credit 300$ în fiecare lună pe 15</i>\n\nȚin evidența la tot și cu /summary îți dau rezumatul lunii.\n\n💡 Adaugă-mă într-un grup cu partenerul tău pentru un buget comun.",
-  "welcome.group": "👋 Salut! Sunt {app}. Ajut acest chat să țină evidența cheltuielilor, veniturilor, mementourilor și facturilor.\n\nReacționez doar la mesajele marcate:\n• începe cu <b>{prefix}</b> → <i>{prefix} cumpărături 45$</i>\n• menționează-mă → <i>@{bot} amintește-mi vineri să plătesc chiria</i>\n• sau folosește cuvinte-cheie precum <i>am cheltuit, am plătit, amintește, salariu</i>\n• mesajele cu sumă și monedă sunt și ele înregistrate\n\nRestul conversației este ignorat și nu se salvează niciodată.\n\n⚙️ Monedă: <b>{currency}</b> · Fus orar: <b>{timezone}</b> · Limbă: <b>{language}</b>\nSchimbă cu /settings. Rezumatul lunar cu /summary.",
+  "welcome.group": "👋 Salut! Sunt {app}. Ajut acest chat să țină evidența cheltuielilor, veniturilor, mementourilor și facturilor.\n\nReacționez doar la mesajele marcate:\n• începe cu <b>{prefix}</b> → <i>{prefix} cumpărături 45$</i>\n• menționează-mă → <i>@{bot} amintește-mi vineri să plătesc chiria</i>\n• sau strigă-mă pe nume → <i>Madat amintește-mi vineri să plătesc chiria</i>\n• sau folosește cuvinte-cheie precum <i>am cheltuit, am plătit, amintește, salariu</i>\n• mesajele cu sumă și monedă sunt și ele înregistrate\n\nRestul conversației este ignorat și nu se salvează niciodată.\n\n⚙️ Monedă: <b>{currency}</b> · Fus orar: <b>{timezone}</b> · Limbă: <b>{language}</b>\nSchimbă cu /settings. Rezumatul lunar cu /summary.",
   "welcome.privacy_warning": "⚠️ Încă nu văd mesajele obișnuite din acest grup, așa că cuvintele-cheie și prefixul {prefix} nu vor funcționa. Deschide @BotFather → /setprivacy → <b>Disable</b> pentru mine, apoi scoate-mă și adaugă-mă din nou în grup. Mențiunile și răspunsurile funcționează imediat.",
   "help": "📖 <b>Cum funcționez</b>\n\n<b>Cheltuieli și venituri</b>\n<i>{prefix} taxi 12$</i>, <i>am cheltuit 150k pe cumpărături</i>, <i>am primit salariul 3000$</i>\n\n<b>Mementouri</b>\n<i>amintește-mi mâine la 10 să sun la medic</i>, <i>amintește-mi pe 20 să plătesc internetul</i>\n\n<b>Plăți recurente</b>\n<i>credit 300$ în fiecare lună pe 15</i>, <i>chirie 500$ pe 1</i>\nÎți amintesc cu {days} zile înainte și în ziua plății. Spune <i>am plătit creditul</i> ca să bifez.\n\n<b>Corecturi</b>\nRăspunde la confirmarea mea: <i>nu 150, 115</i>, <i>categoria transport</i>, sau apasă ✏️.\n<i>anulează</i> sau /undo șterge ultima înregistrare.\n\n<b>Rezumat</b>\n/summary — luna curentă pe categorii, comparată cu cea anterioară, cu sfaturi.\n/last — ultimele înregistrări · /reminders · /payments\n\n<b>Setări</b>\n/settings — monedă, fus orar, limbă · /keywords — cuvinte-cheie",
   "settings.title": "⚙️ <b>Setări</b>\n\nMonedă: <b>{currency}</b>\nFus orar: <b>{timezone}</b>\nLimbă: <b>{language}</b>\nMemento plăți: <b>cu {days} zile înainte</b>\nPrefix: <b>{prefix}</b>",
