@@ -91,6 +91,7 @@ See [.env.example](.env.example). Highlights:
 | `AI_EXTRACT_MODEL` / `AI_INSIGHTS_MODEL` | `claude-haiku-5-5` for parsing (≈ $0.0002 per message), `claude-opus-5-5` for insights |
 | `DEFAULT_LOCALE` / `DEFAULT_CURRENCY` / `DEFAULT_TIMEZONE` | Defaults for new chats; languages tied to one country (uz, kk, tr, de, …) override currency and timezone automatically |
 | `INTERNAL_TOKEN` | Enables `POST /internal/tick` for an external cron on scale-to-zero hosts |
+| `TELEGRAM_PROXY` | Optional HTTP(S) proxy for the Telegram API. Without it the bot still survives DNS filtering: if the system resolver answers `api.telegram.org` with a private IP, it resolves through DNS-over-HTTPS automatically |
 | `DASHBOARD_URL` / `DASHBOARD_TME_LINK` | Adds the "Open dashboard" button once the Mini App exists |
 
 ## Deployment

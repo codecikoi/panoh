@@ -1,8 +1,9 @@
-import { createDb, env, log, ratesAreStale, refreshRates, requireEnv } from "@budgie/core";
+import { createDb, env, log, requireEnv } from "@budgie/core";
 import { createBot } from "./bot/bot.js";
 import { setCommands } from "./bot/commands.js";
 import { createScheduler } from "./scheduler.js";
 import { createServer } from "./server.js";
+import { createTelegramAgent } from "./network.js";
 
 const e = env();
 const token = requireEnv("BOT_TOKEN");
@@ -11,8 +12,19 @@ const handle = await createDb();
 await handle.migrate();
 
 const deps = { db: handle.db, dashboardUrl: e.DASHBOARD_URL, dashboardLink: e.DASHBOARD_TME_LINK };
-const bot = createBot(token, deps);
-await bot.init();
+const bot = createBot(token, deps, {
+  client: {
+    timeoutSeconds: 30,
+    // grammY on Node uses node-fetch, which takes a classic https.Agent.
+    baseFetchConfig: { agent: createTelegramAgent(e.TELEGRAM_PROXY) } as unknown as RequestInit,
+  },
+});
+try {
+  await bot.init();
+} catch (err) {
+  log.error("bot: cannot reach the Telegram API. Check DNS, or set TELEGRAM_PROXY=http://host:port", { err });
+  process.exit(1);
+}
 log.info("bot: initialised", {
   username: bot.botInfo.username,
   canReadAllGroupMessages: bot.botInfo.can_read_all_group_messages,
@@ -21,19 +33,12 @@ log.info("bot: initialised", {
 if (!bot.botInfo.can_read_all_group_messages) {
   log.warn("bot: privacy mode is ON — keyword and prefix triggers will not work in groups. Disable it in @BotFather (/setprivacy).");
 }
-await setCommands(bot).catch((err) => log.warn("setMyCommands failed", { err }));
+// 30 localized command lists take ~20 s to register; do it in the background so polling starts right away.
+void setCommands(bot).catch((err) => log.warn("setMyCommands failed", { err }));
 
 const scheduler = createScheduler(bot.api, deps);
 const { server } = createServer(bot, scheduler);
 scheduler.start(30_000);
-
-void (async () => {
-  try {
-    if (await ratesAreStale(handle.db, 24)) await refreshRates(handle.db);
-  } catch (err) {
-    log.warn("initial rates refresh failed", { err });
-  }
-})();
 
 const allowedUpdates = ["message", "callback_query", "my_chat_member"] as const;
 if (e.BOT_MODE === "webhook") {

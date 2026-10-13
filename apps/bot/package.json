@@ -15,6 +15,7 @@
     "@hono/node-server": "^2.1.4",
     "grammy": "^1.38.0",
     "hono": "^4.9.0",
+    "https-proxy-agent": "^7.0.6",
     "luxon": "^3.7.2"
   },
   "devDependencies": {
