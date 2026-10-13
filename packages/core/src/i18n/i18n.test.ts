@@ -1,13 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { LOCALES } from "./locales/index.js";
 import { en } from "./locales/en.js";
-import { pickLocale, t } from "./index.js";
+import { SUPPORTED_LOCALES, pickLocale, t } from "./index.js";
 
 function placeholders(s: string): string[] {
   return [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!).sort();
 }
 
 describe("i18n", () => {
+  it("ships all 30 supported locales", () => {
+    expect(Object.keys(LOCALES).sort()).toEqual([...SUPPORTED_LOCALES].sort());
+  });
+
   it("every locale has every English key with the same placeholders", () => {
     for (const [code, table] of Object.entries(LOCALES)) {
       for (const key of Object.keys(en) as (keyof typeof en)[]) {
@@ -24,7 +28,9 @@ describe("i18n", () => {
 
   it("picks locales from Telegram language codes", () => {
     expect(pickLocale("ru")).toBe("ru");
-    expect(pickLocale("pt-br")).toBe("en");
+    expect(pickLocale("pt-br")).toBe("pt");
+    expect(pickLocale("zh-hans")).toBe("zh");
+    expect(pickLocale("xx")).toBe("en");
     expect(pickLocale("uz-UZ")).toBe("uz");
     expect(pickLocale(undefined, "ru")).toBe("ru");
   });

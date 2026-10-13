@@ -10,7 +10,7 @@ paid the loan                        → ✅ Paid · Loan · $300
 /summary                             → 📊 October 2026 … by category, vs September, tips
 ```
 
-Works in a private chat or in a group with your partner. Any language: parsing is done by Claude, the bot's own replies are localized (English, Russian, Uzbek hand-written; 27 more generated on demand).
+Works in a private chat or in a group with your partner. Any language: parsing is done by Claude, and the bot's own replies ship in 30 languages (English, Russian and Uzbek hand-written; the other 27 machine-translated, regenerate with `pnpm locales:translate --force`). Trigger keywords exist for all 30.
 
 ## How it works
 
@@ -63,7 +63,7 @@ pnpm test                 # unit + integration tests (PGlite in memory, Telegram
 pnpm typecheck
 pnpm build                # bundles apps/bot and apps/api into dist/
 pnpm simulate             # runs the extraction prompt on sample messages (needs ANTHROPIC_API_KEY)
-pnpm locales:translate    # generates the remaining 27 locales with Claude
+pnpm locales:translate    # regenerates machine-translated locales with Claude (--force to redo all)
 pnpm db:generate          # new SQL migration after changing packages/core/src/db/schema.ts
 ```
 
