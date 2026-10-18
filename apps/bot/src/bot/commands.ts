@@ -184,3 +184,40 @@ export async function setCommands(bot: Bot<BotContext>): Promise<void> {
     }
   }
 }
+
+/**
+ * Display name ("Madat — Family Budget") and the descriptions shown before /start, per language.
+ * Telegram rate-limits these setters hard (setMyName especially), so read first and only write what changed.
+ */
+export async function setProfile(bot: Bot<BotContext>): Promise<void> {
+  const failed: string[] = [];
+  const sync = async (label: string, want: string, get: () => Promise<string>, set: () => Promise<unknown>) => {
+    try {
+      if ((await get()) !== want) await set();
+    } catch {
+      failed.push(label);
+    }
+  };
+  const locales = ["en", ...availableLocales().filter((l) => l !== "en" && l.length === 2)];
+  for (const locale of locales) {
+    // English is the default for every language without its own entry.
+    const opts = locale === "en" ? {} : { language_code: locale as LanguageCode };
+    const name = t(locale, "bot.name");
+    const short = t(locale, "bot.short_description");
+    const description = t(locale, "bot.description");
+    await sync(`${locale}:name`, name, async () => (await bot.api.getMyName(opts)).name, () => bot.api.setMyName(name, opts));
+    await sync(
+      `${locale}:short_description`,
+      short,
+      async () => (await bot.api.getMyShortDescription(opts)).short_description,
+      () => bot.api.setMyShortDescription(short, opts),
+    );
+    await sync(
+      `${locale}:description`,
+      description,
+      async () => (await bot.api.getMyDescription(opts)).description,
+      () => bot.api.setMyDescription(description, opts),
+    );
+  }
+  if (failed.length) throw new Error(`not updated (retried on next start): ${failed.join(", ")}`);
+}

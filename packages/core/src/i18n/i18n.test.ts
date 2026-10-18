@@ -21,6 +21,14 @@ describe("i18n", () => {
     }
   });
 
+  it("bot profile texts fit Telegram limits", () => {
+    for (const [code, table] of Object.entries(LOCALES)) {
+      expect([...table["bot.name"]].length, `${code}:bot.name`).toBeLessThanOrEqual(64);
+      expect([...table["bot.short_description"]].length, `${code}:bot.short_description`).toBeLessThanOrEqual(120);
+      expect([...table["bot.description"]].length, `${code}:bot.description`).toBeLessThanOrEqual(512);
+    }
+  });
+
   it("interpolates and falls back", () => {
     expect(t("ru", "settings.saved", { value: "UZS" })).toBe("✅ Сохранил: UZS");
     expect(t("xx", "settings.saved", { value: "UZS" })).toBe("✅ Saved: UZS");

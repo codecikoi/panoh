@@ -1,6 +1,6 @@
 import { createDb, env, log, requireEnv } from "@madat/core";
 import { createBot } from "./bot/bot.js";
-import { setCommands } from "./bot/commands.js";
+import { setCommands, setProfile } from "./bot/commands.js";
 import { createScheduler } from "./scheduler.js";
 import { createServer } from "./server.js";
 import { createTelegramAgent } from "./network.js";
@@ -33,8 +33,11 @@ log.info("bot: initialised", {
 if (!bot.botInfo.can_read_all_group_messages) {
   log.warn("bot: privacy mode is ON — keyword and prefix triggers will not work in groups. Disable it in @BotFather (/setprivacy).");
 }
-// 30 localized command lists take ~20 s to register; do it in the background so polling starts right away.
-void setCommands(bot).catch((err) => log.warn("setMyCommands failed", { err }));
+// 30 localized command lists and profiles take a while to register; do it in the background so polling starts right away.
+void setCommands(bot)
+  .catch((err) => log.warn("setMyCommands failed", { err }))
+  .then(() => setProfile(bot))
+  .catch((err) => log.warn("bot profile update incomplete", { err }));
 
 const scheduler = createScheduler(bot.api, deps);
 const { server } = createServer(bot, scheduler);

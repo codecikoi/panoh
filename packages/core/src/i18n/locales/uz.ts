@@ -2,6 +2,10 @@ import type { LocaleStrings } from "./en.js";
 
 export const uz: LocaleStrings = {
   "app.name": "Madat",
+  "bot.name": "Madat — oilaviy byudjet",
+  "bot.short_description": "Xarajatlarni oddiy yozing — Madat oila byudjetini yuritadi, to'lovlarni eslatadi va pul qayerga ketishini ko'rsatadi.",
+  "bot.description":
+    "👋 Men Madat, oilaviy byudjet yordamchisiman.\n\nMenga odamga yozgandek yozing:\n• oziq-ovqat 150 ming\n• 9 mln oylik oldim\n• juma kuni bog'cha pulini to'lashni eslat\n\nXarajat va daromadlarni yozib boraman, to'lov va kreditlarni eslataman, har oy toifalar bo'yicha hisobot va maslahatlar yuboraman.\n\nShaxsiy chatda yoki oilaviy guruhda ishlayman.",
 
   "cmd.start": "Boshlash / sozlash",
   "cmd.help": "Qanday ishlataman",

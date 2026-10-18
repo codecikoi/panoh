@@ -3,6 +3,10 @@ import type { LocaleStrings } from "./en.js";
 
 export const ko: LocaleStrings = {
   "app.name": "Madat",
+  "bot.name": "Madat — 가계부",
+  "bot.short_description": "평소처럼 지출을 적으세요. Madat이 가계부를 관리하고, 결제를 알려주고, 돈이 어디로 가는지 보여줍니다.",
+  "bot.description":
+    "👋 저는 Madat, 가족 가계부 도우미예요.\n\n사람에게 말하듯 적어 주세요:\n• 장보기 45000원\n• 월급 300만원 받음\n• 금요일에 어린이집 비용 내라고 알려줘\n\n지출과 수입을 기록하고, 청구서와 정기 결제를 알려드리고, 매달 카테고리별 요약과 조언을 보내드려요.\n\n개인 채팅에서 쓰거나 배우자와 함께 있는 그룹에 추가하세요.",
   "cmd.start": "시작 / 설정",
   "cmd.help": "사용법",
   "cmd.summary": "월간 요약",

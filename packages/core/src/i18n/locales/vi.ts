@@ -3,6 +3,10 @@ import type { LocaleStrings } from "./en.js";
 
 export const vi: LocaleStrings = {
   "app.name": "Madat",
+  "bot.name": "Madat — Ngân sách gia đình",
+  "bot.short_description": "Ghi chi tiêu như nhắn tin bình thường — Madat quản lý ngân sách gia đình, nhắc thanh toán và cho biết tiền đi đâu.",
+  "bot.description":
+    "👋 Mình là Madat, trợ lý ngân sách gia đình.\n\nCứ nhắn như với người thật:\n• đi chợ 300k\n• nhận lương 20 triệu\n• nhắc mình thứ Sáu đóng tiền nhà trẻ\n\nMình ghi lại chi tiêu và thu nhập, nhắc hóa đơn và khoản thanh toán định kỳ, mỗi tháng gửi tổng kết theo danh mục kèm gợi ý.\n\nDùng trong chat riêng hoặc thêm mình vào nhóm cùng vợ/chồng.",
   "cmd.start": "Bắt đầu / thiết lập",
   "cmd.help": "Cách dùng",
   "cmd.summary": "Tổng kết tháng",

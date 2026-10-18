@@ -3,6 +3,10 @@ import type { LocaleStrings } from "./en.js";
 
 export const es: LocaleStrings = {
   "app.name": "Madat",
+  "bot.name": "Madat — Presupuesto familiar",
+  "bot.short_description": "Escribe tus gastos como siempre: Madat lleva el presupuesto familiar, recuerda los pagos y muestra adónde va el dinero.",
+  "bot.description":
+    "👋 Soy Madat, tu asistente de presupuesto familiar.\n\nEscríbeme como a una persona:\n• supermercado 45$\n• cobré el sueldo 3000$\n• recuérdame el viernes pagar la guardería\n\nRegistro gastos e ingresos, te recuerdo facturas y pagos recurrentes y cada mes envío un resumen por categorías con consejos.\n\nÚsame en un chat privado o añádeme a un grupo con tu pareja.",
   "cmd.start": "Inicio / configuración",
   "cmd.help": "Cómo usarlo",
   "cmd.summary": "Resumen del mes",

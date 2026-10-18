@@ -3,6 +3,10 @@ import type { LocaleStrings } from "./en.js";
 
 export const zh: LocaleStrings = {
   "app.name": "Madat",
+  "bot.name": "Madat — 家庭账本",
+  "bot.short_description": "像平时聊天一样记支出，Madat 帮你管理家庭预算、提醒付款，并告诉你钱花在哪里。",
+  "bot.description":
+    "👋 我是 Madat，你的家庭预算助手。\n\n像跟人说话一样告诉我：\n• 买菜 150元\n• 工资到账 8000元\n• 周五提醒我交幼儿园费用\n\n我会记录支出和收入，提醒账单和定期付款，每月按类别发送总结和建议。\n\n可以私聊使用，也可以把我拉进和伴侣的群组。",
   "cmd.start": "开始 / 设置",
   "cmd.help": "使用说明",
   "cmd.summary": "月度总结",

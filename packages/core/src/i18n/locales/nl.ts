@@ -3,6 +3,10 @@ import type { LocaleStrings } from "./en.js";
 
 export const nl: LocaleStrings = {
   "app.name": "Madat",
+  "bot.name": "Madat — Gezinsbudget",
+  "bot.short_description": "Schrijf uitgaven gewoon op – Madat beheert het gezinsbudget, herinnert aan betalingen en toont waar het geld heen gaat.",
+  "bot.description":
+    "👋 Ik ben Madat, je assistent voor het gezinsbudget.\n\nSchrijf me zoals je een mens zou schrijven:\n• boodschappen 45€\n• salaris 3000€ ontvangen\n• herinner me vrijdag om de opvang te betalen\n\nIk registreer uitgaven en inkomsten, herinner je aan rekeningen en vaste betalingen en stuur elke maand een overzicht per categorie met tips.\n\nGebruik me in een privéchat of voeg me toe aan een groep met je partner.",
   "cmd.start": "Start / instellen",
   "cmd.help": "Hoe werkt het",
   "cmd.summary": "Maandoverzicht",

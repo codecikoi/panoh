@@ -3,6 +3,10 @@ import type { LocaleStrings } from "./en.js";
 
 export const tr: LocaleStrings = {
   "app.name": "Madat",
+  "bot.name": "Madat — Aile bütçesi",
+  "bot.short_description": "Harcamalarını her zamanki gibi yaz — Madat aile bütçeni tutar, ödemeleri hatırlatır, paranın nereye gittiğini gösterir.",
+  "bot.description":
+    "👋 Ben Madat, aile bütçesi asistanınım.\n\nBana bir insana yazar gibi yaz:\n• market 450₺\n• maaş 30000₺ aldım\n• cuma günü kreş ücretini ödemeyi hatırlat\n\nGelir ve giderleri kaydederim, faturaları ve düzenli ödemeleri hatırlatırım, her ay kategorilere göre özet ve öneriler gönderirim.\n\nÖzel sohbette kullan ya da beni eşinle bir gruba ekle.",
   "cmd.start": "Başlat / kurulum",
   "cmd.help": "Nasıl kullanılır",
   "cmd.summary": "Aylık özet",

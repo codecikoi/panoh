@@ -1,5 +1,9 @@
 export const en = {
   "app.name": "Madat",
+  "bot.name": "Madat — Family Budget",
+  "bot.short_description": "Write expenses as usual — Madat tracks the family budget, reminds you about bills and shows where the money goes.",
+  "bot.description":
+    "👋 I'm Madat, your family budget assistant.\n\nJust write like you would to a person:\n• groceries 45$\n• salary 3000$ received\n• remind me on Friday to pay for kindergarten\n\nI record expenses and income, remind you about bills and recurring payments, and send a monthly summary by category with tips.\n\nUse me in a private chat or add me to a group with your partner.",
 
   "cmd.start": "Start / setup",
   "cmd.help": "How to use",

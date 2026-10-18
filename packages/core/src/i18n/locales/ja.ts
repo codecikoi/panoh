@@ -3,6 +3,10 @@ import type { LocaleStrings } from "./en.js";
 
 export const ja: LocaleStrings = {
   "app.name": "Madat",
+  "bot.name": "Madat — 家計簿",
+  "bot.short_description": "いつも通りに支出を書くだけ。Madatが家計を記録し、支払いをリマインドし、お金の行き先を見せます。",
+  "bot.description":
+    "👋 Madatです。家族の家計アシスタントです。\n\n人に話すように書いてください:\n• スーパー 4500円\n• 給料30万円入った\n• 金曜に保育料を払うのをリマインドして\n\n支出と収入を記録し、請求や定期払いをリマインドし、毎月カテゴリ別のまとめとアドバイスを送ります。\n\n個人チャットで使うか、パートナーとのグループに追加してください。",
   "cmd.start": "開始 / 設定",
   "cmd.help": "使い方",
   "cmd.summary": "今月のまとめ",
