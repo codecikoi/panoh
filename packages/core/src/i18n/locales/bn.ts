@@ -186,4 +186,7 @@ export const bn: LocaleStrings = {
   "summary.budgets": "🎯 <b>সীমা</b>",
   "summary.goals": "🐷 <b>সঞ্চয়</b>",
   "summary.plans": "🗓 <b>এই মাসের পরিকল্পনা</b>",
+  "correction.nothing": "🤔 কী বদলাতে হবে বুঝতে পারিনি। নিশ্চিতকরণ বার্তার উত্তরে লিখুন, যেমন «amount 2M», «move to the 15th» বা «category transport»।",
+  "correction.confirm_amount": "🤔 পরিমাণ {old} থেকে <b>{new}</b> করবেন? এটা আগের থেকে অনেক আলাদা।",
+  "correction.amount_kept": "👌 {amount}-ই রাখা হলো।",
 };

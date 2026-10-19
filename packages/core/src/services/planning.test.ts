@@ -20,6 +20,7 @@ import {
   setBudget,
 } from "./planning.js";
 import { loadMonthlySummary } from "./summary.js";
+import { describeEdits, diffFields, listEdits, logEdit } from "./edits.js";
 
 let id = 1;
 const created = new Date("2026-09-01T00:00:00Z");
@@ -193,5 +194,25 @@ describe("planning services (pglite)", () => {
     expect(summary.outlook.forecast).toMatchObject({ free: -1700000 });
     expect(await removeBudget(handle.db, household.id, "dining")).toBe(true);
     expect(await removeBudget(handle.db, household.id, "dining")).toBe(false);
+  });
+});
+
+describe("record edits", () => {
+  it("diffs only changed fields and describes the history", async () => {
+    expect(diffFields({ amount: 3000000, title: "x", at: new Date("2026-10-01T00:00:00Z") }, { amount: 3000000, title: "x", at: new Date("2026-10-01T00:00:00Z") })).toBeNull();
+    const diff = diffFields({ amount: 3000000, plannedOn: "2026-10-31", extra: 1 }, { amount: 11, plannedOn: "2026-10-31" })!;
+    expect(diff).toEqual({ before: { amount: 3000000 }, after: { amount: 11 } });
+
+    const handle = await createTestDb();
+    try {
+      const { household } = await getOrCreateHousehold(handle.db, { chatId: -3001, chatType: "supergroup" }, { locale: "ru", currency: "UZS", timezone: "Asia/Tashkent" });
+      await logEdit(handle.db, household.id, "plan", 7, diff);
+      await logEdit(handle.db, household.id, "plan", 7, { before: { plannedOn: "2026-10-31" }, after: { plannedOn: "2026-11-11" } });
+      await logEdit(handle.db, household.id, "goal", 7, { before: { title: "a" }, after: { title: "b" } });
+      const edits = await listEdits(handle.db, "plan", 7);
+      expect(describeEdits(edits)).toBe('edit 1: amount 3000000 → 11\nedit 2: plannedOn "2026-10-31" → "2026-11-11"');
+    } finally {
+      await handle.close();
+    }
   });
 });

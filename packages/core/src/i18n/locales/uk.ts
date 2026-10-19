@@ -186,4 +186,7 @@ export const uk: LocaleStrings = {
   "summary.budgets": "🎯 <b>Ліміти</b>",
   "summary.goals": "🐷 <b>Заощадження</b>",
   "summary.plans": "🗓 <b>Заплановано цього місяця</b>",
+  "correction.nothing": "🤔 Не зрозумів, що змінити. Дайте відповідь на підтвердження, наприклад: «сума 2M», «перенеси на 15-те» або «категорія транспорт».",
+  "correction.confirm_amount": "🤔 Змінити суму з {old} на <b>{new}</b>? Це суттєво відрізняється від попередньої.",
+  "correction.amount_kept": "👌 Залишив {amount}.",
 };

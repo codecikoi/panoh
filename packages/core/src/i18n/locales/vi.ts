@@ -186,4 +186,7 @@ export const vi: LocaleStrings = {
   "summary.budgets": "🎯 <b>Hạn mức</b>",
   "summary.goals": "🐷 <b>Tiết kiệm</b>",
   "summary.plans": "🗓 <b>Dự kiến tháng này</b>",
+  "correction.nothing": "🤔 Mình chưa hiểu cần sửa gì. Hãy trả lời tin nhắn xác nhận, ví dụ «số tiền 2M», «chuyển sang ngày 15» hoặc «danh mục đi lại».",
+  "correction.confirm_amount": "🤔 Đổi số tiền từ {old} thành <b>{new}</b> nhé? Con số này khác khá nhiều so với trước đó.",
+  "correction.amount_kept": "👌 Đã giữ nguyên {amount}.",
 };

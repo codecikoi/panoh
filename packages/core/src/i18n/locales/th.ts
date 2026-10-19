@@ -186,4 +186,7 @@ export const th: LocaleStrings = {
   "summary.budgets": "🎯 <b>วงเงิน</b>",
   "summary.goals": "🐷 <b>เงินออม</b>",
   "summary.plans": "🗓 <b>แผนของเดือนนี้</b>",
+  "correction.nothing": "🤔 ไม่แน่ใจว่าต้องการแก้อะไร ลองตอบกลับข้อความยืนยัน เช่น «จำนวน 2M», «ย้ายไปวันที่ 15» หรือ «หมวด ค่าเดินทาง»",
+  "correction.confirm_amount": "🤔 เปลี่ยนจำนวนจาก {old} เป็น <b>{new}</b> ใช่ไหม? ต่างจากเดิมมากเลยนะ",
+  "correction.amount_kept": "👌 คงไว้ที่ {amount} แล้ว",
 };

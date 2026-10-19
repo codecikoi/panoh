@@ -186,4 +186,7 @@ export const ro: LocaleStrings = {
   "summary.budgets": "🎯 <b>Limite</b>",
   "summary.goals": "🐷 <b>Economii</b>",
   "summary.plans": "🗓 <b>Planificat luna aceasta</b>",
+  "correction.nothing": "🤔 Nu am înțeles ce trebuie schimbat. Răspunde la confirmare, de ex. «suma 2M», «mută pe 15» sau «categoria transport».",
+  "correction.confirm_amount": "🤔 Schimb suma din {old} în <b>{new}</b>? E foarte diferită de cea de dinainte.",
+  "correction.amount_kept": "👌 Am păstrat {amount}.",
 };

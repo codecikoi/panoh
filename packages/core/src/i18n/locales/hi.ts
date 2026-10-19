@@ -186,4 +186,7 @@ export const hi: LocaleStrings = {
   "summary.budgets": "🎯 <b>सीमाएँ</b>",
   "summary.goals": "🐷 <b>बचत</b>",
   "summary.plans": "🗓 <b>इस महीने की योजनाएँ</b>",
+  "correction.nothing": "🤔 समझ नहीं आया कि क्या बदलना है। पुष्टि वाले मैसेज का जवाब दें, जैसे «राशि 2M», «15 तारीख पर करें» या «श्रेणी परिवहन»।",
+  "correction.confirm_amount": "🤔 राशि {old} से बदलकर <b>{new}</b> कर दें? यह पहले से काफ़ी अलग है।",
+  "correction.amount_kept": "👌 {amount} ही रहने दिया।",
 };

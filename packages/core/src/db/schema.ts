@@ -252,6 +252,23 @@ export const reminders = pgTable(
   ],
 );
 
+/** Field-level history of corrections to any record, so "put it back as it was" works and the model sees what changed. */
+export const recordEdits = pgTable(
+  "record_edits",
+  {
+    id: serial("id").primaryKey(),
+    householdId: integer("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    recordType: text("record_type").$type<"transaction" | "reminder" | "recurring" | "plan" | "goal">().notNull(),
+    recordId: integer("record_id").notNull(),
+    before: jsonb("before").$type<Record<string, unknown>>().notNull(),
+    after: jsonb("after").$type<Record<string, unknown>>().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("record_edits_record_idx").on(t.recordType, t.recordId)],
+);
+
 export const exchangeRates = pgTable("exchange_rates", {
   currency: text("currency").primaryKey(),
   rate: numeric("rate", { precision: 18, scale: 6, mode: "number" }).notNull(),
@@ -295,3 +312,5 @@ export type NewPlan = typeof plans.$inferInsert;
 export type Budget = typeof budgets.$inferSelect;
 export type Goal = typeof goals.$inferSelect;
 export type NewGoal = typeof goals.$inferInsert;
+export type RecordEdit = typeof recordEdits.$inferSelect;
+export type RecordType = RecordEdit["recordType"];

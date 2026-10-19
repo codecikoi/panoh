@@ -78,6 +78,8 @@ describe("normalizeItems", () => {
     expect(msg).toContain("Default reminder time when none is given: 09:00");
     expect(msg).toContain('"кредит"');
     expect(msg).toContain("REPLY");
+    expect(msg).not.toContain("Most recent record");
+    expect(buildExtractionUserMessage({ ...ctx, lastRecord: "planned expense: \"x\"" })).toContain('Most recent record in this chat (the message is not a reply): planned expense: "x"');
     expect(msg).toContain(ctx.text);
   });
 });

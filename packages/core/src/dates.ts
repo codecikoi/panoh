@@ -57,6 +57,11 @@ export function formatMonth(key: string, locale: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/** Month name for the middle of a sentence: «на ноябрь 2026», "for November 2026". */
+export function formatMonthInline(key: string, locale: string): string {
+  return DateTime.fromFormat(key, "yyyy-LL", { zone: "utc" }).setLocale(locale).toFormat("LLLL yyyy");
+}
+
 export function formatDate(iso: string, locale: string, tz = "utc"): string {
   const dt = DateTime.fromISO(iso, { zone: tz }).setLocale(locale);
   return dt.toLocaleString({ day: "numeric", month: "short" });

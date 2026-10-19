@@ -186,4 +186,7 @@ export const nl: LocaleStrings = {
   "summary.budgets": "🎯 <b>Limieten</b>",
   "summary.goals": "🐷 <b>Sparen</b>",
   "summary.plans": "🗓 <b>Gepland deze maand</b>",
+  "correction.nothing": "🤔 Ik snap niet wat ik moet aanpassen. Reageer op de bevestiging, bijv. «bedrag 2M», «verplaats naar de 15e» of «categorie vervoer».",
+  "correction.confirm_amount": "🤔 Bedrag wijzigen van {old} naar <b>{new}</b>? Dat is wel heel anders dan eerst.",
+  "correction.amount_kept": "👌 {amount} blijft staan.",
 };

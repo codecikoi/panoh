@@ -34,7 +34,7 @@ import {
 } from "@madat/core";
 import type { BotContext } from "./context.js";
 import * as R from "./render.js";
-import { budgetLineFor, payPlan, recordPayment } from "./actions.js";
+import { applyCorrection, budgetLineFor, correctionOf, loadTarget, payPlan, recordPayment } from "./actions.js";
 import { sendSummary } from "./summary.js";
 import { safeEdit } from "./telegram.js";
 
@@ -154,6 +154,27 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
           await edit(R.planPaidText(scope, plan, tx) + (await budgetLineFor(db, scope, tx)), R.txKeyboard(scope, tx));
           if (messageId) await updateTransaction(db, tx.id, { botMessageId: messageId });
           return answer(t(scope.locale, "confirm.done"));
+        }
+        return answer();
+      }
+
+      if (ns === "fix") {
+        // Yes/No on a suspicious amount correction: fix:amt:<type>:<id>:<amount> or fix:keep:<type>:<id>
+        const target = await loadTarget(db, rest[0] ?? "", Number(rest[1]));
+        if (!target || target.row.householdId !== scope.household.id) return answer(t(scope.locale, "hint.not_found"));
+        if (action === "amt") {
+          const amount = Number(rest[2]);
+          if (!Number.isFinite(amount) || amount <= 0) return answer();
+          const { rates } = await getRates(db);
+          const place = { chatId, isPrivate: message?.chat.type === "private" };
+          await applyCorrection(ctx, target, correctionOf({ amount }), place, rates, { trustAmount: true });
+          await edit(t(scope.locale, "confirm.updated"));
+          return answer(t(scope.locale, "confirm.done"));
+        }
+        if (action === "keep") {
+          const row = target.row as { amount?: number | null; targetAmount?: number; currency: string };
+          const amount = row.amount ?? row.targetAmount;
+          await edit(t(scope.locale, "correction.amount_kept", { amount: amount != null ? R.money(scope, amount, row.currency) : "—" }));
         }
         return answer();
       }

@@ -202,6 +202,9 @@ export const en = {
   "summary.budgets": "🎯 <b>Limits</b>",
   "summary.goals": "🐷 <b>Savings</b>",
   "summary.plans": "🗓 <b>Planned this month</b>",
+  "correction.nothing": "🤔 I didn't get what to change. Reply to the confirmation, e.g. «amount 2M», «move to the 15th» or «category transport».",
+  "correction.confirm_amount": "🤔 Change the amount from {old} to <b>{new}</b>? That's very different from before.",
+  "correction.amount_kept": "👌 Kept {amount}.",
 } as const;
 
 export type LocaleStrings = { [K in keyof typeof en]: string };

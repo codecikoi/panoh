@@ -186,4 +186,7 @@ export const tr: LocaleStrings = {
   "summary.budgets": "🎯 <b>Limitler</b>",
   "summary.goals": "🐷 <b>Birikimler</b>",
   "summary.plans": "🗓 <b>Bu ay planlananlar</b>",
+  "correction.nothing": "🤔 Neyi değiştireceğimi anlayamadım. Onay mesajını yanıtlayarak yaz, ör. «tutar 2M», «15'ine taşı» veya «kategori ulaşım».",
+  "correction.confirm_amount": "🤔 Tutar {old} yerine <b>{new}</b> olarak değiştirilsin mi? Öncekinden çok farklı.",
+  "correction.amount_kept": "👌 {amount} olarak bırakıldı.",
 };

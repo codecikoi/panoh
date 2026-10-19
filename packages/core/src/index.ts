@@ -21,6 +21,8 @@ export type {
   Budget,
   Goal,
   NewGoal,
+  RecordEdit,
+  RecordType,
   TriggerConfig,
 } from "./db/schema.js";
 export * from "./ai/extract.js";
@@ -35,4 +37,5 @@ export * from "./services/insights.js";
 export * from "./services/processed.js";
 export * from "./services/records.js";
 export * from "./services/planning.js";
+export * from "./services/edits.js";
 export * from "./telegram/initData.js";

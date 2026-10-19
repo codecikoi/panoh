@@ -186,4 +186,7 @@ export const tg: LocaleStrings = {
   "summary.budgets": "🎯 <b>Лимитҳо</b>",
   "summary.goals": "🐷 <b>Пасандоз</b>",
   "summary.plans": "🗓 <b>Нақшаҳои ин моҳ</b>",
+  "correction.nothing": "🤔 Нафаҳмидам, чиро иваз кунам. Ба тасдиқнома ҷавоб диҳед, масалан: «маблағ 2M», «ба 15-ум гузарон» ё «категория нақлиёт».",
+  "correction.confirm_amount": "🤔 Маблағро аз {old} ба <b>{new}</b> иваз кунам? Ин аз пештара хеле фарқ мекунад.",
+  "correction.amount_kept": "👌 {amount} боқӣ монд.",
 };

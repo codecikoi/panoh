@@ -186,4 +186,7 @@ export const ko: LocaleStrings = {
   "summary.budgets": "🎯 <b>한도</b>",
   "summary.goals": "🐷 <b>저축</b>",
   "summary.plans": "🗓 <b>이번 달 예정 지출</b>",
+  "correction.nothing": "🤔 무엇을 바꿀지 잘 모르겠어요. 확인 메시지에 답장으로 알려주세요. 예: «금액 2M», «15일로 이동», «카테고리 교통».",
+  "correction.confirm_amount": "🤔 금액을 {old}에서 <b>{new}</b>(으)로 바꿀까요? 이전 금액과 차이가 꽤 커요.",
+  "correction.amount_kept": "👌 {amount} 그대로 유지했어요.",
 };

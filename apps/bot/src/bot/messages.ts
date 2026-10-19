@@ -12,7 +12,7 @@ import {
   type ExtractionResult,
 } from "@madat/core";
 import type { BotContext } from "./context.js";
-import { applyItems, describeTarget, resolveReplyTarget } from "./actions.js";
+import { applyItems, describeWithHistory, recentRecord, resolveReplyTarget } from "./actions.js";
 import { sendSummary } from "./summary.js";
 import { safeReact } from "./telegram.js";
 import { ensureWelcome } from "./commands.js";
@@ -52,6 +52,7 @@ export function registerMessages(bot: Bot<BotContext>): void {
     const replyTarget = isReplyToBot && replyTo ? await resolveReplyTarget(ctx.deps.db, chat.id, replyTo.message_id) : undefined;
     void safeReact(ctx, "👀");
 
+    const lastRecord = replyTarget ? undefined : await recentRecord(ctx.deps.db, scope.household.id);
     const [recurring, plans, goals] = await Promise.all([
       listRecurring(ctx.deps.db, scope.household.id),
       listOpenPlans(ctx.deps.db, scope.household.id),
@@ -70,7 +71,9 @@ export function registerMessages(bot: Bot<BotContext>): void {
         recurringPayments: recurring.map((p) => ({ name: p.name, amount: p.amount, currency: p.currency, dayOfMonth: p.dayOfMonth })),
         plans: plans.slice(0, 20).map((p) => ({ name: p.title, amount: p.amount, currency: p.currency, date: p.plannedOn })),
         goals: goals.map((g) => ({ name: g.title, target: g.targetAmount, currency: g.currency })),
-        replyTo: replyTarget ? describeTarget(replyTarget, scope.tz) : undefined,
+        replyTo: replyTarget ? await describeWithHistory(ctx.deps.db, replyTarget, scope.tz) : undefined,
+        lastRecord: lastRecord ? await describeWithHistory(ctx.deps.db, lastRecord, scope.tz) : undefined,
+        addressed: trigger.explicit,
         recent: recentByChat.get(chat.id),
       });
     } catch (err) {
@@ -110,6 +113,8 @@ export function registerMessages(bot: Bot<BotContext>): void {
       }
       return;
     }
-    await safeReact(ctx, outcome.corrected > 0 && outcome.corrected === outcome.handled ? "👌" : "✍");
+    const reaction =
+      outcome.clarified === outcome.handled ? "🤔" : outcome.corrected > 0 && outcome.corrected + outcome.clarified === outcome.handled ? "👌" : "✍";
+    await safeReact(ctx, reaction);
   });
 }

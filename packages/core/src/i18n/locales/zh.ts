@@ -186,4 +186,7 @@ export const zh: LocaleStrings = {
   "summary.budgets": "🎯 <b>限额</b>",
   "summary.goals": "🐷 <b>储蓄</b>",
   "summary.plans": "🗓 <b>本月计划</b>",
+  "correction.nothing": "🤔 我没明白要改什么。请回复确认消息，例如「金额 2M」、「改到15号」或「分类 交通」。",
+  "correction.confirm_amount": "🤔 要把金额从 {old} 改为 <b>{new}</b> 吗？和之前差别很大哦。",
+  "correction.amount_kept": "👌 已保留 {amount}。",
 };

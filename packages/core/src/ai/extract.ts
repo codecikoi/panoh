@@ -21,6 +21,7 @@ export const ITEM_KINDS = [
   "correction",
   "cancel_last",
   "summary_request",
+  "clarify",
   "none",
 ] as const;
 export type ItemKind = (typeof ITEM_KINDS)[number];
@@ -83,8 +84,12 @@ export interface ExtractionContext {
   recurringPayments: { name: string; amount: number | null; currency: string; dayOfMonth: number }[];
   plans?: { name: string; amount: number; currency: string; date: string }[];
   goals?: { name: string; target: number; currency: string }[];
-  /** Short description of the bot message the user replied to, if any. */
+  /** Short description of the bot message the user replied to (with its edit history), if any. */
   replyTo?: string;
+  /** The most recent record in the chat (with its edit history) when the message is not a reply. */
+  lastRecord?: string;
+  /** The message addresses the bot directly (reply, mention, name, prefix or private chat). */
+  addressed?: boolean;
   /** Recent processed messages, oldest first. */
   recent?: string[];
 }
@@ -114,6 +119,7 @@ Return nothing but the structured output.
 - correction: the message replies to a bot confirmation and changes something ("not 150, 115", "category transport", "it was yesterday", "in dollars"). Fill ONLY the changed fields; leave everything else null (note "" if unchanged).
 - cancel_last: the user wants to remove the last record ("undo", "delete that", "wrong", "отмени", "bekor").
 - summary_request: the user asks for totals / summary / how much was spent.
+- clarify: you cannot act safely without asking, or the user asks about a record or about what the bot just did ("why didn't the amount change?", "what did you record?"). Put a short reply (≤ 200 chars) in note, in the message's language, friendly and specific: ask ONE concrete question, or answer using only facts from the context (the reply target, its edit history, the most recent record, recent chat). Never invent amounts or dates. Return clarify alone, not together with a record for the same thing.
 - none: nothing actionable (chit-chat, questions, plans with neither an amount nor a date).
 
 ## Rules
@@ -128,7 +134,13 @@ Return nothing but the structured output.
 - note: short (≤ 40 chars), in the message's language, no amount or currency inside, lowercase unless it is a proper name. For recurring payments the note is the bill name ("кредит", "квартира", "internet"); for plans and goals it is what the money is for ("подарок на свадьбу", "отпуск").
 - category must be one of the lists below. Loan or mortgage instalments → loans. Taxi, fuel, bus → transport. Cafe, restaurant, delivery → dining. Supermarket, market, food at home → groceries. Pharmacy, doctor → health. Money sent to parents/relatives → family.
 - confidence: 0.9–1 clear and complete; 0.6–0.8 minor ambiguity (e.g. category guessed); ≤ 0.5 missing data or unclear intent.
-- If the message is a reply to a bot confirmation (provided as context) and it reads like a change, it is a correction, not a new record. Moving a planned expense or a goal deadline is a correction with the new date (and date_approximate).
+- If the message is a reply to a bot confirmation (provided as context) and it reads like a change, it is a correction, not a new record.
+- A message that is not a reply but clearly refers to the most recent record ("make it 2 million", "move it to the 15th") is a correction of that record; a question about it is clarify.
+- "Put it back", "as it was", "undo the change" in a correction: take the old values from the edit history and return them as the changed fields. If the history does not have them, clarify.
+- A bare number with no currency or multiplier, replying to a planned expense or goal: if it is 1–31 and the record has no exact day (month only), it is the day of the month (a date correction), not an amount. Otherwise, if it is far off the current amount (e.g. "11" for 3 000 000), clarify whether it is a day or an amount.
+- A day of the month that has already passed this month, for a record in the current month ("on the 11th" when today is the 19th): clarify whether to move it to that day next month instead of moving it silently.
+- Never return a correction that changes nothing; clarify what should change instead.
+- When the message addresses the bot directly but holds no record (a greeting, thanks, declining a change you offered like "leave it", a question about how you work), return clarify with a short friendly answer instead of none. Otherwise chit-chat is none. Moving a planned expense or a goal deadline is a correction with the new date (and date_approximate).
 - language: BCP-47 code of the message language.
 - Ignore anything that is not a financial record, reminder, bill or correction. Do not moralize, do not add commentary.
 
@@ -162,6 +174,8 @@ export function buildExtractionUserMessage(ctx: ExtractionContext): string {
     for (const r of ctx.recent) lines.push(`- ${r}`);
   }
   if (ctx.replyTo) lines.push(`The message is a REPLY to this bot message: ${ctx.replyTo}`);
+  else if (ctx.lastRecord) lines.push(`Most recent record in this chat (the message is not a reply): ${ctx.lastRecord}`);
+  if (ctx.addressed) lines.push("The message addresses the bot directly.");
   lines.push(`Author: ${ctx.authorName}`);
   lines.push(`Message: """${ctx.text}"""`);
   return lines.join("\n");
@@ -213,7 +227,7 @@ export function normalizeItems(raw: RawExtractedItem[], ctx: ExtractionContext):
         r.kind === "expense" || r.kind === "income" || r.kind === "planned_expense"
           ? (category ?? normalizeCategory(kindForCategory, null))
           : category,
-      note: (r.note ?? "").trim().slice(0, 80),
+      note: (r.note ?? "").trim().slice(0, r.kind === "clarify" ? 300 : 80),
       date,
       hasDate,
       dateApproximate,

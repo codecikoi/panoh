@@ -26,7 +26,7 @@ Telegram ──▶ apps/bot ──▶ packages/core ──▶ Postgres
 Mini App ──▶ apps/api  (Hono, Telegram initData auth) ──▶ packages/core
 ```
 
-* **Only marked messages are processed.** In groups the bot reacts to messages that start with the prefix (`+` by default), start with the bot's name (`madat …` or `мадат …`, any case), mention the bot, reply to it, contain a trigger keyword (`spent`, `paid`, `remind`, `потратил`, `оплатил`, `напомни`, `sarfladim`, …) or contain an amount with a currency. Everything else is ignored and never stored. Private chats process every message.
+* **Only marked messages are processed.** In groups the bot reacts to messages that start with the prefix (`+` by default), start with the bot's name (`madat`, `мадат`, `madad` or `мадад`, any case), mention the bot, reply to it, contain a trigger keyword (`spent`, `paid`, `remind`, `потратил`, `оплатил`, `напомни`, `sarfladim`, …) or contain an amount with a currency. Everything else is ignored and never stored. Private chats process every message.
 * **Numbers are computed in code.** The summary (totals, categories, month-over-month deltas, projections, upcoming bills) is calculated from the database; Claude only writes the short insights section from those numbers.
 * **Every record is confirmed in chat** with ✏️ / 🗑 buttons. Reply to a confirmation with "not 150, 115" or "category transport" to fix it; "undo" or /undo removes the last record. Low-confidence parses ask "record this?" before counting.
 * **Bills remind themselves.** A recurring payment reminds N days before and on the day, with a ✅ Paid button that also books the expense.

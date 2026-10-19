@@ -186,4 +186,7 @@ export const ur: LocaleStrings = {
   "summary.budgets": "🎯 <b>حدیں</b>",
   "summary.goals": "🐷 <b>بچت</b>",
   "summary.plans": "🗓 <b>اس مہینے کے منصوبے</b>",
+  "correction.nothing": "🤔 سمجھ نہیں آیا کیا بدلنا ہے۔ تصدیقی پیغام کا جواب دیں، مثلاً «رقم 2M»، «15 تاریخ پر کر دیں» یا «زمرہ ٹرانسپورٹ»۔",
+  "correction.confirm_amount": "🤔 رقم {old} سے <b>{new}</b> کر دیں؟ یہ پہلے والی رقم سے کافی مختلف ہے۔",
+  "correction.amount_kept": "👌 {amount} ہی رہنے دیا۔",
 };

@@ -186,4 +186,7 @@ export const id: LocaleStrings = {
   "summary.budgets": "🎯 <b>Batas</b>",
   "summary.goals": "🐷 <b>Tabungan</b>",
   "summary.plans": "🗓 <b>Rencana bulan ini</b>",
+  "correction.nothing": "🤔 Aku belum paham apa yang mau diubah. Balas pesan konfirmasinya, misalnya «jumlah 2jt», «pindah ke tanggal 15» atau «kategori transportasi».",
+  "correction.confirm_amount": "🤔 Ubah jumlah dari {old} jadi <b>{new}</b>? Bedanya jauh banget dari sebelumnya.",
+  "correction.amount_kept": "👌 Tetap {amount}.",
 };

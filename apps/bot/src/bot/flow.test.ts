@@ -452,6 +452,51 @@ describe("bot flow", () => {
     expect((await listOpenPlans(handle.db, 1)).some((p) => p.title === "пылесос")).toBe(false);
   });
 
+  it("holds back an implausible amount, keeps history and answers honestly", async () => {
+    const tz = "Asia/Tashkent";
+    const monthEnd = DateTime.now().setZone(tz).endOf("month").toISODate()!;
+    mockExtraction([item({ kind: "planned_expense", amount: 3000000, category: "other", note: "расходы в этом месяце", date: monthEnd, hasDate: true, dateApproximate: true })]);
+    await sendText(bot, "Мадат у меня в этом месяце ещё будут 3 миллиона расходов");
+    const plan = (await listOpenPlans(handle.db, 1)).find((p) => p.title === "расходы в этом месяце")!;
+    const reply = { reply_to_message: { message_id: plan.botMessageId, from: me, chat, date: 1, text: "x" } };
+
+    // "11" read as an amount: not applied, asked with Yes/No instead.
+    mockExtraction([item({ kind: "correction", amount: 11, changed: { amount: 11 } })]);
+    await sendText(bot, "11", reply);
+    expect((await getPlan(handle.db, plan.id))?.amount).toBe(3000000);
+    expect(lastSent().payload.text).toContain("Поменять сумму");
+    expect(JSON.stringify(lastSent().payload.reply_markup)).toContain(`fix:amt:plan:${plan.id}:11`);
+    expect(reactions().at(-1)).toContain("🤔");
+    await press(bot, `fix:keep:plan:${plan.id}`, 901, "q");
+    expect(calls.filter((c) => c.method === "editMessageText").at(-1)!.payload.text).toContain("Оставил");
+
+    // A real change is applied and remembered.
+    const day = `${monthEnd.slice(0, 7)}-28`;
+    mockExtraction([item({ kind: "correction", changed: { date: day, dateApproximate: false } })]);
+    await sendText(bot, "28 числа", reply);
+    expect((await getPlan(handle.db, plan.id))?.plannedOn).toBe(day);
+    mockExtraction([item({ kind: "correction", changed: {} })]);
+    await sendText(bot, "сумму верни как было", reply);
+    expect(extractItems).toHaveBeenLastCalledWith(expect.objectContaining({ replyTo: expect.stringContaining("Edit history") }));
+    expect(String(vi.mocked(extractItems).mock.lastCall![0].replyTo)).toContain(`"${monthEnd}"`);
+    // Nothing changed: no 👌, the bot says it did not understand.
+    expect(lastSent().payload.text).toContain("Не понял");
+    expect(reactions().at(-1)).toContain("🤔");
+
+    // A question about the record is answered by the model's clarify text; the last record is in context.
+    mockExtraction([item({ kind: "clarify", note: "Сумма плана сейчас 3 000 000 сум. Поменять?" })]);
+    await sendText(bot, "Мадат почему сумму не изменил?");
+    expect(extractItems).toHaveBeenLastCalledWith(expect.objectContaining({ lastRecord: expect.stringContaining("расходы в этом месяце") }));
+    expect(lastSent().payload.text).toBe("Сумма плана сейчас 3 000 000 сум. Поменять?");
+    expect(reactions().at(-1)).toContain("🤔");
+
+    // "Yes" on a held amount applies it.
+    mockExtraction([item({ kind: "correction", amount: 5000, changed: { amount: 5000 } })]);
+    await sendText(bot, "5000", reply);
+    await press(bot, `fix:amt:plan:${plan.id}:5000`, 902, "q");
+    expect((await getPlan(handle.db, plan.id))?.amount).toBe(5000);
+  });
+
   it("changes settings from inline buttons", async () => {
     await sendText(bot, "/settings", { entities: [{ type: "bot_command", offset: 0, length: 9 }] });
     const settingsMsg = lastSent();

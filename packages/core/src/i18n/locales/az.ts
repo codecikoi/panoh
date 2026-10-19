@@ -186,4 +186,7 @@ export const az: LocaleStrings = {
   "summary.budgets": "🎯 <b>Limitlər</b>",
   "summary.goals": "🐷 <b>Yığımlar</b>",
   "summary.plans": "🗓 <b>Bu ay üçün planlar</b>",
+  "correction.nothing": "🤔 Nəyi dəyişmək lazım olduğunu başa düşmədim. Təsdiq mesajına cavab yazın, məsələn: «məbləğ 2M», «15-nə köçür» və ya «kateqoriya nəqliyyat».",
+  "correction.confirm_amount": "🤔 Məbləği {old}-dan <b>{new}</b>-a dəyişək? Bu, əvvəlkindən xeyli fərqlidir.",
+  "correction.amount_kept": "👌 {amount} saxlanıldı.",
 };

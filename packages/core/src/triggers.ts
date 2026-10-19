@@ -149,7 +149,7 @@ export const BUILTIN_KEYWORDS: Record<string, string[]> = {
 const SUBSTRING_LOCALES = new Set(["th", "ja", "zh", "ko"]);
 
 /** Names the bot answers to when a message starts with one of them (any case, Latin or Cyrillic spelling). */
-export const BOT_NAMES = ["madat", "мадат"];
+export const BOT_NAMES = ["madat", "мадат", "madad", "мадад"];
 const NAME_PATTERN = new RegExp(`^(?:${BOT_NAMES.map(escapeRegExp).join("|")})(?![\\p{L}\\p{N}])[\\s,:;!.?\\-—–]*`, "iu");
 
 const MULTIPLIER = "(?:k|к|тыс\\.?|тысяч|млн\\.?|миллион[а-я]*|mln|ming|million|mil|rb|ribu|jt|juta|万|千|천|만|ล้าน|พัน)?";

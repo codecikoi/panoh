@@ -186,4 +186,7 @@ export const ja: LocaleStrings = {
   "summary.budgets": "🎯 <b>上限</b>",
   "summary.goals": "🐷 <b>貯金</b>",
   "summary.plans": "🗓 <b>今月の予定</b>",
+  "correction.nothing": "🤔 何を変更すればいいかわかりませんでした。確認メッセージに返信してください。例：«金額 2M»、«15日に移動»、«カテゴリ 交通費»",
+  "correction.confirm_amount": "🤔 金額を {old} から <b>{new}</b> に変更しますか？前の金額とかなり違います。",
+  "correction.amount_kept": "👌 {amount} のままにしました。",
 };

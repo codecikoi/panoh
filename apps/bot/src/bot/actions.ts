@@ -8,9 +8,12 @@ import {
   currentMonthKey,
   findGoalByBotMessage,
   findPlanByBotMessage,
-  formatMonth,
+  formatMonthInline,
+  getGoal,
   getPlan,
   getPlanReminder,
+  getRecurring,
+  getTransaction,
   listActiveGoals,
   listOpenPlans,
   loadBudgetStat,
@@ -26,6 +29,10 @@ import {
   createReminder,
   createTransaction,
   deactivateRecurring,
+  describeEdits,
+  diffFields,
+  listEdits,
+  logEdit,
   ensureRemindersFor,
   escapeHtml,
   findLastRecord,
@@ -118,6 +125,8 @@ export interface ApplyMeta {
 export interface ApplyOutcome {
   handled: number;
   corrected: number;
+  /** Replies where the bot asked or explained instead of recording. */
+  clarified: number;
   summaryRequested: boolean;
 }
 
@@ -126,7 +135,7 @@ function replyOpts(meta: ApplyMeta, extra: Record<string, unknown> = {}): Record
 }
 
 export async function applyItems(ctx: BotContext, items: ExtractedItem[], meta: ApplyMeta): Promise<ApplyOutcome> {
-  const outcome: ApplyOutcome = { handled: 0, corrected: 0, summaryRequested: false };
+  const outcome: ApplyOutcome = { handled: 0, corrected: 0, clarified: 0, summaryRequested: false };
   if (!items.length) return outcome;
   const { rates } = await getRates(ctx.deps.db);
   for (const item of items.slice(0, 6)) {
@@ -158,10 +167,18 @@ export async function applyItems(ctx: BotContext, items: ExtractedItem[], meta: 
         case "goal_contribution":
           if (await handleContribution(ctx, item, meta, rates)) outcome.handled++;
           break;
-        case "correction":
-          if (await handleCorrection(ctx, item, meta, rates)) {
+        case "correction": {
+          const result = await handleCorrection(ctx, item, meta, rates);
+          if (result !== "missing") outcome.handled++;
+          if (result === "changed") outcome.corrected++;
+          if (result === "nothing" || result === "asked") outcome.clarified++;
+          break;
+        }
+        case "clarify":
+          if (item.note) {
+            await ctx.reply(escapeHtml(item.note), replyOpts(meta));
             outcome.handled++;
-            outcome.corrected++;
+            outcome.clarified++;
           }
           break;
         case "cancel_last":
@@ -231,7 +248,7 @@ async function planImpact(db: Db, scope: Scope, plan: Plan): Promise<string> {
   }
   const { rates } = await getRates(db);
   const total = plannedTotalForMonth(await listOpenPlans(db, scope.household.id), month, scope.currency, rates);
-  return t(scope.locale, "confirm.plan_month_total", { month: formatMonth(month, scope.locale), amount: R.money(scope, total) });
+  return t(scope.locale, "confirm.plan_month_total", { month: formatMonthInline(month, scope.locale), amount: R.money(scope, total) });
 }
 
 function localTime(date: Date, tz: string): { hour: number; minute: number } {
@@ -512,35 +529,181 @@ async function handlePaymentDone(ctx: BotContext, item: ExtractedItem, meta: App
   return true;
 }
 
-async function handleCorrection(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta, rates: RateTable): Promise<boolean> {
-  const scope = ctx.scope;
-  const db = ctx.deps.db;
-  let target = meta.replyTarget;
-  if (!target) {
-    const last = await findLastRecord(db, scope.household.id);
-    if (last && Date.now() - last.row.createdAt.getTime() < 15 * 60 * 1000) target = last;
+/** Where a correction came from: the chat and, in groups, the user message to answer. */
+export interface ReplyPlace {
+  chatId: number;
+  isPrivate: boolean;
+  replyTo?: number;
+}
+
+/** changed: applied · nothing: nothing to change (the user was asked) · asked: an amount waits for a yes/no · missing: no live record. */
+export type CorrectionResult = "changed" | "nothing" | "asked" | "missing";
+
+const RECENT_RECORD_MS = 30 * 60 * 1000;
+
+/** The newest record of the household if it was created recently enough to be what a message refers to. */
+export async function recentRecord(db: Db, householdId: number): Promise<ReplyTarget | undefined> {
+  const last = await findLastRecord(db, householdId);
+  return last && Date.now() - last.row.createdAt.getTime() < RECENT_RECORD_MS ? last : undefined;
+}
+
+/** Loads a live record by the type/id pair used in callback data. */
+export async function loadTarget(db: Db, type: string, id: number): Promise<ReplyTarget | undefined> {
+  if (!Number.isInteger(id)) return undefined;
+  switch (type) {
+    case "transaction": {
+      const row = await getTransaction(db, id);
+      return row && row.status !== "deleted" ? { type, row } : undefined;
+    }
+    case "plan": {
+      const row = await getPlan(db, id);
+      return row && row.status === "planned" ? { type, row } : undefined;
+    }
+    case "goal": {
+      const row = await getGoal(db, id);
+      return row && row.status === "active" ? { type, row } : undefined;
+    }
+    case "recurring": {
+      const row = await getRecurring(db, id);
+      return row && row.active ? { type, row } : undefined;
+    }
+    default:
+      return undefined;
   }
+}
+
+/** A correction item that changes only the given fields. */
+export function correctionOf(changed: ExtractedItem["changed"]): ExtractedItem {
+  return {
+    kind: "correction",
+    amount: changed.amount ?? null,
+    currency: changed.currency ?? "",
+    category: null,
+    note: "",
+    date: "",
+    hasDate: false,
+    dateApproximate: false,
+    dueAt: null,
+    dayOfMonth: null,
+    remindDaysBefore: null,
+    target: null,
+    timeSpecified: false,
+    confidence: 1,
+    changed,
+  };
+}
+
+/** Target description plus its correction history, for the model. */
+export async function describeWithHistory(db: Db, target: ReplyTarget, tz: string): Promise<string> {
+  const edits = await listEdits(db, target.type, target.row.id);
+  const base = describeTarget(target, tz);
+  return edits.length ? `${base}\nEdit history (oldest first):\n${describeEdits(edits)}` : base;
+}
+
+function amountOf(target: ReplyTarget): { amount: number; currency: string } | null {
+  switch (target.type) {
+    case "transaction":
+    case "plan":
+      return { amount: target.row.amount, currency: target.row.currency };
+    case "goal":
+      return { amount: target.row.targetAmount, currency: target.row.currency };
+    case "recurring":
+      return target.row.amount === null ? null : { amount: target.row.amount, currency: target.row.currency };
+    case "reminder":
+      return null;
+  }
+}
+
+/** A new amount a thousand times off the current one is far more likely a misread (a day, a typo) than a fix. */
+function implausibleAmount(current: number | undefined, next: number | undefined, currencyGiven: boolean): boolean {
+  if (!current || !next || currencyGiven) return false;
+  const ratio = next / current;
+  return ratio >= 1000 || ratio <= 0.001;
+}
+
+function placeOpts(place: ReplyPlace, extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return place.isPrivate || !place.replyTo ? extra : { reply_parameters: { message_id: place.replyTo }, ...extra };
+}
+
+async function handleCorrection(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta, rates: RateTable): Promise<CorrectionResult> {
+  const scope = ctx.scope;
+  const target = meta.replyTarget ?? (await recentRecord(ctx.deps.db, scope.household.id));
   if (!target) {
     await ctx.reply(t(scope.locale, "hint.not_found"), replyOpts(meta));
-    return false;
+    return "missing";
   }
+  return applyCorrection(ctx, target, item, { chatId: meta.chatId, isPrivate: meta.isPrivate, replyTo: meta.sourceMessageId }, rates);
+}
+
+/**
+ * Applies a correction to a record, logs what changed and refreshes its confirmation.
+ * A suspicious amount is held back and confirmed with Yes/No buttons; a correction that changes nothing is said so.
+ */
+export async function applyCorrection(
+  ctx: BotContext,
+  target: ReplyTarget,
+  item: ExtractedItem,
+  place: ReplyPlace,
+  rates: RateTable,
+  options: { trustAmount?: boolean } = {},
+): Promise<CorrectionResult> {
+  const scope = ctx.scope;
+  const changes = { ...item.changed };
+  const current = amountOf(target);
+  let held: number | undefined;
+  if (!options.trustAmount && implausibleAmount(current?.amount, changes.amount, changes.currency !== undefined)) {
+    held = changes.amount;
+    delete changes.amount;
+  }
+  const applied = await applyChanges(ctx, target, { ...item, changed: changes }, place, rates);
+  if (applied === null) return "missing";
+  if (held !== undefined && current) {
+    const keyboard = new InlineKeyboard()
+      .text(t(scope.locale, "btn.yes"), `fix:amt:${target.type}:${target.row.id}:${held}`)
+      .text(t(scope.locale, "btn.no"), `fix:keep:${target.type}:${target.row.id}`);
+    await ctx.api.sendMessage(
+      place.chatId,
+      t(scope.locale, "correction.confirm_amount", {
+        old: R.money(scope, current.amount, current.currency),
+        new: R.money(scope, held, current.currency),
+      }),
+      placeOpts(place, { reply_markup: keyboard }),
+    );
+    return "asked";
+  }
+  if (!applied) {
+    await ctx.api.sendMessage(place.chatId, t(scope.locale, "correction.nothing"), placeOpts(place));
+    return "nothing";
+  }
+  return "changed";
+}
+
+/** true: changed and logged · false: nothing would change · null: the record is finished or gone. */
+async function applyChanges(ctx: BotContext, target: ReplyTarget, item: ExtractedItem, place: ReplyPlace, rates: RateTable): Promise<boolean | null> {
+  const scope = ctx.scope;
+  const db = ctx.deps.db;
+  const hid = scope.household.id;
   const c = item.changed;
   if (target.type === "transaction") {
     const row = target.row;
-    const amount = c.amount ?? row.amount;
-    const currency = c.currency ?? row.currency;
-    const updated = await updateTransaction(db, row.id, {
-      amount,
-      currency,
-      amountBase: toBase(amount, currency, scope.currency, rates),
+    const next = {
+      amount: c.amount ?? row.amount,
+      currency: c.currency ?? row.currency,
       category: c.category ?? row.category,
       note: c.note ?? row.note,
       occurredOn: c.date ?? row.occurredOn,
+    };
+    const diff = diffFields(row, next);
+    if (!diff) return false;
+    const updated = await updateTransaction(db, row.id, {
+      ...next,
+      amountBase: toBase(next.amount, next.currency, scope.currency, rates),
       status: row.status === "pending" ? "confirmed" : row.status,
     });
-    if (!updated) return false;
+    if (!updated) return null;
+    await logEdit(db, hid, "transaction", row.id, diff);
     const text = R.txText(scope, updated) + (await budgetLineFor(db, scope, updated));
-    await refreshConfirmation(ctx.api, scope, meta.chatId, row.botMessageId, text, R.txKeyboard(scope, updated), meta);
+    await refreshConfirmation(ctx.api, scope, row.botMessageId, text, R.txKeyboard(scope, updated), place);
     return true;
   }
   if (target.type === "plan") {
@@ -549,7 +712,8 @@ async function handleCorrection(ctx: BotContext, item: ExtractedItem, meta: Appl
     let plannedOn = c.date ?? row.plannedOn;
     let dateApproximate = c.date ? c.dateApproximate === true : row.dateApproximate;
     // Keep an explicit time of day the plan reminder already had; take a new one when the reply names it.
-    let time = reminder && !reminder.defaultTime ? localTime(reminder.dueAt, scope.tz) : null;
+    const before = reminder && !reminder.defaultTime ? localTime(reminder.dueAt, scope.tz) : null;
+    let time = before;
     if (item.dueAt && item.timeSpecified) {
       time = localTime(item.dueAt, scope.tz);
       if (!c.date) {
@@ -557,38 +721,50 @@ async function handleCorrection(ctx: BotContext, item: ExtractedItem, meta: Appl
         dateApproximate = false;
       }
     }
-    const updated = await updatePlan(db, row.id, {
+    if (dateApproximate) time = null;
+    const hhmm = (v: { hour: number; minute: number } | null) => (v ? `${String(v.hour).padStart(2, "0")}:${String(v.minute).padStart(2, "0")}` : null);
+    const next = {
       amount: c.amount ?? row.amount,
       currency: c.currency ?? row.currency,
       category: c.category ?? row.category,
       title: c.note ?? row.title,
       plannedOn,
       dateApproximate,
-    });
-    if (!updated) return false;
-    await schedulePlanReminder(db, updated, scope.household, dateApproximate ? null : time);
+      time: hhmm(time),
+    };
+    const diff = diffFields({ ...row, time: hhmm(before) }, next);
+    if (!diff) return false;
+    const { time: _time, ...fields } = next;
+    const updated = await updatePlan(db, row.id, fields);
+    if (!updated) return null;
+    await logEdit(db, hid, "plan", row.id, diff);
+    await schedulePlanReminder(db, updated, scope.household, time);
     const text = R.planText(scope, updated) + (await planImpact(db, scope, updated));
-    await refreshConfirmation(ctx.api, scope, meta.chatId, row.botMessageId, text, R.planKeyboard(scope, updated), meta);
+    await refreshConfirmation(ctx.api, scope, row.botMessageId, text, R.planKeyboard(scope, updated), place);
     return true;
   }
   if (target.type === "goal") {
     const row = target.row;
-    const updated = await updateGoal(db, row.id, {
+    const next = {
       targetAmount: c.amount ?? row.targetAmount,
       currency: c.currency ?? row.currency,
       title: c.note ?? row.title,
       deadline: c.date ?? row.deadline,
-    });
-    if (!updated) return false;
+    };
+    const diff = diffFields(row, next);
+    if (!diff) return false;
+    const updated = await updateGoal(db, row.id, next);
+    if (!updated) return null;
+    await logEdit(db, hid, "goal", row.id, diff);
     const text = R.goalText(scope, updated, await goalStat(db, scope, updated.id));
-    await refreshConfirmation(ctx.api, scope, meta.chatId, row.botMessageId, text, R.goalKeyboard(scope, updated), meta);
+    await refreshConfirmation(ctx.api, scope, row.botMessageId, text, R.goalKeyboard(scope, updated), place);
     return true;
   }
   if (target.type === "reminder") {
     const row = target.row;
     if (row.status === "done" || row.status === "cancelled") {
-      await ctx.reply(t(scope.locale, "hint.not_found"), replyOpts(meta));
-      return false;
+      await ctx.api.sendMessage(place.chatId, t(scope.locale, "hint.not_found"), placeOpts(place));
+      return null;
     }
     const orig = DateTime.fromJSDate(row.dueAt).setZone(scope.tz);
     let dueAt = row.dueAt;
@@ -604,48 +780,51 @@ async function handleCorrection(ctx: BotContext, item: ExtractedItem, meta: Appl
       const minute = row.defaultTime ? 0 : orig.minute;
       dueAt = newDate.set({ hour, minute, second: 0, millisecond: 0 }).toJSDate();
     }
-    const updated = await updateReminder(db, row.id, { title: c.note ?? row.title, dueAt, defaultTime, status: "scheduled" });
-    if (!updated) return false;
+    const next = { title: c.note ?? row.title, dueAt, defaultTime };
+    const diff = diffFields(row, next);
+    if (!diff) return false;
+    const updated = await updateReminder(db, row.id, { ...next, status: "scheduled" });
+    if (!updated) return null;
+    await logEdit(db, hid, "reminder", row.id, diff);
     await refreshConfirmation(
       ctx.api,
       scope,
-      meta.chatId,
       row.botMessageId,
       R.reminderText(scope, updated, { defaultTime }),
       R.reminderKeyboard(scope, updated, { offerTime: defaultTime }),
-      meta,
+      place,
     );
     return true;
   }
   const row = target.row;
-  const updated = await updateRecurring(db, row.id, {
+  const next = {
     amount: c.amount ?? row.amount,
     currency: c.currency ?? row.currency,
     name: c.note ?? row.name,
     dayOfMonth: item.dayOfMonth ?? row.dayOfMonth,
     category: c.category ?? row.category,
-  });
-  if (!updated) return false;
+  };
+  const diff = diffFields(row, next);
+  if (!diff) return false;
+  const updated = await updateRecurring(db, row.id, next);
+  if (!updated) return null;
+  await logEdit(db, hid, "recurring", row.id, diff);
   await ensureRemindersFor(db, updated, scope.household);
-  await refreshConfirmation(ctx.api, scope, meta.chatId, row.botMessageId, R.recurringText(scope, updated), R.recurringKeyboard(scope, updated), meta);
+  await refreshConfirmation(ctx.api, scope, row.botMessageId, R.recurringText(scope, updated), R.recurringKeyboard(scope, updated), place);
   return true;
 }
 
 async function refreshConfirmation(
   api: Api,
   scope: Scope,
-  chatId: number,
   botMessageId: number | null,
   text: string,
   keyboard: ReturnType<typeof R.txKeyboard>,
-  meta: ApplyMeta,
+  place: ReplyPlace,
 ): Promise<void> {
-  const edited = botMessageId ? await safeEdit(api, chatId, botMessageId, text, keyboard) : false;
+  const edited = botMessageId ? await safeEdit(api, place.chatId, botMessageId, text, keyboard) : false;
   if (!edited) {
-    await api.sendMessage(chatId, `${t(scope.locale, "confirm.updated")}\n${text}`, {
-      reply_markup: keyboard,
-      ...(meta.isPrivate ? {} : { reply_parameters: { message_id: meta.sourceMessageId } }),
-    });
+    await api.sendMessage(place.chatId, `${t(scope.locale, "confirm.updated")}\n${text}`, placeOpts(place, { reply_markup: keyboard }));
   }
 }
 

@@ -186,4 +186,7 @@ export const ar: LocaleStrings = {
   "summary.budgets": "🎯 <b>الحدود</b>",
   "summary.goals": "🐷 <b>المدخرات</b>",
   "summary.plans": "🗓 <b>المخطط هذا الشهر</b>",
+  "correction.nothing": "🤔 لم أفهم ما الذي تريد تغييره. ردّ على رسالة التأكيد، مثلًا: «المبلغ 2M» أو «انقله إلى يوم 15» أو «الفئة مواصلات».",
+  "correction.confirm_amount": "🤔 هل تريد تغيير المبلغ من {old} إلى <b>{new}</b>؟ الفرق كبير جدًا عن السابق.",
+  "correction.amount_kept": "👌 أبقيتُ المبلغ {amount}.",
 };

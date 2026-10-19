@@ -204,4 +204,7 @@ export const uz: LocaleStrings = {
   "summary.budgets": "🎯 <b>Limitlar</b>",
   "summary.goals": "🐷 <b>Jamg'armalar</b>",
   "summary.plans": "🗓 <b>Bu oyga rejalashtirilgan</b>",
+  "correction.nothing": "🤔 Nimani o'zgartirishni tushunmadim. Tasdiqlashga javob yozing, masalan: «summa 2 mln», «15-sanaga» yoki «toifa transport».",
+  "correction.confirm_amount": "🤔 Summani {old} dan <b>{new}</b> ga o'zgartiraymi? Avvalgisidan juda farq qiladi.",
+  "correction.amount_kept": "👌 {amount} qoldirildi.",
 };

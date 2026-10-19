@@ -186,4 +186,7 @@ export const fa: LocaleStrings = {
   "summary.budgets": "🎯 <b>سقف‌ها</b>",
   "summary.goals": "🐷 <b>پس‌انداز</b>",
   "summary.plans": "🗓 <b>برنامه‌های این ماه</b>",
+  "correction.nothing": "🤔 متوجه نشدم چه چیزی را باید تغییر بدهم. به پیام تأیید جواب بده، مثلاً «مبلغ ۲ میلیون»، «ببر به پانزدهم» یا «دسته حمل‌ونقل».",
+  "correction.confirm_amount": "🤔 مبلغ از {old} به <b>{new}</b> تغییر کند؟ با قبلی خیلی فرق دارد.",
+  "correction.amount_kept": "👌 همان {amount} ماند.",
 };

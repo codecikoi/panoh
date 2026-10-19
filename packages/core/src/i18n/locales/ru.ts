@@ -204,4 +204,7 @@ export const ru: LocaleStrings = {
   "summary.budgets": "🎯 <b>Лимиты</b>",
   "summary.goals": "🐷 <b>Копилки</b>",
   "summary.plans": "🗓 <b>Запланировано в этом месяце</b>",
+  "correction.nothing": "🤔 Не понял, что поменять. Ответьте на подтверждение, например: «сумма 2 млн», «на 15 число» или «категория транспорт».",
+  "correction.confirm_amount": "🤔 Поменять сумму {old} на <b>{new}</b>? Слишком сильно отличается от прежней.",
+  "correction.amount_kept": "👌 Оставил {amount}.",
 };

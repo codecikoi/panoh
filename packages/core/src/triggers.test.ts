@@ -31,7 +31,7 @@ describe("evaluateTrigger", () => {
   });
 
   it("triggers on the bot name at the start of a message and strips it", () => {
-    for (const text of ["мадат продукты 150к", "Мадат, продукты 150к", "madat продукты 150к", "MADAT: продукты 150к", "Мадат — продукты 150к"]) {
+    for (const text of ["мадат продукты 150к", "Мадат, продукты 150к", "madat продукты 150к", "MADAT: продукты 150к", "Мадат — продукты 150к", "мадад продукты 150к", "Madad, продукты 150к"]) {
       const r = evaluateTrigger({ ...base, text });
       expect(r.reason, text).toBe("name");
       expect(r.explicit, text).toBe(true);

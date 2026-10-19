@@ -186,4 +186,7 @@ export const it: LocaleStrings = {
   "summary.budgets": "🎯 <b>Limiti</b>",
   "summary.goals": "🐷 <b>Risparmi</b>",
   "summary.plans": "🗓 <b>Previsto questo mese</b>",
+  "correction.nothing": "🤔 Non ho capito cosa modificare. Rispondi alla conferma, ad es. «importo 2M», «sposta al 15» o «categoria trasporti».",
+  "correction.confirm_amount": "🤔 Cambio l'importo da {old} a <b>{new}</b>? È molto diverso da prima.",
+  "correction.amount_kept": "👌 Lascio {amount}.",
 };

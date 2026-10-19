@@ -186,4 +186,7 @@ export const ky: LocaleStrings = {
   "summary.budgets": "🎯 <b>Лимиттер</b>",
   "summary.goals": "🐷 <b>Топтоо</b>",
   "summary.plans": "🗓 <b>Бул айга пландалган</b>",
+  "correction.nothing": "🤔 Эмнени өзгөртүү керек экенин түшүнгөн жокмун. Ырастоого жооп жазыңыз, мисалы: «сумма 2M», «15-күнгө жылдыр» же «категория транспорт».",
+  "correction.confirm_amount": "🤔 Сумманы {old} дегенден <b>{new}</b> кылып өзгөртөйүнбү? Мурункусунан абдан айырмаланат.",
+  "correction.amount_kept": "👌 {amount} калтырылды.",
 };
