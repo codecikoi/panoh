@@ -7,6 +7,7 @@ import {
   isMember,
   isValidMonthKey,
   listHouseholdsForTelegramUser,
+  listOpenPlans,
   listOpenReminders,
   listRecurring,
   listTransactionsForMonth,
@@ -71,6 +72,20 @@ export function createApp(options: ApiOptions): Hono<{ Variables: AuthVariables 
     if (!household) return c.json({ error: "not found" }, 404);
     const list = await listRecurring(db, household.id);
     return c.json({ recurring: list.map((p) => ({ ...p, next: nextDue(p, household.timezone) })) });
+  });
+
+  app.get("/api/households/:id/plans", async (c) => {
+    const household = await authorizedHousehold(c.get("tgUser").id, Number(c.req.param("id")));
+    if (!household) return c.json({ error: "not found" }, 404);
+    return c.json({ plans: await listOpenPlans(db, household.id) });
+  });
+
+  // Limits and savings goals with this month's usage and progress.
+  app.get("/api/households/:id/planning", async (c) => {
+    const household = await authorizedHousehold(c.get("tgUser").id, Number(c.req.param("id")));
+    if (!household) return c.json({ error: "not found" }, 404);
+    const summary = await loadMonthlySummary(db, household, currentMonthKey(household.timezone));
+    return c.json({ month: summary.month, ...summary.outlook });
   });
 
   async function authorizedHousehold(telegramUserId: number, id: number): Promise<Household | undefined> {

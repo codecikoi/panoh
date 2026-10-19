@@ -9,13 +9,31 @@ vi.mock("../../../../packages/core/src/ai/extract.ts", async (importOriginal) =>
 vi.mock("../../../../packages/core/src/ai/insights.ts", () => ({ generateInsights: vi.fn().mockResolvedValue(null) }));
 process.env.LOG_LEVEL = "warn";
 
-import { createTestDb, extractItems, getHouseholdByChatId, getReminder, listRecentTransactions, listOpenReminders, listRecurring, markReminderDone, type DbHandle, type ExtractedItem } from "@madat/core";
+import {
+  createTestDb,
+  extractItems,
+  getHouseholdByChatId,
+  getPlan,
+  getPlanReminder,
+  getReminder,
+  listActiveGoals,
+  listBudgets,
+  listOpenPlans,
+  listRecentTransactions,
+  listOpenReminders,
+  listRecurring,
+  markReminderDone,
+  updateReminder,
+  type DbHandle,
+  type ExtractedItem,
+} from "@madat/core";
 import { DateTime } from "luxon";
 process.env.DEFAULT_LOCALE = "ru";
 process.env.DEFAULT_CURRENCY = "UZS";
 process.env.DEFAULT_TIMEZONE = "Asia/Tashkent";
 
 import { createBot } from "./bot.js";
+import { createScheduler } from "../scheduler.js";
 import type { BotContext } from "./context.js";
 
 const me = {
@@ -39,7 +57,7 @@ let updateId = 1;
 
 function item(partial: Partial<ExtractedItem>): ExtractedItem {
   return {
-    kind: "expense", amount: null, currency: "UZS", category: null, note: "", date: "2026-10-13", dueAt: null,
+    kind: "expense", amount: null, currency: "UZS", category: null, note: "", date: "2026-10-13", hasDate: false, dateApproximate: false, dueAt: null,
     dayOfMonth: null, remindDaysBefore: null, target: null, timeSpecified: true, confidence: 0.95, changed: {}, ...partial,
   };
 }
@@ -307,6 +325,131 @@ describe("bot flow", () => {
     await sendText(bot, "+ отмени");
     expect(lastSent().payload.text).toContain("🗑");
     expect((await listRecentTransactions(handle.db, 1))[0]?.note).not.toBe("кофе");
+  });
+
+  it("plans a month-only expense, then pins the date with a reply", async () => {
+    const tz = "Asia/Tashkent";
+    const nextMonthEnd = DateTime.now().setZone(tz).plus({ months: 1 }).endOf("month").toISODate()!;
+    mockExtraction([item({ kind: "planned_expense", amount: 3000000, category: "gifts", note: "подарок на свадьбу", date: nextMonthEnd, hasDate: true, dateApproximate: true, timeSpecified: false })]);
+    await sendText(bot, "+ в следующем месяце подарок на свадьбу 3 млн");
+    const confirmation = lastSent();
+    expect(confirmation.payload.text).toContain("🗓");
+    expect(confirmation.payload.text).toContain("без точной даты");
+    expect(confirmation.payload.text).toContain("Всего на");
+    expect(JSON.stringify(confirmation.payload.reply_markup)).toContain("plan:del:");
+    const plan = (await listOpenPlans(handle.db, 1)).find((p) => p.title === "подарок на свадьбу")!;
+    expect(plan).toMatchObject({ plannedOn: nextMonthEnd, dateApproximate: true, amount: 3000000 });
+    expect((await getPlanReminder(handle.db, plan.id))?.status).toBe("scheduled");
+
+    const exact = `${nextMonthEnd.slice(0, 7)}-15`;
+    mockExtraction([item({ kind: "correction", date: exact, hasDate: true, changed: { date: exact, dateApproximate: false } })]);
+    await sendText(bot, "15 числа", { reply_to_message: { message_id: plan.botMessageId, from: me, chat, date: 1, text: "x" } });
+    const moved = (await getPlan(handle.db, plan.id))!;
+    expect(moved).toMatchObject({ plannedOn: exact, dateApproximate: false });
+    const reminder = (await getPlanReminder(handle.db, plan.id))!;
+    expect(DateTime.fromJSDate(reminder.dueAt).setZone(tz).toISODate()).toBe(exact);
+    const edited = calls.filter((c) => c.method === "editMessageText").at(-1)!;
+    expect(edited.payload.text).not.toContain("без точной даты");
+    expect(reactions().at(-1)).toContain("👌");
+  });
+
+  it("marks a plan paid from a message and shows plan vs fact", async () => {
+    mockExtraction([item({ kind: "payment_done", target: "подарок на свадьбу", note: "купили подарок", amount: 2800000 })]);
+    await sendText(bot, "+ купили подарок на свадьбу за 2.8 млн");
+    expect(lastSent().payload.text).toContain("Оплачено по плану");
+    expect(lastSent().payload.text).toContain("план");
+    expect((await listOpenPlans(handle.db, 1)).some((p) => p.title === "подарок на свадьбу")).toBe(false);
+    const [tx] = await listRecentTransactions(handle.db, 1, 1);
+    expect(tx).toMatchObject({ amount: 2800000, category: "gifts", note: "подарок на свадьбу" });
+    expect(tx?.planId).toBeTypeOf("number");
+  });
+
+  it("sends the planned-day alert and records the payment from its button", async () => {
+    const day = DateTime.now().setZone("Asia/Tashkent").plus({ days: 2 }).toISODate()!;
+    mockExtraction([item({ kind: "planned_expense", amount: 2000000, category: "kids", note: "коляска", date: day, hasDate: true })]);
+    await sendText(bot, "+ послезавтра купить коляску 2 млн");
+    expect(lastSent().payload.text).toMatch(/свободно|не хватает|Всего на/i);
+    const plan = (await listOpenPlans(handle.db, 1)).find((p) => p.title === "коляска")!;
+    const reminder = (await getPlanReminder(handle.db, plan.id))!;
+    await updateReminder(handle.db, reminder.id, { dueAt: new Date(Date.now() - 1000) });
+
+    const before = sent().length;
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+    try {
+      await createScheduler(bot.api, { db: handle.db }).tick();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    const alert = sent().slice(before).find((c) => String(c.payload.text).includes("коляска"))!;
+    expect(alert.payload.text).toContain("по плану");
+    expect(JSON.stringify(alert.payload.reply_markup)).toContain(`plan:paid:${plan.id}`);
+
+    await press(bot, `plan:paid:${plan.id}`, 777, "alert");
+    expect(calls.filter((c) => c.method === "editMessageText").at(-1)!.payload.text).toContain("Оплачено по плану");
+    expect((await getPlan(handle.db, plan.id))?.status).toBe("done");
+    expect((await listRecentTransactions(handle.db, 1, 1))[0]).toMatchObject({ amount: 2000000, planId: plan.id, botMessageId: 777 });
+    // A second press on the same alert does nothing.
+    await press(bot, `plan:paid:${plan.id}`, 777, "alert");
+    expect((await listRecentTransactions(handle.db, 1, 5)).filter((t) => t.planId === plan.id)).toHaveLength(1);
+  });
+
+  it("sets a category limit and warns on the expense that crosses it", async () => {
+    mockExtraction([item({ kind: "budget_limit", category: "groceries", amount: 200000 })]);
+    await sendText(bot, "+ лимит на продукты 200к");
+    expect(lastSent().payload.text).toContain("Лимит на");
+    expect((await listBudgets(handle.db, 1)).map((b) => [b.category, b.amount])).toEqual([["groceries", 200000]]);
+
+    mockExtraction([item({ amount: 180000, category: "groceries", note: "рынок" })]);
+    await sendText(bot, "+ рынок 180к");
+    expect(lastSent().payload.text).toContain("🚨");
+    expect(lastSent().payload.text).toContain("превышен");
+
+    await sendText(bot, "/budgets", { entities: [{ type: "bot_command", offset: 0, length: 8 }] });
+    expect(lastSent().payload.text).toContain("Лимиты на месяц");
+    expect(JSON.stringify(lastSent().payload.reply_markup)).toContain("bud:rm:groceries");
+  });
+
+  it("creates a savings goal and records a contribution", async () => {
+    const tz = "Asia/Tashkent";
+    const deadline = DateTime.now().setZone(tz).plus({ months: 3 }).endOf("month").toISODate()!;
+    mockExtraction([item({ kind: "goal", amount: 10000000, note: "отпуск", date: deadline, hasDate: true, dateApproximate: true })]);
+    await sendText(bot, "+ копим на отпуск 10 млн");
+    expect(lastSent().payload.text).toContain("Копилка");
+    expect(lastSent().payload.text).toContain("в месяц");
+    const [goal] = await listActiveGoals(handle.db, 1);
+    expect(goal).toMatchObject({ title: "отпуск", targetAmount: 10000000, deadline });
+
+    const today = DateTime.now().setZone(tz).toISODate()!;
+    mockExtraction([item({ kind: "goal_contribution", target: "отпуск", amount: 1000000, date: today })]);
+    await sendText(bot, "+ отложили на отпуск 1 млн");
+    expect(lastSent().payload.text).toContain("Накоплено");
+    expect(lastSent().payload.text).toContain("10%");
+    expect((await listRecentTransactions(handle.db, 1, 1))[0]).toMatchObject({ category: "savings", goalId: goal!.id });
+
+    await sendText(bot, "/goals", { entities: [{ type: "bot_command", offset: 0, length: 6 }] });
+    expect(lastSent().payload.text).toContain("отпуск");
+    await sendText(bot, "/summary", { entities: [{ type: "bot_command", offset: 0, length: 8 }] });
+    expect(lastSent().payload.text).toContain("Копилки");
+    expect(lastSent().payload.text).toContain("Лимиты");
+  });
+
+  it("lists and cancels plans", async () => {
+    const later = DateTime.now().setZone("Asia/Tashkent").plus({ months: 2 }).toISODate()!;
+    mockExtraction([item({ kind: "planned_expense", amount: 5000000, category: "transport", note: "ремонт машины", date: later, hasDate: true })]);
+    await sendText(bot, "+ ремонт машины 5 млн");
+    const plan = (await listOpenPlans(handle.db, 1)).find((p) => p.title === "ремонт машины")!;
+    await sendText(bot, "/plans", { entities: [{ type: "bot_command", offset: 0, length: 6 }] });
+    expect(lastSent().payload.text).toContain("ремонт машины");
+    await press(bot, `plan:del:${plan.id}`, plan.botMessageId!, "plan");
+    expect((await getPlan(handle.db, plan.id))?.status).toBe("cancelled");
+    expect((await getPlanReminder(handle.db, plan.id))?.status).toBe("cancelled");
+  });
+
+  it("asks for a date when a plan has none", async () => {
+    mockExtraction([item({ kind: "planned_expense", amount: 900000, category: "household", note: "пылесос" })]);
+    await sendText(bot, "+ хотим купить пылесос 900к");
+    expect(lastSent().payload.text).toContain("Когда планируете");
+    expect((await listOpenPlans(handle.db, 1)).some((p) => p.title === "пылесос")).toBe(false);
   });
 
   it("changes settings from inline buttons", async () => {

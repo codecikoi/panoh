@@ -109,6 +109,77 @@ export const recurringPayments = pgTable(
   (t) => [index("recurring_household_idx").on(t.householdId, t.active)],
 );
 
+/** A one-off expense the family intends to make (with an exact date or only a month). */
+export const plans = pgTable(
+  "plans",
+  {
+    id: serial("id").primaryKey(),
+    householdId: integer("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+    title: text("title").notNull(),
+    amount: money("amount").notNull(),
+    currency: text("currency").notNull(),
+    category: text("category").notNull().default("other"),
+    plannedOn: date("planned_on", { mode: "string" }).notNull(),
+    /** True when only a month was given; plannedOn is then the last day of that month. */
+    dateApproximate: boolean("date_approximate").notNull().default(false),
+    status: text("status").$type<"planned" | "done" | "cancelled">().notNull().default("planned"),
+    sourceChatId: tgId("source_chat_id"),
+    sourceMessageId: tgId("source_message_id"),
+    botMessageId: tgId("bot_message_id"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("plans_household_idx").on(t.householdId, t.status, t.plannedOn),
+    index("plans_bot_msg_idx").on(t.sourceChatId, t.botMessageId),
+  ],
+);
+
+/** Monthly spending limit for one expense category. */
+export const budgets = pgTable(
+  "budgets",
+  {
+    householdId: integer("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    category: text("category").notNull(),
+    amount: money("amount").notNull(),
+    currency: text("currency").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.category] })],
+);
+
+/** Savings goal ("копилка"). Contributions are savings expenses linked through transactions.goalId. */
+export const goals = pgTable(
+  "goals",
+  {
+    id: serial("id").primaryKey(),
+    householdId: integer("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+    title: text("title").notNull(),
+    targetAmount: money("target_amount").notNull(),
+    currency: text("currency").notNull(),
+    deadline: date("deadline", { mode: "string" }),
+    status: text("status").$type<"active" | "done" | "cancelled">().notNull().default("active"),
+    sourceChatId: tgId("source_chat_id"),
+    sourceMessageId: tgId("source_message_id"),
+    botMessageId: tgId("bot_message_id"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("goals_household_idx").on(t.householdId, t.status),
+    index("goals_bot_msg_idx").on(t.sourceChatId, t.botMessageId),
+  ],
+);
+
 export const transactions = pgTable(
   "transactions",
   {
@@ -130,6 +201,8 @@ export const transactions = pgTable(
     rawText: text("raw_text"),
     recurringPaymentId: integer("recurring_payment_id").references(() => recurringPayments.id, { onDelete: "set null" }),
     period: text("period"),
+    planId: integer("plan_id").references(() => plans.id, { onDelete: "set null" }),
+    goalId: integer("goal_id").references(() => goals.id, { onDelete: "set null" }),
     sourceChatId: tgId("source_chat_id"),
     sourceMessageId: tgId("source_message_id"),
     botMessageId: tgId("bot_message_id"),
@@ -137,6 +210,7 @@ export const transactions = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [
+    index("transactions_goal_idx").on(t.goalId),
     index("transactions_household_date_idx").on(t.householdId, t.occurredOn),
     index("transactions_bot_msg_idx").on(t.sourceChatId, t.botMessageId),
   ],
@@ -150,12 +224,13 @@ export const reminders = pgTable(
       .notNull()
       .references(() => households.id, { onDelete: "cascade" }),
     userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
-    kind: text("kind").$type<"reminder" | "payment_upcoming" | "payment_due">().notNull().default("reminder"),
+    kind: text("kind").$type<"reminder" | "payment_upcoming" | "payment_due" | "plan_due">().notNull().default("reminder"),
     title: text("title").notNull(),
     dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
     status: text("status").$type<"scheduled" | "sent" | "done" | "cancelled">().notNull().default("scheduled"),
     recurringPaymentId: integer("recurring_payment_id").references(() => recurringPayments.id, { onDelete: "cascade" }),
     period: text("period"),
+    planId: integer("plan_id").references(() => plans.id, { onDelete: "cascade" }),
     snoozeCount: integer("snooze_count").notNull().default(0),
     /** True while the time of day is the household default (no explicit time given by the user). */
     defaultTime: boolean("default_time").notNull().default(false),
@@ -170,6 +245,7 @@ export const reminders = pgTable(
     index("reminders_due_idx").on(t.status, t.dueAt),
     index("reminders_household_idx").on(t.householdId, t.status),
     index("reminders_bot_msg_idx").on(t.sourceChatId, t.botMessageId),
+    uniqueIndex("reminders_plan_idx").on(t.planId).where(sql`${t.planId} is not null`),
     uniqueIndex("reminders_recurring_period_idx")
       .on(t.recurringPaymentId, t.period, t.kind)
       .where(sql`${t.recurringPaymentId} is not null`),
@@ -214,3 +290,8 @@ export type RecurringPayment = typeof recurringPayments.$inferSelect;
 export type NewTransaction = typeof transactions.$inferInsert;
 export type NewReminder = typeof reminders.$inferInsert;
 export type NewRecurringPayment = typeof recurringPayments.$inferInsert;
+export type Plan = typeof plans.$inferSelect;
+export type NewPlan = typeof plans.$inferInsert;
+export type Budget = typeof budgets.$inferSelect;
+export type Goal = typeof goals.$inferSelect;
+export type NewGoal = typeof goals.$inferInsert;

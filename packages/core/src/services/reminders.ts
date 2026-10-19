@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, lt, lte, ne, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import type { Db } from "../db/client.js";
 import { reminders, type NewReminder, type Reminder } from "../db/schema.js";
@@ -126,7 +126,7 @@ export async function rescheduleDefaultHour(db: Db, householdId: number, tz: str
       and(
         eq(reminders.householdId, householdId),
         eq(reminders.status, "scheduled"),
-        or(ne(reminders.kind, "reminder"), eq(reminders.defaultTime, true)),
+        or(inArray(reminders.kind, ["payment_upcoming", "payment_due"]), eq(reminders.defaultTime, true)),
       ),
     );
   let changed = 0;

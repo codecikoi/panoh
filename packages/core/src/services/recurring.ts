@@ -68,22 +68,27 @@ function tokens(value: string): string[] {
     .filter((t) => t.length >= 3);
 }
 
-/** Finds the recurring payment whose name best matches a free-text mention. */
-export function matchRecurringByName(list: RecurringPayment[], query: string | null | undefined): RecurringPayment | undefined {
+/** Finds the item whose name best matches a free-text mention. */
+export function matchByName<T>(list: T[], nameOf: (item: T) => string, query: string | null | undefined): T | undefined {
   if (!query) return undefined;
   const q = query.trim().toLowerCase();
   if (!q) return undefined;
-  const exact = list.find((p) => p.name.toLowerCase() === q);
+  const exact = list.find((p) => nameOf(p).toLowerCase() === q);
   if (exact) return exact;
-  const contains = list.find((p) => q.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(q));
+  const contains = list.find((p) => q.includes(nameOf(p).toLowerCase()) || nameOf(p).toLowerCase().includes(q));
   if (contains) return contains;
   const qTokens = new Set(tokens(q));
-  let best: { payment: RecurringPayment; score: number } | undefined;
+  let best: { item: T; score: number } | undefined;
   for (const p of list) {
-    const score = tokens(p.name).filter((t) => qTokens.has(t) || [...qTokens].some((x) => x.startsWith(t) || t.startsWith(x))).length;
-    if (score > 0 && (!best || score > best.score)) best = { payment: p, score };
+    const score = tokens(nameOf(p)).filter((t) => qTokens.has(t) || [...qTokens].some((x) => x.startsWith(t) || t.startsWith(x))).length;
+    if (score > 0 && (!best || score > best.score)) best = { item: p, score };
   }
-  return best?.payment;
+  return best?.item;
+}
+
+/** Finds the recurring payment whose name best matches a free-text mention. */
+export function matchRecurringByName(list: RecurringPayment[], query: string | null | undefined): RecurringPayment | undefined {
+  return matchByName(list, (p) => p.name, query);
 }
 
 export interface NextDue {

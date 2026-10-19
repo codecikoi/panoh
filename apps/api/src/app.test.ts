@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 vi.mock("../../../packages/core/src/ai/insights.ts", () => ({ generateInsights: vi.fn().mockResolvedValue({ highlights: ["ok"], tips: [], mood: "neutral" }) }));
 process.env.LOG_LEVEL = "warn";
 
-import { createTestDb, createTransaction, ensureMember, getOrCreateHousehold, signInitData, upsertUser, type DbHandle } from "@madat/core";
+import { createTestDb, createTransaction, ensureMember, getOrCreateHousehold, setBudget, signInitData, upsertUser, type DbHandle } from "@madat/core";
 import { createApp } from "./app.js";
 
 const token = "123:ABC";
@@ -52,6 +52,18 @@ describe("api", () => {
     const data = (await summary.json()) as { summary: { expense: number }; insights: { highlights: string[] } | null };
     expect(data.summary.expense).toBe(45);
     expect(data.insights?.highlights).toEqual(["ok"]);
+  });
+
+  it("returns limits usage and planning data", async () => {
+    await setBudget(handle.db, householdId, "groceries", 100, "USD");
+    const res = await app.request(`/api/households/${householdId}/planning`, { headers: { authorization: tma(42) } });
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as { budgets: { category: string; spent: number; pct: number }[]; forecast: unknown };
+    expect(data.budgets).toEqual([expect.objectContaining({ category: "groceries", spent: 45, pct: 45 })]);
+    expect(data.forecast).toBeTruthy();
+    expect((await app.request(`/api/households/${householdId}/planning`, { headers: { authorization: tma(43) } })).status).toBe(404);
+    const plans = await app.request(`/api/households/${householdId}/plans`, { headers: { authorization: tma(42) } });
+    expect(((await plans.json()) as { plans: unknown[] }).plans).toEqual([]);
   });
 
   it("hides households the user is not a member of", async () => {

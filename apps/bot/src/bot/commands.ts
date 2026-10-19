@@ -3,6 +3,10 @@ import type { LanguageCode } from "grammy/types";
 import {
   availableLocales,
   currentMonthKey,
+  getRates,
+  listOpenPlans,
+  loadMonthlySummary,
+  plannedTotalForMonth,
   effectiveKeywords,
   escapeHtml,
   hasLocale,
@@ -62,7 +66,8 @@ export function registerCommands(bot: Bot<BotContext>): void {
 
   bot.command("help", async (ctx) => {
     const scope = ctx.scope;
-    await ctx.reply(t(scope.locale, "help", { prefix: escapeHtml(R.prefixOf(scope)), days: scope.household.remindDaysBefore }));
+    const help = t(scope.locale, "help", { prefix: escapeHtml(R.prefixOf(scope)), days: scope.household.remindDaysBefore });
+    await ctx.reply(`${help}\n\n${t(scope.locale, "help.planning")}`);
   });
 
   bot.command("summary", async (ctx) => {
@@ -92,6 +97,27 @@ export function registerCommands(bot: Bot<BotContext>): void {
     const list = await listRecurring(ctx.deps.db, ctx.scope.household.id);
     const rows = list.map((payment) => ({ payment, ...nextDue(payment, ctx.scope.tz) }));
     await ctx.reply(R.paymentsListText(ctx.scope, rows));
+  });
+
+  bot.command("plans", async (ctx) => {
+    const scope = ctx.scope;
+    const rows = await listOpenPlans(ctx.deps.db, scope.household.id);
+    const { rates } = await getRates(ctx.deps.db);
+    const months = new Set(rows.map((p) => p.plannedOn.slice(0, 7)));
+    const total = [...months].reduce((sum, m) => sum + plannedTotalForMonth(rows, m, scope.currency, rates), 0);
+    await ctx.reply(R.plansListText(scope, rows, rows.length > 1 ? total : null));
+  });
+
+  bot.command("budgets", async (ctx) => {
+    const scope = ctx.scope;
+    const stats = (await loadMonthlySummary(ctx.deps.db, scope.household, currentMonthKey(scope.tz))).outlook.budgets;
+    await ctx.reply(R.budgetsListText(scope, stats), stats.length ? { reply_markup: R.budgetsKeyboard(scope, stats) } : {});
+  });
+
+  bot.command("goals", async (ctx) => {
+    const scope = ctx.scope;
+    const stats = (await loadMonthlySummary(ctx.deps.db, scope.household, currentMonthKey(scope.tz))).outlook.goals;
+    await ctx.reply(R.goalsListText(scope, stats));
   });
 
   bot.command("settings", async (ctx) => {
@@ -166,6 +192,9 @@ const COMMAND_KEYS: { command: string; key: LocaleKey }[] = [
   { command: "undo", key: "cmd.undo" },
   { command: "reminders", key: "cmd.reminders" },
   { command: "payments", key: "cmd.payments" },
+  { command: "plans", key: "cmd.plans" },
+  { command: "budgets", key: "cmd.budgets" },
+  { command: "goals", key: "cmd.goals" },
   { command: "settings", key: "cmd.settings" },
   { command: "keywords", key: "cmd.keywords" },
   { command: "help", key: "cmd.help" },
@@ -186,7 +215,7 @@ export async function setCommands(bot: Bot<BotContext>): Promise<void> {
 }
 
 /**
- * Display name ("Madat — Family Budget") and the descriptions shown before /start, per language.
+ * Display name ("Madat — Family Helper") and the descriptions shown before /start, per language.
  * Telegram rate-limits these setters hard (setMyName especially), so read first and only write what changed.
  */
 export async function setProfile(bot: Bot<BotContext>): Promise<void> {

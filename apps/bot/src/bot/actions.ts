@@ -1,6 +1,27 @@
 import { DateTime } from "luxon";
 import {
+  cancelPlan,
   cancelReminder,
+  completePlan,
+  createGoal,
+  createPlan,
+  currentMonthKey,
+  findGoalByBotMessage,
+  findPlanByBotMessage,
+  formatMonth,
+  getPlan,
+  getPlanReminder,
+  listActiveGoals,
+  listOpenPlans,
+  loadBudgetStat,
+  loadMonthlySummary,
+  matchByName,
+  plannedTotalForMonth,
+  removeBudget,
+  schedulePlanReminder,
+  setBudget,
+  updateGoal,
+  updatePlan,
   createRecurring,
   createReminder,
   createTransaction,
@@ -26,12 +47,14 @@ import {
   updateTransaction,
   type Db,
   type ExtractedItem,
+  type Goal,
+  type Plan,
   type RateTable,
   type RecurringPayment,
   type Reminder,
   type Transaction,
 } from "@madat/core";
-import type { Api } from "grammy";
+import { InlineKeyboard, type Api } from "grammy";
 import type { BotContext, Scope } from "./context.js";
 import * as R from "./render.js";
 import { safeEdit } from "./telegram.js";
@@ -39,15 +62,27 @@ import { safeEdit } from "./telegram.js";
 export type ReplyTarget =
   | { type: "transaction"; row: Transaction }
   | { type: "reminder"; row: Reminder }
-  | { type: "recurring"; row: RecurringPayment };
+  | { type: "recurring"; row: RecurringPayment }
+  | { type: "plan"; row: Plan }
+  | { type: "goal"; row: Goal };
 
 export async function resolveReplyTarget(db: Db, chatId: number, messageId: number): Promise<ReplyTarget | undefined> {
   const tx = await findTransactionByBotMessage(db, chatId, messageId);
   if (tx && tx.status !== "deleted") return { type: "transaction", row: tx };
   const reminder = await findReminderByBotMessage(db, chatId, messageId);
-  if (reminder && reminder.status !== "cancelled") return { type: "reminder", row: reminder };
+  if (reminder?.planId) {
+    // A reply to a "planned for today" alert is about the plan itself.
+    const plan = await getPlan(db, reminder.planId);
+    if (plan && plan.status === "planned") return { type: "plan", row: plan };
+  } else if (reminder && reminder.status !== "cancelled") {
+    return { type: "reminder", row: reminder };
+  }
   const recurring = await findRecurringByBotMessage(db, chatId, messageId);
   if (recurring && recurring.active) return { type: "recurring", row: recurring };
+  const plan = await findPlanByBotMessage(db, chatId, messageId);
+  if (plan && plan.status === "planned") return { type: "plan", row: plan };
+  const goal = await findGoalByBotMessage(db, chatId, messageId);
+  if (goal && goal.status === "active") return { type: "goal", row: goal };
   return undefined;
 }
 
@@ -61,6 +96,14 @@ export function describeTarget(target: ReplyTarget, tz = "UTC"): string {
       return `reminder: "${target.row.title}" due ${DateTime.fromJSDate(target.row.dueAt).setZone(tz).toFormat("yyyy-LL-dd HH:mm")} (local time)`;
     case "recurring":
       return `recurring payment: "${target.row.name}" ${target.row.amount ?? "?"} ${target.row.currency} on day ${target.row.dayOfMonth}`;
+    case "plan": {
+      const r = target.row;
+      return `planned expense: "${r.title}" ${r.amount} ${r.currency}, category ${r.category}, date ${r.plannedOn}${r.dateApproximate ? " (month only)" : ""}`;
+    }
+    case "goal": {
+      const r = target.row;
+      return `savings goal: "${r.title}" target ${r.targetAmount} ${r.currency}, deadline ${r.deadline ?? "none"}`;
+    }
   }
 }
 
@@ -101,6 +144,19 @@ export async function applyItems(ctx: BotContext, items: ExtractedItem[], meta: 
           break;
         case "payment_done":
           if (await handlePaymentDone(ctx, item, meta, rates)) outcome.handled++;
+          break;
+        case "planned_expense":
+          if (await handlePlan(ctx, item, meta)) outcome.handled++;
+          break;
+        case "budget_limit":
+        case "budget_remove":
+          if (await handleBudget(ctx, item, meta)) outcome.handled++;
+          break;
+        case "goal":
+          if (await handleGoal(ctx, item, meta)) outcome.handled++;
+          break;
+        case "goal_contribution":
+          if (await handleContribution(ctx, item, meta, rates)) outcome.handled++;
           break;
         case "correction":
           if (await handleCorrection(ctx, item, meta, rates)) {
@@ -150,10 +206,192 @@ async function handleTransaction(ctx: BotContext, item: ExtractedItem, meta: App
     sourceChatId: meta.chatId,
     sourceMessageId: meta.sourceMessageId,
   });
-  const text = status === "pending" ? R.txPendingText(scope, tx) : R.txText(scope, tx);
+  const text = status === "pending" ? R.txPendingText(scope, tx) : R.txText(scope, tx) + (await budgetLineFor(ctx.deps.db, scope, tx));
   const sent = await ctx.reply(text, replyOpts(meta, { reply_markup: R.txKeyboard(scope, tx) }));
   await updateTransaction(ctx.deps.db, tx.id, { botMessageId: sent.message_id });
   return true;
+}
+
+/** "🎯 Groceries: 2.6M of 3M (87%)" for a confirmed expense in a category with a monthly limit. */
+export async function budgetLineFor(db: Db, scope: Scope, tx: Transaction): Promise<string> {
+  if (tx.kind !== "expense" || tx.status !== "confirmed") return "";
+  return R.budgetLine(scope, await loadBudgetStat(db, scope.household, tx.category, tx.occurredOn.slice(0, 7)));
+}
+
+/** How a plan changes the month: free money / shortfall for this month, the planned total for a later month. */
+async function planImpact(db: Db, scope: Scope, plan: Plan): Promise<string> {
+  const month = plan.plannedOn.slice(0, 7);
+  const current = currentMonthKey(scope.tz);
+  if (month <= current) {
+    const forecast = (await loadMonthlySummary(db, scope.household, current)).outlook.forecast;
+    if (!forecast) return "";
+    return forecast.free >= 0
+      ? t(scope.locale, "confirm.plan_free", { amount: R.money(scope, forecast.free) })
+      : t(scope.locale, "confirm.plan_short", { amount: R.money(scope, -forecast.free) });
+  }
+  const { rates } = await getRates(db);
+  const total = plannedTotalForMonth(await listOpenPlans(db, scope.household.id), month, scope.currency, rates);
+  return t(scope.locale, "confirm.plan_month_total", { month: formatMonth(month, scope.locale), amount: R.money(scope, total) });
+}
+
+function localTime(date: Date, tz: string): { hour: number; minute: number } {
+  const dt = DateTime.fromJSDate(date).setZone(tz);
+  return { hour: dt.hour, minute: dt.minute };
+}
+
+async function handlePlan(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta): Promise<boolean> {
+  const scope = ctx.scope;
+  const db = ctx.deps.db;
+  const title = item.note || item.target || "…";
+  if (item.amount === null) {
+    await ctx.reply(t(scope.locale, "ask.amount", { note: escapeHtml(title) }), replyOpts(meta));
+    return true;
+  }
+  if (!item.hasDate) {
+    await ctx.reply(t(scope.locale, "ask.plan_when", { title: escapeHtml(title) }), replyOpts(meta));
+    return true;
+  }
+  const plan = await createPlan(db, {
+    householdId: scope.household.id,
+    userId: scope.user?.id ?? null,
+    title,
+    amount: item.amount,
+    currency: item.currency,
+    category: item.category ?? "other",
+    plannedOn: item.date,
+    dateApproximate: item.dateApproximate,
+    sourceChatId: meta.chatId,
+    sourceMessageId: meta.sourceMessageId,
+  });
+  const time = item.timeSpecified && item.dueAt && !item.dateApproximate ? localTime(item.dueAt, scope.tz) : null;
+  await schedulePlanReminder(db, plan, scope.household, time);
+  const text = R.planText(scope, plan) + (await planImpact(db, scope, plan));
+  const sent = await ctx.reply(text, replyOpts(meta, { reply_markup: R.planKeyboard(scope, plan) }));
+  await updatePlan(db, plan.id, { botMessageId: sent.message_id });
+  return true;
+}
+
+async function handleBudget(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta): Promise<boolean> {
+  const scope = ctx.scope;
+  const db = ctx.deps.db;
+  const category = item.category;
+  if (!category) {
+    await ctx.reply(t(scope.locale, "ask.budget_category"), replyOpts(meta));
+    return true;
+  }
+  if (item.kind === "budget_remove") {
+    await removeBudget(db, scope.household.id, category);
+    await ctx.reply(t(scope.locale, "confirm.budget_removed", { category: R.catLabel(scope, category) }), replyOpts(meta));
+    return true;
+  }
+  if (item.amount === null) {
+    await ctx.reply(t(scope.locale, "ask.amount", { note: R.catLabel(scope, category) }), replyOpts(meta));
+    return true;
+  }
+  await setBudget(db, scope.household.id, category, item.amount, item.currency);
+  const stat = await loadBudgetStat(db, scope.household, category, currentMonthKey(scope.tz));
+  await ctx.reply(
+    R.budgetConfirmText(scope, category, item.amount, item.currency, stat),
+    replyOpts(meta, { reply_markup: new InlineKeyboard().text(t(scope.locale, "btn.delete"), `bud:del:${category}`) }),
+  );
+  return true;
+}
+
+async function goalStat(db: Db, scope: Scope, goalId: number) {
+  return (await loadMonthlySummary(db, scope.household, currentMonthKey(scope.tz))).outlook.goals.find((g) => g.id === goalId);
+}
+
+async function handleGoal(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta): Promise<boolean> {
+  const scope = ctx.scope;
+  const db = ctx.deps.db;
+  const title = item.note || item.target || "…";
+  if (item.amount === null) {
+    await ctx.reply(t(scope.locale, "ask.amount", { note: escapeHtml(title) }), replyOpts(meta));
+    return true;
+  }
+  const goal = await createGoal(db, {
+    householdId: scope.household.id,
+    userId: scope.user?.id ?? null,
+    title,
+    targetAmount: item.amount,
+    currency: item.currency,
+    deadline: item.hasDate ? item.date : null,
+    sourceChatId: meta.chatId,
+    sourceMessageId: meta.sourceMessageId,
+  });
+  const sent = await ctx.reply(
+    R.goalText(scope, goal, await goalStat(db, scope, goal.id)),
+    replyOpts(meta, { reply_markup: R.goalKeyboard(scope, goal) }),
+  );
+  await updateGoal(db, goal.id, { botMessageId: sent.message_id });
+  return true;
+}
+
+async function handleContribution(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta, rates: RateTable): Promise<boolean> {
+  const scope = ctx.scope;
+  const db = ctx.deps.db;
+  const goals = await listActiveGoals(db, scope.household.id);
+  const goal =
+    matchByName(goals, (g) => g.title, item.target) ??
+    matchByName(goals, (g) => g.title, item.note) ??
+    (goals.length === 1 ? goals[0] : undefined);
+  if (!goal || item.amount === null) {
+    return handleTransaction(ctx, { ...item, kind: "expense", category: "savings" }, meta, rates);
+  }
+  const tx = await createTransaction(db, {
+    householdId: scope.household.id,
+    userId: scope.user?.id ?? null,
+    kind: "expense",
+    amount: item.amount,
+    currency: item.currency,
+    amountBase: toBase(item.amount, item.currency, scope.currency, rates),
+    baseCurrency: scope.currency,
+    category: "savings",
+    note: goal.title,
+    occurredOn: item.date,
+    status: "confirmed",
+    confidence: item.confidence,
+    rawText: meta.rawText.slice(0, 500),
+    goalId: goal.id,
+    sourceChatId: meta.chatId,
+    sourceMessageId: meta.sourceMessageId,
+  });
+  const stat = await goalStat(db, scope, goal.id);
+  const text = stat ? R.contributionText(scope, tx, stat) : R.txText(scope, tx);
+  const sent = await ctx.reply(text, replyOpts(meta, { reply_markup: R.txKeyboard(scope, tx) }));
+  await updateTransaction(db, tx.id, { botMessageId: sent.message_id });
+  return true;
+}
+
+/** Records the expense for a planned item and closes the plan. */
+export async function payPlan(
+  db: Db,
+  scope: Scope,
+  plan: Plan,
+  override: { amount?: number | null; currency?: string; sourceMessageId?: number; chatId: number; rates: RateTable },
+): Promise<Transaction> {
+  const custom = override.amount !== undefined && override.amount !== null;
+  const amount = custom ? override.amount! : plan.amount;
+  const currency = custom && override.currency ? override.currency : plan.currency;
+  const tx = await createTransaction(db, {
+    householdId: scope.household.id,
+    userId: scope.user?.id ?? null,
+    kind: "expense",
+    amount,
+    currency,
+    amountBase: toBase(amount, currency, scope.currency, override.rates),
+    baseCurrency: scope.currency,
+    category: plan.category,
+    note: plan.title,
+    occurredOn: DateTime.now().setZone(scope.tz).toISODate()!,
+    status: "confirmed",
+    confidence: 1,
+    planId: plan.id,
+    sourceChatId: override.chatId,
+    sourceMessageId: override.sourceMessageId ?? null,
+  });
+  await completePlan(db, plan.id);
+  return tx;
 }
 
 async function handleReminder(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta): Promise<boolean> {
@@ -243,6 +481,21 @@ async function handlePaymentDone(ctx: BotContext, item: ExtractedItem, meta: App
   const list = await listRecurring(ctx.deps.db, scope.household.id);
   const match = matchRecurringByName(list, item.target) ?? matchRecurringByName(list, item.note);
   if (!match) {
+    const plans = await listOpenPlans(ctx.deps.db, scope.household.id);
+    const plan = matchByName(plans, (p) => p.title, item.target) ?? matchByName(plans, (p) => p.title, item.note);
+    if (plan) {
+      const tx = await payPlan(ctx.deps.db, scope, plan, {
+        amount: item.amount,
+        currency: item.currency,
+        sourceMessageId: meta.sourceMessageId,
+        chatId: meta.chatId,
+        rates,
+      });
+      const text = R.planPaidText(scope, plan, tx) + (await budgetLineFor(ctx.deps.db, scope, tx));
+      const sent = await ctx.reply(text, replyOpts(meta, { reply_markup: R.txKeyboard(scope, tx) }));
+      await updateTransaction(ctx.deps.db, tx.id, { botMessageId: sent.message_id });
+      return true;
+    }
     return handleTransaction(ctx, { ...item, kind: "expense", category: item.category ?? "loans" }, meta, rates);
   }
   const due = nextDue(match, scope.tz);
@@ -286,7 +539,49 @@ async function handleCorrection(ctx: BotContext, item: ExtractedItem, meta: Appl
       status: row.status === "pending" ? "confirmed" : row.status,
     });
     if (!updated) return false;
-    await refreshConfirmation(ctx.api, scope, meta.chatId, row.botMessageId, R.txText(scope, updated), R.txKeyboard(scope, updated), meta);
+    const text = R.txText(scope, updated) + (await budgetLineFor(db, scope, updated));
+    await refreshConfirmation(ctx.api, scope, meta.chatId, row.botMessageId, text, R.txKeyboard(scope, updated), meta);
+    return true;
+  }
+  if (target.type === "plan") {
+    const row = target.row;
+    const reminder = await getPlanReminder(db, row.id);
+    let plannedOn = c.date ?? row.plannedOn;
+    let dateApproximate = c.date ? c.dateApproximate === true : row.dateApproximate;
+    // Keep an explicit time of day the plan reminder already had; take a new one when the reply names it.
+    let time = reminder && !reminder.defaultTime ? localTime(reminder.dueAt, scope.tz) : null;
+    if (item.dueAt && item.timeSpecified) {
+      time = localTime(item.dueAt, scope.tz);
+      if (!c.date) {
+        plannedOn = DateTime.fromJSDate(item.dueAt).setZone(scope.tz).toISODate()!;
+        dateApproximate = false;
+      }
+    }
+    const updated = await updatePlan(db, row.id, {
+      amount: c.amount ?? row.amount,
+      currency: c.currency ?? row.currency,
+      category: c.category ?? row.category,
+      title: c.note ?? row.title,
+      plannedOn,
+      dateApproximate,
+    });
+    if (!updated) return false;
+    await schedulePlanReminder(db, updated, scope.household, dateApproximate ? null : time);
+    const text = R.planText(scope, updated) + (await planImpact(db, scope, updated));
+    await refreshConfirmation(ctx.api, scope, meta.chatId, row.botMessageId, text, R.planKeyboard(scope, updated), meta);
+    return true;
+  }
+  if (target.type === "goal") {
+    const row = target.row;
+    const updated = await updateGoal(db, row.id, {
+      targetAmount: c.amount ?? row.targetAmount,
+      currency: c.currency ?? row.currency,
+      title: c.note ?? row.title,
+      deadline: c.date ?? row.deadline,
+    });
+    if (!updated) return false;
+    const text = R.goalText(scope, updated, await goalStat(db, scope, updated.id));
+    await refreshConfirmation(ctx.api, scope, meta.chatId, row.botMessageId, text, R.goalKeyboard(scope, updated), meta);
     return true;
   }
   if (target.type === "reminder") {
@@ -371,9 +666,15 @@ export async function undoLast(ctx: BotContext, meta?: ApplyMeta): Promise<boole
   } else if (last.type === "reminder") {
     await cancelReminder(db, last.row.id);
     what = R.reminderText(scope, last.row);
-  } else {
+  } else if (last.type === "recurring") {
     await deactivateRecurring(db, last.row.id);
     what = R.recurringText(scope, last.row);
+  } else if (last.type === "plan") {
+    await cancelPlan(db, last.row.id);
+    what = R.planText(scope, last.row);
+  } else {
+    await updateGoal(db, last.row.id, { status: "cancelled" });
+    what = R.goalText(scope, last.row);
   }
   const chatId = last.row.sourceChatId ?? scope.household.telegramChatId;
   if (last.row.botMessageId) await safeEdit(ctx.api, chatId, last.row.botMessageId, R.deletedText(scope, what));

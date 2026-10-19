@@ -31,6 +31,11 @@ export function monthDateRange(key: string): { start: string; end: string } {
   return { start: dt.toISODate()!, end: dt.plus({ months: 1 }).toISODate()! };
 }
 
+/** Last day (ISO date) of the month that contains an ISO date. */
+export function endOfMonthISO(isoDate: string): string {
+  return DateTime.fromISO(isoDate, { zone: "utc" }).endOf("month").toISODate()!;
+}
+
 export function daysInMonth(key: string): number {
   return DateTime.fromFormat(key, "yyyy-LL", { zone: "utc" }).daysInMonth ?? 30;
 }

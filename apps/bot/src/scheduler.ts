@@ -6,6 +6,7 @@ import {
   dueReminders,
   ensureRemindersFor,
   getHouseholdById,
+  getPlan,
   getRecurring,
   listAllActiveRecurring,
   listAllHouseholds,
@@ -57,8 +58,13 @@ export function createScheduler(api: Api, deps: Deps): Scheduler {
         await updateReminder(deps.db, reminder.id, { status: "cancelled" });
         continue;
       }
+      const plan = reminder.planId ? await getPlan(deps.db, reminder.planId) : undefined;
+      if (reminder.planId && (!plan || plan.status !== "planned")) {
+        await updateReminder(deps.db, reminder.id, { status: "cancelled" });
+        continue;
+      }
       try {
-        const sent = await api.sendMessage(h.telegramChatId, alertText(scope, reminder, rp), { reply_markup: alertKeyboard(scope, reminder) });
+        const sent = await api.sendMessage(h.telegramChatId, alertText(scope, reminder, rp, plan), { reply_markup: alertKeyboard(scope, reminder) });
         await markReminderSent(deps.db, reminder.id, sent.message_id);
         if (reminder.botMessageId) {
           // The confirmation's "change time" / "cancel" buttons are meaningless once the alert is out.

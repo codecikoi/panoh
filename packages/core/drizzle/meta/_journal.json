@@ -15,6 +15,13 @@
       "when": 1791890985238,
       "tag": "0001_reminder_default_time",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792429052362,
+      "tag": "0002_planning",
+      "breakpoints": true
     }
   ]
 }

@@ -18,7 +18,8 @@ You receive the computed numbers (already correct, already in the household's ba
 Write in the language given by "locale". Tone: warm, concise, friendly, like a smart friend, no lecturing, no generic advice.
 - highlights: 2–4 one-line observations that matter (what grew, what dominates, unusual single purchases, pace vs last month, upcoming bills vs balance). Each ≤ 120 characters, may start with an emoji.
 - tips: 1–3 concrete, specific suggestions grounded in the data (e.g. which category to cap and by how much). ≤ 120 characters each. If the data is thin, give one gentle tip about tracking consistently.
-- mood: "good" if spending is under control, "warning" if expenses exceed income or a category jumped a lot, otherwise "neutral".
+- The JSON may contain "outlook": forecast (money still to pay this month and the free money left; only income already received is counted), budgets (monthly limits per category with usage), goals (savings goals with progress and the monthly pace needed), plans (planned expenses this month). Use them when relevant: a limit that is close or exceeded, a shortfall, a goal falling behind.
+- mood: "good" if spending is under control, "warning" if expenses exceed income, the forecast shows a shortfall, a limit is exceeded or a category jumped a lot, otherwise "neutral".
 Plain text only, no markdown, no HTML.`;
 
 export async function generateInsights(summary: MonthlySummary, locale: string): Promise<Insights | null> {

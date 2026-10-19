@@ -1,16 +1,19 @@
 # Madat
 
-A friendly family-finance assistant that lives in your Telegram chat. Mention an expense, an income, a bill or a reminder in your own words and Madat keeps the books, nudges you about payments and sends a monthly summary with insights.
+A friendly family helper for money that lives in your Telegram chat. Mention an expense, an income, a bill, a planned purchase or a reminder in your own words and Madat keeps the books, nudges you about payments, watches limits and savings goals, tells you how much free money is left this month and sends a monthly summary with insights.
 
 ```
 + groceries 45$                      → ✍ Expense · $45 · 🛒 Groceries
 remind me on Friday to pay the rent  → ⏰ I'll remind you Fri 17 Oct, 09:00
 loan 300$ every month on the 15th    → 🔁 Loan · $300 · every month on day 15
 paid the loan                        → ✅ Paid · Loan · $300
+wedding gift 300$ in December        → 🗓 Plan · $300 · 🎁 Gifts · December 2026, no exact date
+limit on groceries 400$              → 🎯 Limit for 🛒 Groceries: $400 a month
+saving for a vacation 2000$ by July  → 🐷 Savings goal · vacation · ≈ $222 a month to make it
 /summary                             → 📊 October 2026 … by category, vs September, tips
 ```
 
-Works in a private chat or in a group with your partner. Any language: parsing is done by Claude, and the bot's own replies ship in 30 languages (English, Russian and Uzbek hand-written; the other 27 machine-translated, regenerate with `pnpm locales:translate --force`). Trigger keywords exist for all 30.
+Works in a private chat or in a group with your partner. Any language: parsing is done by Claude, and the bot's own replies ship in 30 languages (English, Russian and Uzbek hand-written; the other 27 machine-translated, regenerate with `pnpm locales:translate --force`; after adding English keys run `pnpm locales:translate --missing`). Trigger keywords exist for all 30.
 
 ## How it works
 
@@ -18,7 +21,7 @@ Works in a private chat or in a group with your partner. Any language: parsing i
 Telegram ──▶ apps/bot ──▶ packages/core ──▶ Postgres
               │  grammY      ├─ ai/extract   (Claude Haiku 5.5: message → structured items)
               │  scheduler   ├─ ai/insights  (Claude Opus 5.5: numbers → highlights & tips)
-              │              ├─ services     (households, transactions, reminders, recurring, summary)
+              │              ├─ services     (households, transactions, reminders, recurring, planning, summary)
               │              └─ i18n, triggers, money, dates
 Mini App ──▶ apps/api  (Hono, Telegram initData auth) ──▶ packages/core
 ```
@@ -27,6 +30,8 @@ Mini App ──▶ apps/api  (Hono, Telegram initData auth) ──▶ packages/c
 * **Numbers are computed in code.** The summary (totals, categories, month-over-month deltas, projections, upcoming bills) is calculated from the database; Claude only writes the short insights section from those numbers.
 * **Every record is confirmed in chat** with ✏️ / 🗑 buttons. Reply to a confirmation with "not 150, 115" or "category transport" to fix it; "undo" or /undo removes the last record. Low-confidence parses ask "record this?" before counting.
 * **Bills remind themselves.** A recurring payment reminds N days before and on the day, with a ✅ Paid button that also books the expense.
+* **Plans, limits and savings.** A planned expense («gift 300$ in December», a month or an exact day) reminds on its day with ✅ Paid / snooze / cancel buttons and books the expense with plan-vs-fact. A monthly limit per category adds «🎯 Groceries: $360 of $400 (90%)» to each expense confirmation. A savings goal with a deadline shows the monthly pace; «put 200$ aside for the vacation» records a savings expense linked to the goal.
+* **Free money this month.** The summary adds what is still ahead this month (unpaid bills, open plans, the goals' monthly pace) and the result: income already received − spent − ahead. Future income is deliberately not counted, so a negative number is a real shortfall.
 * **Reminders without a time** get the household's default reminder time (09:00 unless changed in /settings) and a 🕒 button to pick another hour; replying «at 15:00» to the confirmation also moves it.
 * **Multi-currency.** Each household has a base currency; other currencies are converted with daily rates (open.er-api.com). Unconverted amounts are shown separately, never silently dropped.
 
@@ -77,6 +82,9 @@ pnpm db:generate          # new SQL migration after changing packages/core/src/d
 | `/undo` | Delete the last record |
 | `/reminders` | Open reminders |
 | `/payments` | Recurring payments and their next due dates |
+| `/plans` | Planned expenses, overdue ones marked |
+| `/budgets` | Monthly limits per category with this month's usage; 🗑 buttons remove them |
+| `/goals` | Savings goals: progress, deadline, monthly pace |
 | `/settings` | Currency, timezone, language, default reminder time (inline buttons); also `/currency EUR`, `/timezone Europe/Berlin`, `/language ru` |
 | `/keywords` `[add \| remove words]` | Trigger words for this chat |
 | `/help` | Examples |
@@ -108,5 +116,5 @@ See [docs/DEPLOY.md](docs/DEPLOY.md) for Google Cloud Run + Cloud SQL (recommend
 ## Testing strategy
 
 * `packages/core`: pure-function tests (triggers, money, dates, summary math, initData signatures) and integration tests against an in-memory PGlite with real migrations.
-* `apps/bot`: end-to-end flow tests drive the real grammY bot with a fake Telegram API transformer and a mocked extractor: welcome, expense confirmation, pending → confirm, reply corrections, reminders, recurring payments, payment done, summary, undo, settings.
+* `apps/bot`: end-to-end flow tests drive the real grammY bot with a fake Telegram API transformer and a mocked extractor: welcome, expense confirmation, pending → confirm, reply corrections, reminders, recurring payments, payment done, planned expenses (date by reply, plan alert, paid button), limits, savings goals, summary, undo, settings.
 * Prompts are exercised against the live model with `pnpm simulate`.

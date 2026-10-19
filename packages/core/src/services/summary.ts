@@ -7,6 +7,8 @@ import { roundMoney } from "../money.js";
 import { listTransactionsForMonth } from "./transactions.js";
 import { countReminders, listOpenReminders } from "./reminders.js";
 import { listRecurring, upcomingPayments } from "./recurring.js";
+import { getRates } from "./rates.js";
+import { EMPTY_OUTLOOK, computeOutlook, listActiveGoals, listBudgets, listGoalTransactions, listOpenPlans, type MonthOutlook } from "./planning.js";
 
 export interface CategoryStat {
   category: string;
@@ -62,6 +64,8 @@ export interface MonthlySummary {
   upcomingPayments: UpcomingPaymentInfo[];
   openReminders: number;
   doneReminders: number;
+  /** Limits, savings goals, planned expenses and the "free money" forecast (forecast only for the current month). */
+  outlook: MonthOutlook;
 }
 
 export interface SummaryInput {
@@ -74,6 +78,7 @@ export interface SummaryInput {
   upcomingPayments?: UpcomingPaymentInfo[];
   openReminders?: number;
   doneReminders?: number;
+  outlook?: MonthOutlook;
 }
 
 function baseAmount(tx: Transaction, currency: string): number | null {
@@ -196,6 +201,7 @@ export function computeSummary(input: SummaryInput): MonthlySummary {
     upcomingPayments: input.upcomingPayments ?? [],
     openReminders: input.openReminders ?? 0,
     doneReminders: input.doneReminders ?? 0,
+    outlook: input.outlook ?? EMPTY_OUTLOOK,
   };
 }
 
@@ -219,10 +225,11 @@ export async function loadMonthlySummary(db: Db, household: Household, month = c
     date: u.date,
     daysLeft: u.daysLeft,
   }));
-  return computeSummary({
+  const now = nowIn(household.timezone);
+  const summary = computeSummary({
     month,
     currency: household.baseCurrency,
-    now: nowIn(household.timezone),
+    now,
     transactions,
     prevTransactions,
     pendingCount: withPending.length - transactions.length,
@@ -230,4 +237,26 @@ export async function loadMonthlySummary(db: Db, household: Household, month = c
     openReminders: open.filter((r) => r.kind === "reminder").length,
     doneReminders,
   });
+  const [{ rates }, openPlans, budgetRows, goalRows, goalTransactions] = await Promise.all([
+    getRates(db),
+    listOpenPlans(db, household.id),
+    listBudgets(db, household.id),
+    listActiveGoals(db, household.id),
+    listGoalTransactions(db, household.id),
+  ]);
+  summary.outlook = computeOutlook({
+    month,
+    currency: household.baseCurrency,
+    now,
+    income: summary.income,
+    expense: summary.expense,
+    transactions,
+    recurring,
+    openPlans,
+    budgets: budgetRows,
+    goals: goalRows,
+    goalTransactions,
+    rates,
+  });
+  return summary;
 }

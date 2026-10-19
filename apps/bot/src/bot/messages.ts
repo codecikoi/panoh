@@ -1,5 +1,16 @@
 import type { Bot } from "grammy";
-import { currentMonthKey, evaluateTrigger, extractItems, listRecurring, log, markProcessed, t, type ExtractionResult } from "@madat/core";
+import {
+  currentMonthKey,
+  evaluateTrigger,
+  extractItems,
+  listActiveGoals,
+  listOpenPlans,
+  listRecurring,
+  log,
+  markProcessed,
+  t,
+  type ExtractionResult,
+} from "@madat/core";
 import type { BotContext } from "./context.js";
 import { applyItems, describeTarget, resolveReplyTarget } from "./actions.js";
 import { sendSummary } from "./summary.js";
@@ -41,7 +52,11 @@ export function registerMessages(bot: Bot<BotContext>): void {
     const replyTarget = isReplyToBot && replyTo ? await resolveReplyTarget(ctx.deps.db, chat.id, replyTo.message_id) : undefined;
     void safeReact(ctx, "👀");
 
-    const recurring = await listRecurring(ctx.deps.db, scope.household.id);
+    const [recurring, plans, goals] = await Promise.all([
+      listRecurring(ctx.deps.db, scope.household.id),
+      listOpenPlans(ctx.deps.db, scope.household.id),
+      listActiveGoals(ctx.deps.db, scope.household.id),
+    ]);
     const authorName = ctx.from.first_name || ctx.from.username || "member";
     let result: ExtractionResult;
     try {
@@ -53,6 +68,8 @@ export function registerMessages(bot: Bot<BotContext>): void {
         baseCurrency: scope.currency,
         defaultReminderHour: scope.household.reminderHour,
         recurringPayments: recurring.map((p) => ({ name: p.name, amount: p.amount, currency: p.currency, dayOfMonth: p.dayOfMonth })),
+        plans: plans.slice(0, 20).map((p) => ({ name: p.title, amount: p.amount, currency: p.currency, date: p.plannedOn })),
+        goals: goals.map((g) => ({ name: g.title, target: g.targetAmount, currency: g.currency })),
         replyTo: replyTarget ? describeTarget(replyTarget, scope.tz) : undefined,
         recent: recentByChat.get(chat.id),
       });

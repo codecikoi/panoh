@@ -1,7 +1,14 @@
 import type { Bot } from "grammy";
 import { DateTime } from "luxon";
 import {
+  cancelPlan,
   cancelReminder,
+  currentMonthKey,
+  getGoal,
+  getPlan,
+  loadMonthlySummary,
+  removeBudget,
+  updateGoal,
   currencyName,
   deactivateRecurring,
   escapeHtml,
@@ -27,7 +34,7 @@ import {
 } from "@madat/core";
 import type { BotContext } from "./context.js";
 import * as R from "./render.js";
-import { recordPayment } from "./actions.js";
+import { budgetLineFor, payPlan, recordPayment } from "./actions.js";
 import { sendSummary } from "./summary.js";
 import { safeEdit } from "./telegram.js";
 
@@ -131,6 +138,47 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
           return answer(t(scope.locale, "confirm.done"));
         }
         return answer();
+      }
+
+      if (ns === "plan") {
+        const plan = await getPlan(db, Number(rest[0]));
+        if (!plan || plan.householdId !== scope.household.id || plan.status !== "planned") return answer(t(scope.locale, "hint.not_found"));
+        if (action === "del") {
+          await cancelPlan(db, plan.id);
+          await edit(R.deletedText(scope, currentText));
+          return answer();
+        }
+        if (action === "paid") {
+          const { rates } = await getRates(db);
+          const tx = await payPlan(db, scope, plan, { chatId, rates });
+          await edit(R.planPaidText(scope, plan, tx) + (await budgetLineFor(db, scope, tx)), R.txKeyboard(scope, tx));
+          if (messageId) await updateTransaction(db, tx.id, { botMessageId: messageId });
+          return answer(t(scope.locale, "confirm.done"));
+        }
+        return answer();
+      }
+
+      if (ns === "goal") {
+        const goal = await getGoal(db, Number(rest[0]));
+        if (!goal || goal.householdId !== scope.household.id || goal.status !== "active") return answer(t(scope.locale, "hint.not_found"));
+        if (action === "del") {
+          await updateGoal(db, goal.id, { status: "cancelled" });
+          await edit(R.deletedText(scope, currentText));
+        }
+        return answer();
+      }
+
+      if (ns === "bud") {
+        const category = rest[0] ?? "";
+        await removeBudget(db, scope.household.id, category);
+        if (action === "rm") {
+          // Pressed in the /budgets list: show what is left.
+          const stats = (await loadMonthlySummary(db, scope.household, currentMonthKey(scope.tz))).outlook.budgets;
+          await edit(R.budgetsListText(scope, stats), stats.length ? R.budgetsKeyboard(scope, stats) : undefined);
+        } else {
+          await edit(R.deletedText(scope, currentText));
+        }
+        return answer(t(scope.locale, "confirm.budget_removed", { category: R.catLabel(scope, category) }));
       }
 
       if (ns === "set") {

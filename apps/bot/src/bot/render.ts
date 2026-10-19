@@ -1,4 +1,5 @@
 import { InlineKeyboard } from "grammy";
+import { DateTime } from "luxon";
 import {
   CATEGORY_EMOJI,
   availableLocales,
@@ -12,8 +13,13 @@ import {
   languageName,
   shiftMonthKey,
   t,
+  endOfMonthISO,
+  type BudgetStat,
   type Category,
+  type Goal,
+  type GoalStat,
   type Insights,
+  type Plan,
   type MonthlySummary,
   type RecurringPayment,
   type Reminder,
@@ -134,7 +140,165 @@ export function paidText(scope: Scope, name: string, amount: number | null, curr
   return t(scope.locale, "confirm.paid", { name: escapeHtml(name), amount: amount !== null ? money(scope, amount, currency) : "—" });
 }
 
-export function alertText(scope: Scope, reminder: Reminder, rp?: RecurringPayment): string {
+/** "20 Dec" for an exact date, "December 2026, no exact date" for a month-only plan. */
+export function planWhen(scope: Scope, plan: Pick<Plan, "plannedOn" | "dateApproximate">): string {
+  if (plan.dateApproximate) return t(scope.locale, "plan.whole_month", { month: formatMonth(plan.plannedOn.slice(0, 7), scope.locale) });
+  return longDate(scope, plan.plannedOn);
+}
+
+/** Day and month spelled out, with the year only when it is not the current one. */
+export function longDate(scope: Scope, iso: string): string {
+  const dt = DateTime.fromISO(iso, { zone: "utc" }).setLocale(scope.locale);
+  const sameYear = dt.year === DateTime.now().setZone(scope.tz).year;
+  return dt.toLocaleString({ day: "numeric", month: "long", ...(sameYear ? {} : { year: "numeric" }) });
+}
+
+/** Goal deadline: the month name when the deadline is a month end, the full date otherwise. */
+export function deadlineText(scope: Scope, iso: string): string {
+  if (endOfMonthISO(iso) === iso) {
+    const dt = DateTime.fromISO(iso, { zone: "utc" }).setLocale(scope.locale);
+    return dt.toLocaleString({ month: "long", year: "numeric" });
+  }
+  return longDate(scope, iso);
+}
+
+export function planText(scope: Scope, plan: Plan): string {
+  return (
+    t(scope.locale, "confirm.plan", {
+      amount: money(scope, plan.amount, plan.currency),
+      category: catLabel(scope, plan.category),
+      title: escapeHtml(plan.title),
+      when: planWhen(scope, plan),
+    }) + (plan.dateApproximate ? t(scope.locale, "confirm.plan_no_date") : "")
+  );
+}
+
+export function planKeyboard(scope: Scope, plan: Plan): InlineKeyboard {
+  return new InlineKeyboard().text(t(scope.locale, "btn.cancel_plan"), `plan:del:${plan.id}`);
+}
+
+export function planPaidText(scope: Scope, plan: Plan, tx: Transaction): string {
+  const differs = tx.amount !== plan.amount || tx.currency !== plan.currency;
+  return (
+    t(scope.locale, "confirm.plan_paid", { title: escapeHtml(plan.title), amount: money(scope, tx.amount, tx.currency) }) +
+    (differs ? t(scope.locale, "confirm.plan_paid_diff", { planned: money(scope, plan.amount, plan.currency) }) : "")
+  );
+}
+
+/** Line appended to an expense confirmation when its category has a monthly limit. */
+export function budgetLine(scope: Scope, stat: BudgetStat | undefined): string {
+  if (!stat) return "";
+  const params = { category: catLabel(scope, stat.category), spent: money(scope, stat.spent), limit: money(scope, stat.limit), pct: stat.pct };
+  if (stat.spent > stat.limit) return t(scope.locale, "budget.over", { ...params, amount: money(scope, stat.spent - stat.limit) });
+  return t(scope.locale, "budget.line", params) + (stat.pct >= 80 ? " ⚠️" : "");
+}
+
+function budgetMark(pct: number): string {
+  return pct > 100 ? " 🚨" : pct >= 80 ? " ⚠️" : "";
+}
+
+export function budgetsLines(scope: Scope, stats: BudgetStat[]): string[] {
+  return stats.map(
+    (b) =>
+      t(scope.locale, "budgets.line", {
+        emoji: b.emoji,
+        category: t(scope.locale, `cat.${b.category}` as Parameters<typeof t>[1]),
+        spent: money(scope, b.spent),
+        limit: money(scope, b.limit),
+        pct: b.pct,
+      }) + budgetMark(b.pct),
+  );
+}
+
+export function budgetConfirmText(scope: Scope, category: string, amount: number, currency: string, stat: BudgetStat | undefined): string {
+  return t(scope.locale, "confirm.budget", {
+    category: catLabel(scope, category),
+    amount: money(scope, amount, currency),
+    spent: money(scope, stat?.spent ?? 0),
+    pct: stat?.pct ?? 0,
+  });
+}
+
+export function budgetsListText(scope: Scope, stats: BudgetStat[]): string {
+  if (!stats.length) return t(scope.locale, "budgets.empty");
+  return `${t(scope.locale, "budgets.title")}\n\n${budgetsLines(scope, stats).join("\n")}`;
+}
+
+/** One delete button per limit; `bud:rm` refreshes the list after removing. */
+export function budgetsKeyboard(scope: Scope, stats: BudgetStat[]): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  stats.forEach((b, i) => {
+    kb.text(`🗑 ${b.emoji} ${t(scope.locale, `cat.${b.category}` as Parameters<typeof t>[1])}`, `bud:rm:${b.category}`);
+    if (i % 2 === 1) kb.row();
+  });
+  return kb;
+}
+
+export function goalText(scope: Scope, goal: Goal, stat?: GoalStat): string {
+  const deadline = goal.deadline ? t(scope.locale, "confirm.goal_deadline", { date: deadlineText(scope, goal.deadline) }) : "";
+  let text = t(scope.locale, "confirm.goal", { title: escapeHtml(goal.title), amount: money(scope, goal.targetAmount, goal.currency), deadline });
+  if (stat?.monthlyNeed) text += t(scope.locale, "confirm.goal_pace", { amount: money(scope, stat.monthlyNeed, goal.currency) });
+  return text;
+}
+
+export function goalKeyboard(scope: Scope, goal: Goal): InlineKeyboard {
+  return new InlineKeyboard().text(t(scope.locale, "btn.delete"), `goal:del:${goal.id}`);
+}
+
+export function contributionText(scope: Scope, tx: Transaction, stat: GoalStat): string {
+  return (
+    t(scope.locale, "confirm.goal_contribution", {
+      title: escapeHtml(stat.title),
+      amount: money(scope, tx.amount, tx.currency),
+      saved: money(scope, stat.saved, stat.currency),
+      target: money(scope, stat.target, stat.currency),
+      pct: stat.pct,
+    }) + (stat.saved >= stat.target ? t(scope.locale, "confirm.goal_reached") : "")
+  );
+}
+
+export function goalsLines(scope: Scope, stats: GoalStat[]): string[] {
+  return stats.map((g) => {
+    let line = t(scope.locale, "goals.line", {
+      title: escapeHtml(g.title),
+      saved: money(scope, g.saved, g.currency),
+      target: money(scope, g.target, g.currency),
+      pct: g.pct,
+    });
+    if (g.deadline) line += t(scope.locale, "goals.line_deadline", { date: deadlineText(scope, g.deadline) });
+    if (g.monthlyNeed && g.saved < g.target) {
+      line += t(scope.locale, "goals.line_pace", {
+        amount: money(scope, g.monthlyNeed, g.currency),
+        left: money(scope, g.remainingThisMonth, g.currency),
+      });
+    }
+    return line;
+  });
+}
+
+export function goalsListText(scope: Scope, stats: GoalStat[]): string {
+  if (!stats.length) return t(scope.locale, "goals.empty");
+  return `${t(scope.locale, "goals.title")}\n\n${goalsLines(scope, stats).join("\n")}`;
+}
+
+export function plansListText(scope: Scope, rows: Plan[], total: number | null): string {
+  if (!rows.length) return t(scope.locale, "plans.empty");
+  const today = DateTime.now().setZone(scope.tz).toISODate()!;
+  const lines = rows.map((p) => {
+    const overdue = p.plannedOn < today ? ` · ⏳ ${t(scope.locale, "plans.overdue")}` : "";
+    return `${planWhen(scope, p)} · ${escapeHtml(p.title)} · ${money(scope, p.amount, p.currency)}${overdue}`;
+  });
+  const footer = total !== null ? `\n\n${t(scope.locale, "plans.total", { amount: money(scope, total) })}` : "";
+  return `${t(scope.locale, "plans.title")}\n\n${lines.join("\n")}${footer}`;
+}
+
+export function alertText(scope: Scope, reminder: Reminder, rp?: RecurringPayment, plan?: Plan): string {
+  if (reminder.kind === "plan_due" && plan) {
+    return t(scope.locale, plan.dateApproximate ? "alert.plan_month_end" : "alert.plan_due", {
+      title: escapeHtml(plan.title),
+      amount: money(scope, plan.amount, plan.currency),
+    });
+  }
   const amount = rp?.amount !== null && rp?.amount !== undefined ? money(scope, rp.amount, rp.currency) : "";
   if (reminder.kind === "payment_due") {
     return t(scope.locale, "alert.payment_due", { name: escapeHtml(reminder.title), amount });
@@ -152,6 +316,10 @@ export function alertKeyboard(scope: Scope, reminder: Reminder): InlineKeyboard 
   if (reminder.recurringPaymentId && reminder.period) {
     kb.text(t(scope.locale, "btn.paid"), `rp:paid:${reminder.recurringPaymentId}:${reminder.period}`);
     kb.text(t(scope.locale, "btn.snooze_1d"), `rem:snz:${reminder.id}:1440`);
+  } else if (reminder.planId) {
+    kb.text(t(scope.locale, "btn.paid"), `plan:paid:${reminder.planId}`);
+    kb.text(t(scope.locale, "btn.snooze_1d"), `rem:snz:${reminder.id}:1440`);
+    kb.row().text(t(scope.locale, "btn.cancel_plan"), `plan:del:${reminder.planId}`);
   } else {
     kb.text(t(scope.locale, "btn.done"), `rem:done:${reminder.id}`);
     kb.text(t(scope.locale, "btn.snooze_1h"), `rem:snz:${reminder.id}:60`);
@@ -209,6 +377,24 @@ export function summaryText(scope: Scope, s: MonthlySummary, insights?: Insights
   if (s.isCurrentMonth && s.daysElapsed >= 3 && s.projected !== null) {
     lines.push(t(L, "summary.avg_day", { avg: money(scope, s.avgPerDay), projected: money(scope, s.projected) }));
   }
+  const f = s.outlook.forecast;
+  if (s.isCurrentMonth && f && f.ahead > 0) {
+    const parts: string[] = [];
+    if (f.payments > 0) parts.push(t(L, "summary.part_payments", { amount: money(scope, f.payments) }));
+    if (f.plans > 0) parts.push(t(L, "summary.part_plans", { amount: money(scope, f.plans) }));
+    if (f.goals > 0) parts.push(t(L, "summary.part_goals", { amount: money(scope, f.goals) }));
+    lines.push("");
+    lines.push(t(L, "summary.forecast_ahead", { amount: money(scope, f.ahead), parts: parts.join(", ") }));
+    if (f.free >= 0) {
+      lines.push(
+        t(L, "summary.forecast_free", { amount: money(scope, f.free) }) +
+          (f.perDay ? t(L, "summary.forecast_per_day", { amount: money(scope, f.perDay) }) : ""),
+      );
+    } else {
+      lines.push(t(L, "summary.forecast_short", { amount: money(scope, -f.free) }));
+      lines.push(t(L, "summary.forecast_note"));
+    }
+  }
   if (s.categories.length) {
     lines.push("");
     lines.push(t(L, "summary.by_category"));
@@ -223,6 +409,24 @@ export function summaryText(scope: Scope, s: MonthlySummary, insights?: Insights
           delta,
         }),
       );
+    }
+  }
+  if (s.outlook.budgets.length) {
+    lines.push("");
+    lines.push(t(L, "summary.budgets"));
+    lines.push(...budgetsLines(scope, s.outlook.budgets));
+  }
+  if (s.outlook.goals.length) {
+    lines.push("");
+    lines.push(t(L, "summary.goals"));
+    lines.push(...goalsLines(scope, s.outlook.goals));
+  }
+  if (s.outlook.plans.length) {
+    lines.push("");
+    lines.push(t(L, "summary.plans"));
+    for (const p of s.outlook.plans.slice(0, 8)) {
+      const when = p.approximate ? "" : ` · ${formatDate(p.date, L)}`;
+      lines.push(`🗓 ${escapeHtml(p.title)} · ${money(scope, p.originalAmount, p.currency)}${when}${p.overdue ? " ⏳" : ""}`);
     }
   }
   const extras: string[] = [];

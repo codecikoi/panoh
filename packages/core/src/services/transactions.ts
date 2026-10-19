@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, lt, ne, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { transactions, type NewTransaction, type Transaction } from "../db/schema.js";
+import { plans, transactions, type NewTransaction, type Transaction } from "../db/schema.js";
 import { monthDateRange } from "../dates.js";
 
 export async function createTransaction(db: Db, input: NewTransaction): Promise<Transaction> {
@@ -19,8 +19,16 @@ export async function updateTransaction(db: Db, id: number, patch: Partial<Trans
   return rows[0];
 }
 
+/** Marks a transaction deleted; a planned expense it paid goes back to the plan list. */
 export async function softDeleteTransaction(db: Db, id: number): Promise<Transaction | undefined> {
-  return updateTransaction(db, id, { status: "deleted" });
+  const row = await updateTransaction(db, id, { status: "deleted" });
+  if (row?.planId) {
+    await db
+      .update(plans)
+      .set({ status: "planned", updatedAt: new Date() })
+      .where(and(eq(plans.id, row.planId), eq(plans.status, "done")));
+  }
+  return row;
 }
 
 export async function getTransaction(db: Db, id: number): Promise<Transaction | undefined> {

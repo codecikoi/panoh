@@ -16,6 +16,11 @@ export type {
   NewTransaction,
   NewReminder,
   NewRecurringPayment,
+  Plan,
+  NewPlan,
+  Budget,
+  Goal,
+  NewGoal,
   TriggerConfig,
 } from "./db/schema.js";
 export * from "./ai/extract.js";
@@ -29,4 +34,5 @@ export * from "./services/summary.js";
 export * from "./services/insights.js";
 export * from "./services/processed.js";
 export * from "./services/records.js";
+export * from "./services/planning.js";
 export * from "./telegram/initData.js";

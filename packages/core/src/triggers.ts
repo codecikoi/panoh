@@ -5,7 +5,7 @@ export const BUILTIN_KEYWORDS: Record<string, string[]> = {
   en: [
     "spent", "spend", "paid", "pay", "bought", "buy", "expense", "expenses", "income", "salary", "earned", "received",
     "remind", "reminder", "loan", "credit", "mortgage", "payment", "rent", "bill", "bills", "subscription",
-    "summary", "report", "stats", "undo", "cancel", "delete", "fix", "budget",
+    "summary", "report", "stats", "undo", "cancel", "delete", "fix", "budget", "planned", "limit", "savings",
   ],
   ru: [
     "потратил", "потратила", "потратили", "трата", "траты", "купил", "купила", "купили", "заплатил", "заплатила",
@@ -13,12 +13,13 @@ export const BUILTIN_KEYWORDS: Record<string, string[]> = {
     "зп", "получил", "получила", "получили", "напомни", "напомнить", "напоминание", "кредит", "ипотека", "платёж",
     "платеж", "платежи", "аренда", "квартплата", "коммуналка", "подписка", "сводка", "итоги", "отчёт", "отчет",
     "статистика", "отмени", "отменить", "удали", "удалить", "исправь", "исправить", "бюджет", "записал", "запиши",
+    "запланируй", "запланировали", "лимит", "копим", "копилка", "копилку", "отложили", "отложил", "отложила",
   ],
   uz: [
     "sarfladim", "sarfladik", "sarflandi", "xarajat", "xarajatlar", "sotib oldim", "sotib oldik", "oldim", "to'ladim",
     "to'ladik", "to'lov", "tuladim", "daromad", "maosh", "oylik", "oldik", "eslat", "eslatma", "eslatib", "kredit",
     "ipoteka", "ijara", "kommunal", "obuna", "hisobot", "xulosa", "statistika", "bekor", "o'chir", "tuzat", "byudjet",
-    "yozib", "yoz",
+    "yozib", "yoz", "rejalashtir", "limit", "jamg'arma", "yig'amiz", "ajratdik",
   ],
   es: [
     "gasté", "gastamos", "gasto", "gastos", "pagué", "pagamos", "pagado", "compré", "compramos", "ingreso", "ingresos",

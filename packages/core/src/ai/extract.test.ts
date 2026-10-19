@@ -14,9 +14,9 @@ describe("normalizeItems", () => {
   it("applies defaults and validates categories", () => {
     const items = normalizeItems(
       [
-        { kind: "expense", amount: 150000, currency: null, category: "groceries", note: "продукты", date: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.95 },
-        { kind: "expense", amount: -20000, currency: "сум", category: "spaceships", note: "такси", date: "2026-10-12", due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 7 },
-        { kind: "none", amount: null, currency: null, category: null, note: "", date: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 1 },
+        { kind: "expense", amount: 150000, currency: null, category: "groceries", note: "продукты", date: null, date_approximate: false, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.95 },
+        { kind: "expense", amount: -20000, currency: "сум", category: "spaceships", note: "такси", date: "2026-10-12", date_approximate: false, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 7 },
+        { kind: "none", amount: null, currency: null, category: null, note: "", date: null, date_approximate: false, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 1 },
       ],
       ctx,
     );
@@ -27,7 +27,7 @@ describe("normalizeItems", () => {
 
   it("keeps only changed fields for corrections", () => {
     const [item] = normalizeItems(
-      [{ kind: "correction", amount: 115000, currency: null, category: null, note: "", date: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 }],
+      [{ kind: "correction", amount: 115000, currency: null, category: null, note: "", date: null, date_approximate: false, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 }],
       ctx,
     );
     expect(item?.changed).toEqual({ amount: 115000 });
@@ -36,20 +36,44 @@ describe("normalizeItems", () => {
 
   it("converts reminder times from household timezone and keeps the time_specified flag", () => {
     const [item] = normalizeItems(
-      [{ kind: "reminder", amount: null, currency: null, category: null, note: "позвонить маме", date: null, due_at: "2026-10-15T10:00", day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 }],
+      [{ kind: "reminder", amount: null, currency: null, category: null, note: "позвонить маме", date: null, date_approximate: false, due_at: "2026-10-15T10:00", day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 }],
       ctx,
     );
     expect(item?.dueAt?.toISOString()).toBe("2026-10-15T05:00:00.000Z");
     expect(item?.timeSpecified).toBe(false);
     const [explicit] = normalizeItems(
-      [{ kind: "reminder", amount: null, currency: null, category: null, note: "врач", date: null, due_at: "2026-10-15T15:30", day_of_month: null, remind_days_before: null, target: null, time_specified: true, confidence: 0.9 }],
+      [{ kind: "reminder", amount: null, currency: null, category: null, note: "врач", date: null, date_approximate: false, due_at: "2026-10-15T15:30", day_of_month: null, remind_days_before: null, target: null, time_specified: true, confidence: 0.9 }],
       ctx,
     );
     expect(explicit?.timeSpecified).toBe(true);
   });
 
+  it("puts month-only plans on the last day of the month", () => {
+    const [plan, exact] = normalizeItems(
+      [
+        { kind: "planned_expense", amount: 3000000, currency: null, category: "gifts", note: "подарок на свадьбу", date: "2026-12-01", date_approximate: true, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 },
+        { kind: "planned_expense", amount: 2000000, currency: null, category: null, note: "коляска", date: "2026-10-17", date_approximate: false, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 },
+      ],
+      ctx,
+    );
+    expect(plan).toMatchObject({ date: "2026-12-31", hasDate: true, dateApproximate: true, category: "gifts", timeSpecified: false });
+    expect(exact).toMatchObject({ date: "2026-10-17", dateApproximate: false, category: "other" });
+    const [fix] = normalizeItems(
+      [{ kind: "correction", amount: null, currency: null, category: null, note: "", date: "2026-12-15", date_approximate: false, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 }],
+      ctx,
+    );
+    expect(fix?.changed).toEqual({ date: "2026-12-15", dateApproximate: false });
+  });
+
   it("builds a prompt with household context", () => {
-    const msg = buildExtractionUserMessage({ ...ctx, replyTo: "expense record: 150000 UZS" });
+    const msg = buildExtractionUserMessage({
+      ...ctx,
+      replyTo: "expense record: 150000 UZS",
+      plans: [{ name: "подарок", amount: 3000000, currency: "UZS", date: "2026-12-31" }],
+      goals: [{ name: "отпуск", target: 10000000, currency: "UZS" }],
+    });
+    expect(msg).toContain('Known planned expenses: "подарок"');
+    expect(msg).toContain('Known savings goals: "отпуск"');
     expect(msg).toContain("Asia/Tashkent");
     expect(msg).toContain("Default reminder time when none is given: 09:00");
     expect(msg).toContain('"кредит"');

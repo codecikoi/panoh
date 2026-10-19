@@ -22,6 +22,8 @@ function tx(partial: Partial<Transaction>): Transaction {
     rawText: null,
     recurringPaymentId: null,
     period: null,
+    planId: null,
+    goalId: null,
     sourceChatId: null,
     sourceMessageId: null,
     botMessageId: null,
