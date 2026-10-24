@@ -12,6 +12,8 @@ import {
   formatPercent,
   languageName,
   shiftMonthKey,
+  monthPeriod,
+  periodKey,
   t,
   endOfMonthISO,
   type BudgetStat,
@@ -502,6 +504,7 @@ export function summaryKeyboard(scope: Scope, month: string, options: { dashboar
     kb.text(t(scope.locale, "btn.next_month", { month: formatMonth(next, scope.locale) }), `sum:${next}`);
   }
   kb.row();
+  kb.text(t(scope.locale, "btn.pdf"), `rep:${periodKey(monthPeriod(month))}`);
   if (options.isPrivate && options.dashboardUrl) {
     kb.webApp(t(scope.locale, "btn.open_dashboard"), `${options.dashboardUrl}?month=${month}`);
   } else if (options.dashboardLink) {

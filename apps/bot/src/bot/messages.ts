@@ -14,6 +14,7 @@ import {
 import type { BotContext } from "./context.js";
 import { applyItems, describeWithHistory, recentRecord, resolveReplyTarget } from "./actions.js";
 import { sendSummary } from "./summary.js";
+import { reportPickerKeyboard, sendReport } from "../report/send.js";
 import { safeReact } from "./telegram.js";
 import { ensureWelcome } from "./commands.js";
 import { prefixOf } from "./render.js";
@@ -102,6 +103,11 @@ export function registerMessages(bot: Bot<BotContext>): void {
       if (item.kind !== "none") remember(chat.id, `bot recorded ${item.kind}: ${item.amount ?? ""} ${item.currency} ${item.category ?? ""} ${item.note}`.trim());
     }
 
+    if (outcome.report === "ask") {
+      await ctx.reply(t(scope.locale, "report.choose"), { reply_markup: reportPickerKeyboard(scope) });
+    } else if (outcome.report) {
+      void sendReport(ctx.api, ctx.deps, scope, chat.id, outcome.report, { replyTo: ctx.message.message_id });
+    }
     if (outcome.summaryRequested) {
       await sendSummary(ctx.api, ctx.deps, scope, chat.id, currentMonthKey(scope.tz));
     }

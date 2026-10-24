@@ -21,6 +21,7 @@ export const ITEM_KINDS = [
   "correction",
   "cancel_last",
   "summary_request",
+  "report_request",
   "rename",
   "clarify",
   "none",
@@ -35,6 +36,7 @@ const RawItem = z.object({
   note: z.string(),
   date: z.string().nullable(),
   date_approximate: z.boolean(),
+  date_to: z.string().nullable(),
   due_at: z.string().nullable(),
   day_of_month: z.number().int().nullable(),
   remind_days_before: z.number().int().nullable(),
@@ -62,6 +64,8 @@ export interface ExtractedItem {
   hasDate: boolean;
   /** Only a month was given for a plan or goal; `date` is then the last day of that month. */
   dateApproximate: boolean;
+  /** report_request: last day of the period (ISO, inclusive); null when no period was named. */
+  dateTo: string | null;
   /** Instant for reminders (already converted from household local time). */
   dueAt: Date | null;
   dayOfMonth: number | null;
@@ -121,7 +125,8 @@ Return nothing but the structured output.
 - goal_contribution: money put aside for a KNOWN savings goal (see the list) ("отложили на отпуск 1 млн", "+500k to the car fund"). target = that goal's name exactly, amount required. If there is exactly one goal and the message just says money went to savings, use it.
 - correction: the message replies to a bot confirmation and changes something ("not 150, 115", "category transport", "it was yesterday", "in dollars"). Fill ONLY the changed fields; leave everything else null (note "" if unchanged).
 - cancel_last: the user wants to remove the last record ("undo", "delete that", "wrong", "отмени", "bekor").
-- summary_request: the user asks for totals / summary / how much was spent.
+- summary_request: the user asks for totals / summary / how much was spent (a chat message).
+- report_request: the user asks for a report / PDF / document / file / statement ("отчёт за прошлую неделю", "pdf за сентябрь", "hisobot"). date = first day and date_to = last day of the period (inclusive); a week is Monday–Sunday, "this month" is the whole calendar month. Both null when no period is named.
 - rename: the user gives the assistant a new name ("теперь тебя зовут Кексик", "call yourself Kex", "seni endi Keksik deb chaqiramiz"). note = the new name exactly as written, without quotes; "Madat" to go back to the default. A question about the name ("как тебя зовут?") is clarify, not rename.
 - clarify: you cannot act safely without asking, or the user asks about a record or about what the bot just did ("why didn't the amount change?", "what did you record?"). Put a short reply (≤ 200 chars) in note, in the message's language, friendly and specific: ask ONE concrete question, or answer using only facts from the context (the reply target, its edit history, the most recent record, recent chat). Never invent amounts or dates. Return clarify alone, not together with a record for the same thing.
 - none: nothing actionable (chit-chat, questions, plans with neither an amount nor a date).
@@ -134,6 +139,7 @@ Return nothing but the structured output.
 - Reminder time of day: if the user states a time or a clear part of the day ("at 3", "tonight" 20:00, "morning" 09:00, "after lunch" 14:00), use it and set time_specified=true. If only a date or weekday is given, use the household default reminder time from the message and set time_specified=false. For planned_expense set time_specified=true only when a time of day is stated. For every other kind time_specified=false.
 - A correction that only changes the time of a reminder keeps the original reminder date: return the full due_at with the new time and time_specified=true. A correction that moves a reminder to another date without naming a time returns due_at with the new date (keep the original time of day) and time_specified=false; the bot decides the final time.
 - Weekday names, months and relative words may be in any language.
+- date_to: only for report_request, otherwise null.
 - date_approximate: true only for planned_expense / goal (or a correction of their date) when no exact day was given; otherwise false.
 - note: short (≤ 40 chars), in the message's language, no amount or currency inside, lowercase unless it is a proper name. For recurring payments the note is the bill name ("кредит", "квартира", "internet"); for plans and goals it is what the money is for ("подарок на свадьбу", "отпуск").
 - category must be one of the lists below. Loan or mortgage instalments → loans. Taxi, fuel, bus → transport. Cafe, restaurant, delivery → dining. Supermarket, market, food at home → groceries. Pharmacy, doctor → health. Money sent to parents/relatives → family.
@@ -235,6 +241,7 @@ export function normalizeItems(raw: RawExtractedItem[], ctx: ExtractionContext):
       note: (r.note ?? "").trim().slice(0, r.kind === "clarify" ? 300 : 80),
       date,
       hasDate,
+      dateTo: r.kind === "report_request" && r.date_to && isValidISODate(r.date_to) ? r.date_to : null,
       dateApproximate,
       dueAt,
       dayOfMonth,

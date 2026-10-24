@@ -87,12 +87,12 @@ function baseAmount(tx: Transaction, currency: string): number | null {
   return null;
 }
 
-function pct(current: number, prev: number): number | null {
+export function pct(current: number, prev: number): number | null {
   if (prev <= 0) return null;
   return Math.round(((current - prev) / prev) * 100);
 }
 
-function buildCategoryStats(
+export function buildCategoryStats(
   current: Transaction[],
   prev: Transaction[],
   kind: "expense" | "income",

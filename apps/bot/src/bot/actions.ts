@@ -18,6 +18,7 @@ import {
   listOpenPlans,
   loadBudgetStat,
   loadMonthlySummary,
+  makePeriod,
   matchByName,
   normalizeAssistantName,
   updateHousehold,
@@ -57,6 +58,7 @@ import {
   type Db,
   type ExtractedItem,
   type Goal,
+  type Period,
   type Plan,
   type RateTable,
   type RecurringPayment,
@@ -129,6 +131,8 @@ export interface ApplyOutcome {
   /** Replies where the bot asked or explained instead of recording. */
   clarified: number;
   summaryRequested: boolean;
+  /** A PDF report was asked for: the period, or "ask" when none was named. */
+  report?: Period | "ask";
 }
 
 function replyOpts(meta: ApplyMeta, extra: Record<string, unknown> = {}): Record<string, unknown> {
@@ -193,6 +197,10 @@ export async function applyItems(ctx: BotContext, items: ExtractedItem[], meta: 
           break;
         case "summary_request":
           outcome.summaryRequested = true;
+          break;
+        case "report_request":
+          outcome.report = (item.hasDate && item.dateTo ? makePeriod(item.date, item.dateTo) : null) ?? "ask";
+          outcome.handled++;
           break;
         case "none":
           break;
@@ -597,6 +605,7 @@ export function correctionOf(changed: ExtractedItem["changed"]): ExtractedItem {
     note: "",
     date: "",
     hasDate: false,
+    dateTo: null,
     dateApproximate: false,
     dueAt: null,
     dayOfMonth: null,

@@ -19,6 +19,7 @@ import {
   getTransaction,
   hasLocale,
   isValidMonthKey,
+  periodFromKey,
   isValidTimezone,
   languageName,
   log,
@@ -36,6 +37,7 @@ import type { BotContext } from "./context.js";
 import * as R from "./render.js";
 import { applyCorrection, budgetLineFor, correctionOf, loadTarget, payPlan, recordPayment } from "./actions.js";
 import { sendSummary } from "./summary.js";
+import { sendReport } from "../report/send.js";
 import { safeEdit } from "./telegram.js";
 
 export function registerCallbacks(bot: Bot<BotContext>): void {
@@ -245,6 +247,14 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
         }
         await edit(R.settingsText(scope), R.settingsKeyboard(scope));
         return answer(saved ? t(scope.locale, "settings.saved", { value: saved }) : undefined);
+      }
+
+      if (ns === "rep") {
+        const period = periodFromKey(action);
+        if (!period) return answer();
+        await answer(t(scope.locale, "report.started"));
+        void sendReport(ctx.api, ctx.deps, scope, chatId, period);
+        return;
       }
 
       if (ns === "sum") {

@@ -79,6 +79,7 @@ pnpm db:generate          # new SQL migration after changing packages/core/src/d
 | Command | What it does |
 |---|---|
 | `/summary` `[last \| YYYY-MM]` | Month overview by category, compared with the previous month, with insights and tips |
+| `/report` `[week \| 2026-09 \| 01.10–15.10]` | PDF report: totals vs the previous period, categories, limits, savings, plans, tips and every record; also a 📄 PDF button under each summary |
 | `/last` | Last 10 records |
 | `/undo` | Delete the last record |
 | `/reminders` | Open reminders |

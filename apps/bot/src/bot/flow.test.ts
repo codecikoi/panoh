@@ -7,6 +7,7 @@ vi.mock("../../../../packages/core/src/ai/extract.ts", async (importOriginal) =>
   return { ...mod, extractItems: vi.fn() };
 });
 vi.mock("../../../../packages/core/src/ai/insights.ts", () => ({ generateInsights: vi.fn().mockResolvedValue(null) }));
+vi.mock("../report/pdf.js", () => ({ htmlToPdf: vi.fn().mockResolvedValue(Buffer.from("%PDF-1.4 test")) }));
 process.env.LOG_LEVEL = "warn";
 
 import {
@@ -33,6 +34,7 @@ process.env.DEFAULT_CURRENCY = "UZS";
 process.env.DEFAULT_TIMEZONE = "Asia/Tashkent";
 
 import { createBot } from "./bot.js";
+import { htmlToPdf } from "../report/pdf.js";
 import { createScheduler } from "../scheduler.js";
 import type { BotContext } from "./context.js";
 
@@ -57,7 +59,7 @@ let updateId = 1;
 
 function item(partial: Partial<ExtractedItem>): ExtractedItem {
   return {
-    kind: "expense", amount: null, currency: "UZS", category: null, note: "", date: "2026-10-13", hasDate: false, dateApproximate: false, dueAt: null,
+    kind: "expense", amount: null, currency: "UZS", category: null, note: "", date: "2026-10-13", hasDate: false, dateApproximate: false, dateTo: null, dueAt: null,
     dayOfMonth: null, remindDaysBefore: null, target: null, timeSpecified: true, confidence: 0.95, changed: {}, ...partial,
   };
 }
@@ -525,6 +527,37 @@ describe("bot flow", () => {
     await sendText(bot, "/name reset", cmd("/name reset"));
     expect(lastSent().payload.text).toContain("снова Мадат");
     expect((await getHouseholdByChatId(handle.db, chat.id))?.assistantName).toBeNull();
+  });
+
+  it("builds PDF reports for a chosen period", async () => {
+    const cmd = (text: string) => ({ entities: [{ type: "bot_command", offset: 0, length: text.split(" ")[0]!.length }] });
+    await sendText(bot, "/report", cmd("/report"));
+    const picker = JSON.stringify(lastSent().payload.reply_markup);
+    expect(lastSent().payload.text).toContain("За какой период");
+    const thisMonth = /rep:(\d{8}-\d{8})/g;
+    const keys = [...picker.matchAll(thisMonth)].map((m) => m[1]);
+    expect(keys).toHaveLength(4);
+
+    await press(bot, `rep:${keys[2]}`, 950, "picker");
+    await vi.waitFor(() => expect(calls.some((c) => c.method === "sendDocument")).toBe(true));
+    expect(htmlToPdf).toHaveBeenCalledTimes(1);
+    expect(String(vi.mocked(htmlToPdf).mock.lastCall![0])).toContain("Все операции");
+    await vi.waitFor(() => expect(calls.some((c) => c.method === "deleteMessage")).toBe(true));
+
+    await sendText(bot, "/report вчера и позавчера", cmd("/report"));
+    expect(lastSent().payload.text).toContain("Не понял период");
+
+    await sendText(bot, "/report 2020-01", cmd("/report"));
+    await vi.waitFor(() => expect(String(lastSent().payload.text)).toContain("записей нет"));
+
+    // Asked in words; the summary keyboard carries the PDF button too.
+    const month = DateTime.now().setZone("Asia/Tashkent");
+    mockExtraction([item({ kind: "report_request", date: month.startOf("month").toISODate()!, hasDate: true, dateTo: month.endOf("month").toISODate()! })]);
+    calls.length = 0;
+    await sendText(bot, "+ пришли отчёт за этот месяц");
+    await vi.waitFor(() => expect(calls.some((c) => c.method === "sendDocument")).toBe(true));
+    await sendText(bot, "/summary", cmd("/summary"));
+    expect(JSON.stringify(lastSent().payload.reply_markup)).toContain("rep:");
   });
 
   it("changes settings from inline buttons", async () => {

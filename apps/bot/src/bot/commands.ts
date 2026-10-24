@@ -6,6 +6,8 @@ import {
   getRates,
   listOpenPlans,
   loadMonthlySummary,
+  parsePeriod,
+  todayISO,
   plannedTotalForMonth,
   effectiveKeywords,
   escapeHtml,
@@ -27,6 +29,7 @@ import type { BotContext } from "./context.js";
 import * as R from "./render.js";
 import { renameAssistant, undoLast } from "./actions.js";
 import { sendSummary } from "./summary.js";
+import { reportPickerKeyboard, sendReport } from "../report/send.js";
 
 export async function ensureWelcome(ctx: BotContext, force = false): Promise<void> {
   const scope = ctx.scope;
@@ -68,7 +71,7 @@ export function registerCommands(bot: Bot<BotContext>): void {
   bot.command("help", async (ctx) => {
     const scope = ctx.scope;
     const help = t(scope.locale, "help", { prefix: escapeHtml(R.prefixOf(scope)), days: scope.household.remindDaysBefore });
-    await ctx.reply(`${help}\n\n${t(scope.locale, "help.planning")}\n\n${t(scope.locale, "help.name")}`);
+    await ctx.reply(`${help}\n\n${t(scope.locale, "help.planning")}\n\n${t(scope.locale, "help.report")}\n\n${t(scope.locale, "help.name")}`);
   });
 
   bot.command("summary", async (ctx) => {
@@ -98,6 +101,15 @@ export function registerCommands(bot: Bot<BotContext>): void {
     const list = await listRecurring(ctx.deps.db, ctx.scope.household.id);
     const rows = list.map((payment) => ({ payment, ...nextDue(payment, ctx.scope.tz) }));
     await ctx.reply(R.paymentsListText(ctx.scope, rows));
+  });
+
+  bot.command("report", async (ctx) => {
+    const scope = ctx.scope;
+    const arg = argOf(ctx);
+    if (!arg) return ctx.reply(t(scope.locale, "report.choose"), { reply_markup: reportPickerKeyboard(scope) });
+    const period = parsePeriod(arg, todayISO(scope.tz));
+    if (!period) return ctx.reply(t(scope.locale, "report.bad_period"), { reply_markup: reportPickerKeyboard(scope) });
+    void sendReport(ctx.api, ctx.deps, scope, ctx.chat.id, period, { replyTo: ctx.message?.message_id });
   });
 
   bot.command("plans", async (ctx) => {
@@ -196,6 +208,7 @@ export function registerCommands(bot: Bot<BotContext>): void {
 
 const COMMAND_KEYS: { command: string; key: LocaleKey }[] = [
   { command: "summary", key: "cmd.summary" },
+  { command: "report", key: "cmd.report" },
   { command: "last", key: "cmd.last" },
   { command: "undo", key: "cmd.undo" },
   { command: "reminders", key: "cmd.reminders" },

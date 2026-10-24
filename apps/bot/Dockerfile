@@ -11,6 +11,11 @@ COPY . .
 RUN pnpm --filter @madat/bot build
 
 FROM node:22-alpine
+# Headless Chromium prints the PDF reports; Noto covers the scripts of all 30 bot languages (incl. CJK, Arabic, Hebrew, Indic, Thai) and emoji.
+RUN apk add --no-cache chromium font-noto font-noto-cjk font-noto-arabic font-noto-hebrew font-noto-thai \
+      font-noto-devanagari font-noto-bengali font-noto-emoji \
+ && fc-cache -f >/dev/null
+ENV CHROMIUM_PATH=/usr/bin/chromium-browser
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /repo/apps/bot/dist ./dist

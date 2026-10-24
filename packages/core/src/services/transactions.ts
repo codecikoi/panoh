@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lt, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lt, lte, ne, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { plans, transactions, type NewTransaction, type Transaction } from "../db/schema.js";
 import { monthDateRange } from "../dates.js";
@@ -65,6 +65,29 @@ export async function listTransactionsForMonth(
       ),
     )
     .orderBy(desc(transactions.occurredOn), desc(transactions.id));
+}
+
+/** Transactions dated from `from` to `to` inclusive (ISO dates), oldest first. */
+export async function listTransactionsInRange(
+  db: Db,
+  householdId: number,
+  from: string,
+  to: string,
+  options: { includePending?: boolean } = {},
+): Promise<Transaction[]> {
+  const statusFilter = options.includePending ? ne(transactions.status, "deleted") : eq(transactions.status, "confirmed");
+  return db
+    .select()
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.householdId, householdId),
+        gte(transactions.occurredOn, from),
+        lte(transactions.occurredOn, to),
+        statusFilter,
+      ),
+    )
+    .orderBy(asc(transactions.occurredOn), asc(transactions.id));
 }
 
 export async function listRecentTransactions(db: Db, householdId: number, limit = 10): Promise<Transaction[]> {

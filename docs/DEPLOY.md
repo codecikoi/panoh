@@ -57,6 +57,8 @@ One small VPS (1 vCPU, 2 GB RAM) runs Postgres and the bot with `docker compose`
 4. `deploy/deploy.sh` copies the working tree to `/opt/madat`, installs the daily backup cron and runs `docker compose -f deploy/compose.prod.yml up -d --build`. `deploy/deploy.sh logs` / `status` for operations.
 5. Backups: `deploy/backup.sh` dumps the database daily to `/var/backups/madat` (14 days). Copy them off the server as well.
 
+The bot image includes headless Chromium and Noto fonts for the PDF reports (about 1.7 GB); `CHROMIUM_PATH` points at it. Locally the bot finds Google Chrome or Chromium by itself.
+
 Stop any other running instance of the bot first: Telegram delivers updates to one poller only.
 
 ## Health and operations
