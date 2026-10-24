@@ -14,6 +14,11 @@ export function availableLocales(): string[] {
   return Object.keys(LOCALES);
 }
 
+/** Every string key (the English table is the reference). */
+export function localeKeys(): LocaleKey[] {
+  return Object.keys(LOCALES.en!) as LocaleKey[];
+}
+
 export function hasLocale(code: string): boolean {
   return code in LOCALES;
 }

@@ -53,6 +53,10 @@ export interface MonthlySummary {
   incomeDeltaPct: number | null;
   categories: CategoryStat[];
   incomeCategories: CategoryStat[];
+  /** Expense categories that appeared this month (none last month); empty when there is no previous month. */
+  newCategories: CategoryStat[];
+  /** Expense categories that had spending last month and none this month. */
+  droppedCategories: CategoryStat[];
   topGrowth: CategoryStat | null;
   topDrop: CategoryStat | null;
   biggest: BiggestSpend[];
@@ -190,6 +194,8 @@ export function computeSummary(input: SummaryInput): MonthlySummary {
     incomeDeltaPct: hasPrev ? pct(incomes.total, incomes.prevTotal) : null,
     categories: visibleCategories,
     incomeCategories: incomes.stats.filter((s) => s.amount > 0),
+    newCategories: hasPrev ? visibleCategories.filter((s) => s.prevAmount === 0) : [],
+    droppedCategories: expenses.stats.filter((s) => s.amount === 0 && s.prevAmount > 0).sort((a, b) => b.prevAmount - a.prevAmount),
     topGrowth: grew[0] ?? null,
     topDrop: dropped[0] ?? null,
     biggest,

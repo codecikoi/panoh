@@ -113,7 +113,7 @@ See [docs/DEPLOY.md](docs/DEPLOY.md) for Google Cloud Run + Cloud SQL (recommend
 ## Roadmap
 
 1. **Stage 1 (this repo):** bot, parsing, confirmations, corrections, reminders, recurring payments, text summary, API.
-2. **Stage 2:** Mini App dashboard (`apps/dashboard`): categories, month-over-month comparison, upcoming bills, insights.
+2. **Stage 2:** Mini App dashboard (`apps/dashboard`, React + Vite, read-only): month (totals, free money, what grew / dropped / is new, category shares, insights, PDF), records by day, plans and bills, limits and savings goals; Telegram theme, 30 languages. Served by Caddy next to the API (`deploy/compose.prod.yml`, profile `dashboard`).
 3. **Stage 3:** public launch: onboarding, Telegram Stars subscription, free-tier limits, voice messages, receipts.
 
 ## Testing strategy

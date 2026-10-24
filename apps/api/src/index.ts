@@ -9,7 +9,13 @@ try {
 } catch (err) {
   log.warn("api: migrations failed (another instance may be migrating)", { err });
 }
-const app = createApp({ db: handle.db, botToken: requireEnv("BOT_TOKEN"), corsOrigin: e.DASHBOARD_ORIGIN });
+const app = createApp({
+  db: handle.db,
+  botToken: requireEnv("BOT_TOKEN"),
+  corsOrigin: e.DASHBOARD_ORIGIN,
+  botUrl: e.BOT_INTERNAL_URL,
+  internalToken: e.INTERNAL_TOKEN,
+});
 
 const server = serve({ fetch: app.fetch, port: e.PORT, hostname: "0.0.0.0" }, (info) => {
   log.info("api: listening", { port: info.port });

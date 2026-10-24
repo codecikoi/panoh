@@ -1,6 +1,7 @@
-# Production on a single VPS: Postgres + bot (long polling). Nothing is published to the internet:
-# the bot only makes outgoing connections (Telegram, Anthropic, exchange rates) and the database stays inside Docker.
-# Started by deploy/deploy.sh from /opt/madat, which holds the server's own .env (BOT_TOKEN, ANTHROPIC_API_KEY, POSTGRES_PASSWORD, ...).
+# Production on a single VPS: Postgres + bot (long polling), and with the "dashboard" profile the API and Caddy
+# (HTTPS on 80/443 for the Telegram Mini App). Only Caddy is published; the bot and the database stay inside Docker.
+# Started by deploy/deploy.sh from /opt/madat, which holds the server's own .env (BOT_TOKEN, ANTHROPIC_API_KEY,
+# POSTGRES_PASSWORD, INTERNAL_TOKEN, and for the dashboard DOMAIN + COMPOSE_PROFILES=dashboard).
 name: madat
 
 x-logging: &logging
@@ -37,6 +38,7 @@ services:
       BOT_MODE: polling
       PORT: "8080"
       DATABASE_URL: postgres://madat:${POSTGRES_PASSWORD}@db:5432/madat
+      DASHBOARD_URL: ${DOMAIN:+https://${DOMAIN}/}
     depends_on:
       db:
         condition: service_healthy
@@ -47,5 +49,44 @@ services:
       retries: 3
     logging: *logging
 
+  api:
+    profiles: ["dashboard"]
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      DATABASE_URL: postgres://madat:${POSTGRES_PASSWORD}@db:5432/madat
+      BOT_INTERNAL_URL: http://bot:8080
+      DASHBOARD_ORIGIN: https://${DOMAIN:-localhost}
+    depends_on:
+      db:
+        condition: service_healthy
+    logging: *logging
+
+  web:
+    profiles: ["dashboard"]
+    build:
+      context: ..
+      dockerfile: apps/dashboard/Dockerfile
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    logging: *logging
+
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:

@@ -39,8 +39,15 @@ void setCommands(bot)
   .then(() => setProfile(bot))
   .catch((err) => log.warn("bot profile update incomplete", { err }));
 
+// The menu button next to the input field in private chats opens the dashboard in one tap.
+if (e.DASHBOARD_URL) {
+  void bot.api
+    .setChatMenuButton({ menu_button: { type: "web_app", text: "📊 Madat", web_app: { url: e.DASHBOARD_URL } } })
+    .catch((err) => log.warn("menu button not set", { err }));
+}
+
 const scheduler = createScheduler(bot.api, deps);
-const { server } = createServer(bot, scheduler);
+const { server } = createServer(bot, scheduler, deps);
 scheduler.start(30_000);
 
 const allowedUpdates = ["message", "callback_query", "my_chat_member"] as const;

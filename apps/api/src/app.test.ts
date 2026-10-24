@@ -66,6 +66,40 @@ describe("api", () => {
     expect(((await plans.json()) as { plans: unknown[] }).plans).toEqual([]);
   });
 
+  it("serves dashboard strings without auth and falls back to English", async () => {
+    const ru = (await (await app.request("/api/i18n/ru")).json()) as { locale: string; strings: Record<string, string> };
+    expect(ru.locale).toBe("ru");
+    expect(ru.strings["dash.tab_month"]).toBe("Месяц");
+    expect(ru.strings["cat.groceries"]).toBe("Продукты");
+    expect(Object.keys(ru.strings).some((k) => k.startsWith("welcome."))).toBe(false);
+    const xx = (await (await app.request("/api/i18n/xx")).json()) as { locale: string };
+    expect(xx.locale).toBe("en");
+  });
+
+  it("forwards a PDF request to the bot", async () => {
+    const auth = { authorization: tma(42), "content-type": "application/json" };
+    const body = JSON.stringify({ from: "2026-10-01", to: "2026-10-31" });
+    expect((await app.request(`/api/households/${householdId}/report`, { method: "POST", headers: auth, body })).status).toBe(503);
+
+    const bot = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 202 }));
+    vi.stubGlobal("fetch", bot);
+    try {
+      const withBot = createApp({ db: handle.db, botToken: token, botUrl: "http://bot:8080", internalToken: "secret" });
+      const res = await withBot.request(`/api/households/${householdId}/report`, { method: "POST", headers: auth, body });
+      expect(res.status).toBe(200);
+      expect(bot).toHaveBeenCalledWith("http://bot:8080/internal/report", expect.objectContaining({ method: "POST" }));
+      const [, init] = bot.mock.calls[0]!;
+      expect(JSON.parse(init.body)).toEqual({ householdId, from: "2026-10-01", to: "2026-10-31" });
+      expect(init.headers.authorization).toBe("Bearer secret");
+      const bad = await withBot.request(`/api/households/${householdId}/report`, { method: "POST", headers: auth, body: JSON.stringify({ from: "x", to: "y" }) });
+      expect(bad.status).toBe(400);
+      const stranger = await withBot.request(`/api/households/${householdId}/report`, { method: "POST", headers: { ...auth, authorization: tma(43) }, body });
+      expect(stranger.status).toBe(404);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("hides households the user is not a member of", async () => {
     const res = await app.request(`/api/households/${householdId}/summary`, { headers: { authorization: tma(43) } });
     expect(res.status).toBe(404);

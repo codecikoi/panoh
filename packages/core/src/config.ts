@@ -17,6 +17,8 @@ const EnvSchema = z.object({
   WEBHOOK_URL: z.string().optional(),
   WEBHOOK_SECRET: z.string().optional(),
   INTERNAL_TOKEN: z.string().optional(),
+  /** Where the API reaches the bot's internal HTTP endpoints (e.g. http://bot:8080). */
+  BOT_INTERNAL_URL: z.string().optional(),
   TELEGRAM_PROXY: z.string().optional(),
   PORT: z.coerce.number().default(8080),
 

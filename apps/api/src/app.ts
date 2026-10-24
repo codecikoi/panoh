@@ -11,8 +11,12 @@ import {
   listOpenReminders,
   listRecurring,
   listTransactionsForMonth,
+  hasLocale,
+  localeKeys,
   loadMonthlySummary,
+  makePeriod,
   nextDue,
+  t,
   type Db,
   type Household,
 } from "@madat/core";
@@ -22,7 +26,13 @@ export interface ApiOptions {
   db: Db;
   botToken: string;
   corsOrigin?: string;
+  /** Bot's internal HTTP address and shared token, for the dashboard's PDF button. */
+  botUrl?: string;
+  internalToken?: string;
 }
+
+/** Locale keys the dashboard needs. */
+const DASHBOARD_PREFIXES = ["dash.", "cat.", "report.", "plans.overdue", "app.name"];
 
 export function createApp(options: ApiOptions): Hono<{ Variables: AuthVariables }> {
   const app = new Hono<{ Variables: AuthVariables }>();
@@ -30,6 +40,18 @@ export function createApp(options: ApiOptions): Hono<{ Variables: AuthVariables 
 
   app.get("/health", (c) => c.json({ ok: true }));
   app.use("/api/*", cors({ origin: options.corsOrigin ?? "*" }));
+
+  // Interface strings for the dashboard in the family's language (public: nothing private in them).
+  app.get("/api/i18n/:locale", (c) => {
+    const locale = hasLocale(c.req.param("locale")) ? c.req.param("locale") : "en";
+    const strings: Record<string, string> = {};
+    for (const key of localeKeys()) {
+      if (DASHBOARD_PREFIXES.some((p) => key.startsWith(p))) strings[key] = t(locale, key);
+    }
+    c.header("Cache-Control", "public, max-age=3600");
+    return c.json({ locale, strings });
+  });
+
   app.use("/api/*", initDataAuth(options.botToken));
 
   app.get("/api/me", async (c) => {
@@ -86,6 +108,24 @@ export function createApp(options: ApiOptions): Hono<{ Variables: AuthVariables 
     if (!household) return c.json({ error: "not found" }, 404);
     const summary = await loadMonthlySummary(db, household, currentMonthKey(household.timezone));
     return c.json({ month: summary.month, ...summary.outlook });
+  });
+
+  // Asks the bot to send the PDF report for a period into the family chat.
+  app.post("/api/households/:id/report", async (c) => {
+    const household = await authorizedHousehold(c.get("tgUser").id, Number(c.req.param("id")));
+    if (!household) return c.json({ error: "not found" }, 404);
+    const body = (await c.req.json().catch(() => ({}))) as { from?: string; to?: string };
+    const period = body.from && body.to ? makePeriod(body.from, body.to) : null;
+    if (!period) return c.json({ error: "bad period" }, 400);
+    if (!options.botUrl || !options.internalToken) return c.json({ error: "reports unavailable" }, 503);
+    const res = await fetch(`${options.botUrl}/internal/report`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${options.internalToken}` },
+      body: JSON.stringify({ householdId: household.id, from: period.from, to: period.to }),
+      signal: AbortSignal.timeout(10_000),
+    }).catch(() => null);
+    if (!res?.ok) return c.json({ error: "bot unavailable" }, 502);
+    return c.json({ ok: true, chatType: household.chatType });
   });
 
   async function authorizedHousehold(telegramUserId: number, id: number): Promise<Household | undefined> {

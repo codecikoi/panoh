@@ -27,7 +27,7 @@ pnpm-монорепо, TypeScript, Node 22+:
 ```
 apps/bot        grammY-бот + планировщик напоминаний + HTTP (webhook, /health, /internal/tick)
 apps/api        Hono REST API для дашборда, авторизация через Telegram initData
-apps/dashboard  (этап 2, ещё нет) Telegram Mini App
+apps/dashboard  Telegram Mini App (React + Vite), только просмотр
 packages/core   схема БД (Drizzle), миграции, ИИ-слой, сервисы, i18n, триггеры, валюты, даты
 ```
 
@@ -93,27 +93,21 @@ pnpm db:generate        # новая миграция после правки pa
 
 ## Этап 2: дашборд (Telegram Mini App)
 
-Цель: по кнопке «📊 Открыть дашборд» в одно касание открывается экран, где «всё чётко и ясно по категориям»: куда и сколько ушло, сравнение с прошлым месяцем, где просело и где много уходит, ближайшие платежи, советы.
+Решено 2026-10-24 (Зоир): React + Vite, только просмотр (без правки записей), экспорт только PDF, главный экран — месяц с итогами, долями категорий, свободными деньгами, сравнением с прошлым месяцем: что выросло, что снизилось (включая исчезнувшие категории), что появилось нового.
 
-Что уже готово под него:
-- `apps/api`: `GET /api/me`, `GET /api/households/:id/summary?month=YYYY-MM` (сводка + инсайты), `/transactions?month=`, `/reminders`, `/recurring`. Авторизация: заголовок `Authorization: tma <initData>` (проверка подписи в `packages/core/src/telegram/initData.ts`). Для локальной разработки вне Telegram: `X-Debug-User: <telegram id>` (только не в production). CORS через `DASHBOARD_ORIGIN`.
-- Формат сводки: `MonthlySummary` в `packages/core/src/services/summary.ts` (категории с долями и дельтами, topGrowth/topDrop, biggest, avgPerDay/projected, upcomingPayments, openReminders, unconverted). Инсайты: `{highlights[], tips[], mood}`.
-- Бот уже умеет показывать кнопку при заданных `DASHBOARD_URL` / `DASHBOARD_TME_LINK`.
+Сделано (`apps/dashboard`, ≈ 74 КБ gzip):
+- вкладки: Месяц (плитки расходы / доходы / свободно или не хватает, «что изменилось», полоса долей + список категорий с отметкой «новое», наблюдения и советы, кнопка «📄 PDF-отчёт за месяц»), Операции (по дням, фильтр по категории, «ждёт подтверждения»), Планы (запланированные расходы, регулярные платежи, напоминания), Цели (лимиты с ⚠️/🚨, копилки);
+- тема и цвета из Telegram (`--tg-theme-*`), светлая и тёмная; цвета категорий — проверенные слоты палитры skill `dataviz` для обеих тем; язык семьи — строки `dash.*` приходят из `GET /api/i18n/:locale` (в бандл не попадают 30 словарей);
+- выбор семьи, если их несколько; переключатель месяцев; `startapp=<householdId>_<YYYY-MM>` из группы, `?month=` из лички;
+- PDF из дашборда: `POST /api/households/:id/report` → бот (`POST /internal/report`, `INTERNAL_TOKEN`) присылает отчёт в чат семьи (Chromium есть только в образе бота);
+- в сводку добавлены `newCategories` и `droppedCategories`.
 
-Рекомендуемое решение (обсудить перед стартом):
-1. **Стек:** Vite + React + TypeScript, Telegram Web Apps SDK (`window.Telegram.WebApp` или `@telegram-apps/sdk`), цвета из `themeParams` (светлая и тёмная тема), лёгкие графики (например Recharts). Не Flutter Web: тяжёлая первая загрузка в WebView.
-2. **Экраны:**
-   - Месяц: расходы/доходы/остаток, дельта к прошлому месяцу, кольцевая диаграмма по категориям, список категорий с долей и изменением, «где выросло / где упало», средний расход в день и прогноз.
-   - Операции: список по дням с фильтром по категории, пометка ожидающих подтверждения.
-   - Платежи и напоминания: ближайшие платежи с датами, открытые напоминания.
-   - Советы: блок инсайтов и советов.
-   - Переключатель месяцев, выбор семьи, если пользователь состоит в нескольких.
-3. **Интеграция с Telegram:** в BotFather `/newapp` создать Mini App (короткое имя), URL дашборда; прямая ссылка `https://t.me/panoh_fam_bot/<app>?startapp=<householdId>_<month>` для групп; параметр `startapp` разбирать на фронте.
-4. **Хостинг:** статика на Cloud Run (nginx) или Firebase Hosting / Cloudflare Pages; API на Cloud Run с `DASHBOARD_ORIGIN`.
-5. **Порядок работ:** каркас `apps/dashboard` в монорепо → экран «Месяц» на данных `/summary` → остальные экраны → подключить `DASHBOARD_URL`/`DASHBOARD_TME_LINK` в боте → деплой.
-6. Перед графиками Claude должен загрузить skill `dataviz`.
+Разработка: `PGLITE_DIR=./data/pglite-demo pnpm --filter @madat/api demo:seed` (демо-семья для пользователя 42), API на демо-базе (`PGLITE_DIR=... BOT_TOKEN=dev PORT=8081 pnpm dev:api`), `pnpm --filter @madat/dashboard dev` → `http://localhost:5173/?debugUser=42&tab=month|operations|plans|goals`. Vite запускать из `apps/dashboard` (в корне лежит Vite 7 от vitest, плагин React требует Vite 8). Скриншоты в мобильной ширине и тёмной теме: headless Chrome через DevTools-протокол (`Emulation.setDeviceMetricsOverride` 375px, `setEmulatedMedia` prefers-color-scheme); простой `--screenshot` на Mac не уже ~500px и снимает до загрузки данных.
 
-Вопросы к Зоиру перед этапом 2: React или Svelte; нужен ли ввод/правка операций прямо в дашборде (тогда в API добавляются PUT/DELETE); нужен ли экспорт (CSV); что считать главным экраном.
+Осталось до запуска:
+1. Домен (вопрос Зоиру: купить `madat.app` ≈ 15 $/год — рекомендовано, или временный `140-82-39-106.sslip.io`). Mini App открывается только по HTTPS.
+2. На сервере: `DOMAIN=...` и `COMPOSE_PROFILES=dashboard` в `/opt/madat/.env`, `ufw allow 80,443/tcp` и `443/udp`, `deploy/deploy.sh` — поднимутся `api` и `web` (Caddy: статика, `/api` → api, сертификат Let's Encrypt сам). У бота появится `DASHBOARD_URL` → кнопка меню «📊 Madat» в личке и кнопка дашборда под сводкой.
+3. BotFather → `/newapp` (короткое имя, URL дашборда) → `DASHBOARD_TME_LINK=https://t.me/panoh_fam_bot/<short>` для кнопки в группах.
 
 ## Этап 3: публичный запуск (набросок)
 

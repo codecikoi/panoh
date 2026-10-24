@@ -69,6 +69,8 @@ describe("computeSummary", () => {
     expect(summary.projected).toBeGreaterThan(summary.expense);
     expect(summary.biggest[0]?.note).toBe("кредит");
     expect(summary.openReminders).toBe(2);
+    expect(summary.newCategories.map((c) => c.category)).toEqual(["loans"]);
+    expect(summary.droppedCategories).toEqual([]);
   });
 
   it("handles empty months", () => {
