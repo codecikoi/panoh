@@ -49,7 +49,7 @@ main { padding: 4px 16px 16px; max-width: 640px; margin: 0 auto; }
 .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.02em; color: var(--section-head); margin: 18px 4px 6px; }
 .card { background: var(--card); border-radius: var(--radius); padding: 12px 14px; }
 .card + .card { margin-top: 8px; }
-html, body { overflow-x: hidden; }
+html, body { overflow-x: clip; }
 .kpis { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .kpi { background: var(--card); border-radius: var(--radius); padding: 12px 14px; min-width: 0; }
 .kpi.wide { grid-column: 1 / -1; }

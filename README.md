@@ -9,7 +9,7 @@ loan 300$ every month on the 15th    → 🔁 Loan · $300 · every month on day
 paid the loan                        → ✅ Paid · Loan · $300
 wedding gift 300$ in December        → 🗓 Plan · $300 · 🎁 Gifts · December 2026, no exact date
 limit on groceries 400$              → 🎯 Limit for 🛒 Groceries: $400 a month
-saving for a vacation 2000$ by July  → 🐷 Savings goal · vacation · ≈ $222 a month to make it
+saving for a vacation 2000$ by July  → 💰 Savings goal · vacation · ≈ $222 a month to make it
 /summary                             → 📊 October 2026 … by category, vs September, tips
 ```
 

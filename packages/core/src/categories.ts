@@ -43,7 +43,7 @@ export const CATEGORY_EMOJI: Record<Category, string> = {
   gifts: "🎁",
   travel: "✈️",
   loans: "🏦",
-  savings: "🐷",
+  savings: "💰",
   family: "👨‍👩‍👧",
   household: "🧹",
   pets: "🐾",

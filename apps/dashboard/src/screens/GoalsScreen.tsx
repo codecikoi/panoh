@@ -43,7 +43,7 @@ export function GoalsScreen({ household }: { household: Household }) {
           goals.map((g) => (
             <Meter
               key={g.id}
-              label={`🐷 ${g.title}`}
+              label={`💰 ${g.title}`}
               pct={g.pct}
               amounts={`${money(g.saved, g.currency)} / ${money(g.target, g.currency)}`}
               {...(g.deadline ? { status: t("dash.goal_deadline", { date: deadline(g.deadline) }) } : {})}

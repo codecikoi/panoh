@@ -153,7 +153,7 @@ function goalMeters(view: ReportView, tr: Tr, goals: GoalStat[]): string {
     .map((g) => {
       const money = (n: number) => formatMoney(n, g.currency, view.locale);
       const pace = g.monthlyNeed && g.saved < g.target ? ` <span class="muted">· ${escapeHtml(tr("report.goal_pace", { amount: money(g.monthlyNeed) }))}</span>` : "";
-      return meter(`🐷 <b>${escapeHtml(g.title)}</b>${pace}`, `${money(g.saved)} / ${money(g.target)} · ${g.pct}%`, g.pct, "var(--accent)", "var(--accent-track)");
+      return meter(`💰 <b>${escapeHtml(g.title)}</b>${pace}`, `${money(g.saved)} / ${money(g.target)} · ${g.pct}%`, g.pct, "var(--accent)", "var(--accent-track)");
     })
     .join("");
 }
