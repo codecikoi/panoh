@@ -47,13 +47,17 @@ Notes:
 * Keep `--min-instances=1` on the bot if you want the in-process scheduler instead of Cloud Scheduler; both can coexist (ticks are idempotent).
 * Cloud Run logs are JSON lines from the app, so `severity` filtering works out of the box.
 
-## Generic Docker / VPS
+## Generic Docker / VPS (what runs in production now)
 
-```bash
-docker compose up -d --build        # postgres + bot + api on one machine
-```
+One small VPS (1 vCPU, 2 GB RAM) runs Postgres and the bot with `docker compose`; the bot uses long polling, so nothing needs to be reachable from the internet except SSH.
 
-Set `BOT_MODE=webhook` and put the bot behind HTTPS (Caddy, nginx, Cloudflare Tunnel) with `WEBHOOK_URL=https://host/telegram/webhook`, or keep `BOT_MODE=polling` with no public endpoint at all: polling works fine for a single instance.
+1. Ubuntu LTS, Docker (`curl -fsSL https://get.docker.com | sh`), `ufw allow OpenSSH && ufw enable`, SSH keys only.
+2. Add the server to `~/.ssh/config` as host `madat` (or set `MADAT_HOST`).
+3. Create `/opt/madat/.env` on the server (mode 600) with `BOT_TOKEN`, `ANTHROPIC_API_KEY`, `DEFAULT_LOCALE`, `DEFAULT_CURRENCY`, `DEFAULT_TIMEZONE` and a random `POSTGRES_PASSWORD` (hex, so it needs no URL escaping).
+4. `deploy/deploy.sh` copies the working tree to `/opt/madat`, installs the daily backup cron and runs `docker compose -f deploy/compose.prod.yml up -d --build`. `deploy/deploy.sh logs` / `status` for operations.
+5. Backups: `deploy/backup.sh` dumps the database daily to `/var/backups/madat` (14 days). Copy them off the server as well.
+
+Stop any other running instance of the bot first: Telegram delivers updates to one poller only.
 
 ## Health and operations
 

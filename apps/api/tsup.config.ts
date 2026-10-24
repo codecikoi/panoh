@@ -12,5 +12,7 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   clean: true,
+  // Keep class names intact: libraries that check constructor names break when esbuild renames them.
+  keepNames: true,
   banner: { js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" },
 });

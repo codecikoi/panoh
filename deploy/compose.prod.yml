@@ -1,0 +1,51 @@
+# Production on a single VPS: Postgres + bot (long polling). Nothing is published to the internet:
+# the bot only makes outgoing connections (Telegram, Anthropic, exchange rates) and the database stays inside Docker.
+# Started by deploy/deploy.sh from /opt/madat, which holds the server's own .env (BOT_TOKEN, ANTHROPIC_API_KEY, POSTGRES_PASSWORD, ...).
+name: madat
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: madat
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: madat
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U madat"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    logging: *logging
+
+  bot:
+    build:
+      context: ..
+      dockerfile: apps/bot/Dockerfile
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+      BOT_MODE: polling
+      PORT: "8080"
+      DATABASE_URL: postgres://madat:${POSTGRES_PASSWORD}@db:5432/madat
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging: *logging
+
+volumes:
+  pgdata:
