@@ -44,6 +44,7 @@ export function registerMessages(bot: Bot<BotContext>): void {
       isReplyToBot,
       isPrivateChat: isPrivate,
       config: scope.household.triggers,
+      names: scope.household.assistantName ? [scope.household.assistantName] : undefined,
     });
     if (!trigger.process) return;
     if (!(await markProcessed(ctx.deps.db, chat.id, ctx.message.message_id))) return;
@@ -74,6 +75,7 @@ export function registerMessages(bot: Bot<BotContext>): void {
         replyTo: replyTarget ? await describeWithHistory(ctx.deps.db, replyTarget, scope.tz) : undefined,
         lastRecord: lastRecord ? await describeWithHistory(ctx.deps.db, lastRecord, scope.tz) : undefined,
         addressed: trigger.explicit,
+        assistantName: scope.household.assistantName,
         recent: recentByChat.get(chat.id),
       });
     } catch (err) {
@@ -93,7 +95,6 @@ export function registerMessages(bot: Bot<BotContext>): void {
     const outcome = await applyItems(ctx, result.items, {
       chatId: chat.id,
       sourceMessageId: ctx.message.message_id,
-      rawText: trigger.cleaned,
       isPrivate,
       replyTarget,
     });

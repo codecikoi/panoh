@@ -48,6 +48,8 @@ export const households = pgTable(
     summaryDay: integer("summary_day").notNull().default(1),
     summaryHour: integer("summary_hour").notNull().default(9),
     lastMonthlySummary: text("last_monthly_summary"),
+    /** Name the family gave the assistant ("Кексик"); null means the default, Madat. */
+    assistantName: text("assistant_name"),
     setupDone: boolean("setup_done").notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -60,8 +62,6 @@ export const users = pgTable(
   {
     id: serial("id").primaryKey(),
     telegramUserId: tgId("telegram_user_id").notNull(),
-    firstName: text("first_name"),
-    username: text("username"),
     locale: text("locale"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -198,7 +198,6 @@ export const transactions = pgTable(
     occurredOn: date("occurred_on", { mode: "string" }).notNull(),
     status: text("status").$type<"confirmed" | "pending" | "deleted">().notNull().default("confirmed"),
     confidence: real("confidence"),
-    rawText: text("raw_text"),
     recurringPaymentId: integer("recurring_payment_id").references(() => recurringPayments.id, { onDelete: "set null" }),
     period: text("period"),
     planId: integer("plan_id").references(() => plans.id, { onDelete: "set null" }),

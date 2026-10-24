@@ -21,6 +21,7 @@ export const ITEM_KINDS = [
   "correction",
   "cancel_last",
   "summary_request",
+  "rename",
   "clarify",
   "none",
 ] as const;
@@ -90,6 +91,8 @@ export interface ExtractionContext {
   lastRecord?: string;
   /** The message addresses the bot directly (reply, mention, name, prefix or private chat). */
   addressed?: boolean;
+  /** Name the family gave the assistant, if not the default. */
+  assistantName?: string | null;
   /** Recent processed messages, oldest first. */
   recent?: string[];
 }
@@ -119,6 +122,7 @@ Return nothing but the structured output.
 - correction: the message replies to a bot confirmation and changes something ("not 150, 115", "category transport", "it was yesterday", "in dollars"). Fill ONLY the changed fields; leave everything else null (note "" if unchanged).
 - cancel_last: the user wants to remove the last record ("undo", "delete that", "wrong", "отмени", "bekor").
 - summary_request: the user asks for totals / summary / how much was spent.
+- rename: the user gives the assistant a new name ("теперь тебя зовут Кексик", "call yourself Kex", "seni endi Keksik deb chaqiramiz"). note = the new name exactly as written, without quotes; "Madat" to go back to the default. A question about the name ("как тебя зовут?") is clarify, not rename.
 - clarify: you cannot act safely without asking, or the user asks about a record or about what the bot just did ("why didn't the amount change?", "what did you record?"). Put a short reply (≤ 200 chars) in note, in the message's language, friendly and specific: ask ONE concrete question, or answer using only facts from the context (the reply target, its edit history, the most recent record, recent chat). Never invent amounts or dates. Return clarify alone, not together with a record for the same thing.
 - none: nothing actionable (chit-chat, questions, plans with neither an amount nor a date).
 
@@ -175,6 +179,7 @@ export function buildExtractionUserMessage(ctx: ExtractionContext): string {
   }
   if (ctx.replyTo) lines.push(`The message is a REPLY to this bot message: ${ctx.replyTo}`);
   else if (ctx.lastRecord) lines.push(`Most recent record in this chat (the message is not a reply): ${ctx.lastRecord}`);
+  if (ctx.assistantName) lines.push(`In this chat the assistant is called "${ctx.assistantName}" (it also answers to Madat). Use that name when it refers to itself.`);
   if (ctx.addressed) lines.push("The message addresses the bot directly.");
   lines.push(`Author: ${ctx.authorName}`);
   lines.push(`Message: """${ctx.text}"""`);

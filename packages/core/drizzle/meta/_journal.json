@@ -29,6 +29,13 @@
       "when": 1792435951017,
       "tag": "0003_record_edits",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792834293675,
+      "tag": "0004_privacy_and_assistant_name",
+      "breakpoints": true
     }
   ]
 }

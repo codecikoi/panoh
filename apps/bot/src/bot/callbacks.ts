@@ -216,6 +216,10 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
           await edit(t(scope.locale, "settings.choose_language"), R.languageKeyboard());
           return answer();
         }
+        if (action === "name") {
+          await edit(t(scope.locale, "rename.current", { name: escapeHtml(R.assistantName(scope)) }), R.settingsKeyboard(scope));
+          return answer();
+        }
         if (action === "hour" && !value) {
           await edit(t(scope.locale, "settings.choose_reminder_time"), R.hourPickerKeyboard("set:hour"));
           return answer();

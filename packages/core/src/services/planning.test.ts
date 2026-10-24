@@ -28,7 +28,7 @@ const created = new Date("2026-09-01T00:00:00Z");
 function tx(partial: Partial<Transaction>): Transaction {
   return {
     id: id++, householdId: 1, userId: null, kind: "expense", amount: 0, currency: "UZS", amountBase: null, baseCurrency: "UZS",
-    category: "other", note: "", occurredOn: "2026-10-05", status: "confirmed", confidence: 1, rawText: null, recurringPaymentId: null,
+    category: "other", note: "", occurredOn: "2026-10-05", status: "confirmed", confidence: 1, recurringPaymentId: null,
     period: null, planId: null, goalId: null, sourceChatId: null, sourceMessageId: null, botMessageId: null, createdAt: created, updatedAt: created,
     ...partial,
   };

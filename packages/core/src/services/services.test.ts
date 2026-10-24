@@ -28,7 +28,7 @@ describe("services (pglite)", () => {
     expect(again.created).toBe(false);
     expect(again.household.id).toBe(household.id);
 
-    const user = await upsertUser(handle.db, { id: 42, firstName: "Zoir", languageCode: "ru" });
+    const user = await upsertUser(handle.db, { id: 42, languageCode: "ru" });
     await ensureMember(handle.db, household.id, user.id);
     await ensureMember(handle.db, household.id, user.id);
     expect(await isMember(handle.db, household.id, 42)).toBe(true);

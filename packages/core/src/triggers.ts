@@ -148,9 +148,26 @@ export const BUILTIN_KEYWORDS: Record<string, string[]> = {
 /** Scripts without word separators (or with attached particles) use substring matching instead of word boundaries. */
 const SUBSTRING_LOCALES = new Set(["th", "ja", "zh", "ko"]);
 
-/** Names the bot answers to when a message starts with one of them (any case, Latin or Cyrillic spelling). */
+/** Names the bot always answers to when a message starts with one of them (any case, Latin or Cyrillic spelling). */
 export const BOT_NAMES = ["madat", "мадат", "madad", "мадад"];
-const NAME_PATTERN = new RegExp(`^(?:${BOT_NAMES.map(escapeRegExp).join("|")})(?![\\p{L}\\p{N}])[\\s,:;!.?\\-—–]*`, "iu");
+export const DEFAULT_ASSISTANT_NAME = "Madat";
+
+function namePattern(names: string[]): RegExp {
+  // Longest first, so "Кексик Бот" wins over "Кексик".
+  const alternatives = [...new Set(names.map((n) => n.trim()).filter(Boolean))].sort((a, b) => b.length - a.length).map(escapeRegExp);
+  return new RegExp(`^(?:${alternatives.join("|")})(?![\\p{L}\\p{N}])[\\s,:;!.?\\-—–]*`, "iu");
+}
+
+/**
+ * Validates a name the family wants to give the assistant: 1–32 characters, letters first, then letters, digits,
+ * spaces, apostrophes or hyphens. Returns null for the built-in names (back to the default) and "invalid" otherwise.
+ */
+export function normalizeAssistantName(raw: string): string | null | "invalid" {
+  const name = raw.trim().replace(/^["«“'‘]+|["»”'’.!]+$/gu, "").replace(/\s+/g, " ").trim();
+  if (!name || [...name].length > 32 || !/^\p{L}[\p{L}\p{N}\p{M} '’-]*$/u.test(name)) return "invalid";
+  if (BOT_NAMES.includes(name.toLowerCase())) return null;
+  return name;
+}
 
 const MULTIPLIER = "(?:k|к|тыс\\.?|тысяч|млн\\.?|миллион[а-я]*|mln|ming|million|mil|rb|ribu|jt|juta|万|千|천|만|ล้าน|พัน)?";
 const CURRENCY_WORDS =
@@ -166,6 +183,8 @@ export interface TriggerInput {
   isReplyToBot?: boolean;
   isPrivateChat?: boolean;
   config?: TriggerConfig | null;
+  /** Extra names the household gave the assistant (the built-in names always work). */
+  names?: string[];
 }
 
 export interface TriggerResult {
@@ -189,8 +208,8 @@ function escapeRegExp(value: string): string {
 }
 
 /** Text after a leading bot name ("мадат, продукты 150к" → "продукты 150к"), or undefined when the message does not start with the name. */
-function stripName(text: string): string | undefined {
-  const match = NAME_PATTERN.exec(text);
+function stripName(text: string, extraNames: string[] = []): string | undefined {
+  const match = namePattern([...BOT_NAMES, ...extraNames]).exec(text);
   if (!match) return undefined;
   const rest = text.slice(match[0].length).trim();
   return rest.length > 0 ? rest : undefined;
@@ -213,7 +232,7 @@ export function evaluateTrigger(input: TriggerInput): TriggerResult {
   const mentionEnabled = config.mention ?? true;
   const moneyEnabled = config.moneyPattern ?? true;
 
-  const named = stripName(text);
+  const named = stripName(text, input.names);
   if (input.isPrivateChat) return { process: true, reason: "private", explicit: true, cleaned: named ?? text };
 
   if (mentionEnabled && input.botUsername) {

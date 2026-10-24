@@ -20,7 +20,7 @@ export const uz: LocaleStrings = {
   "welcome.private":
     "👋 Salom, men {app} — oilaviy moliya yordamchisiman.\n\nMenga oddiy odamga yozgandek yozing:\n• <i>oziq-ovqat 150k</i>\n• <i>maosh 9 mln oldim</i>\n• <i>juma kuni bog'cha uchun to'lashni eslat</i>\n• <i>kredit 2 mln har oyning 15-sanasida</i>\n\nHammasini yozib boraman, /summary buyrug'i bilan oy yakunini ko'rsataman.\n\n💡 Umumiy byudjet uchun meni turmush o'rtog'ingiz bilan guruhga qo'shing.",
   "welcome.group":
-    "👋 Salom! Men {app}. Bu chatda xarajat, daromad, eslatma va to'lovlarni yuritishga yordam beraman.\n\nFaqat belgilangan xabarlarga javob beraman:\n• <b>{prefix}</b> bilan boshlang → <i>{prefix} oziq-ovqat 150k</i>\n• meni belgilang → <i>@{bot} juma kuni ijara uchun to'lashni eslat</i>\n• yoki ismimni yozing → <i>Madat juma kuni ijara uchun to'lashni eslat</i>\n• yoki <i>sarfladim, to'ladim, eslat, maosh</i> kabi so'zlarni ishlating\n• summa va valyutali xabarlarni ham ilib olaman\n\nQolgan yozishmalarni e'tiborsiz qoldiraman va hech qayerda saqlamayman.\n\n⚙️ Valyuta: <b>{currency}</b> · Vaqt zonasi: <b>{timezone}</b> · Til: <b>{language}</b>\nO'zgartirish: /settings. Oy yakuni: /summary.",
+    "👋 Salom! Men {app}. Bu chatda xarajat, daromad, eslatma va to'lovlarni yuritishga yordam beraman.\n\nFaqat belgilangan xabarlarga javob beraman:\n• <b>{prefix}</b> bilan boshlang → <i>{prefix} oziq-ovqat 150k</i>\n• meni belgilang → <i>@{bot} juma kuni ijara uchun to'lashni eslat</i>\n• yoki ismimni yozing → <i>{name} juma kuni ijara uchun to'lashni eslat</i>\n• yoki <i>sarfladim, to'ladim, eslat, maosh</i> kabi so'zlarni ishlating\n• summa va valyutali xabarlarni ham ilib olaman\n\nQolgan yozishmalarni e'tiborsiz qoldiraman va hech qayerda saqlamayman.\n\n⚙️ Valyuta: <b>{currency}</b> · Vaqt zonasi: <b>{timezone}</b> · Til: <b>{language}</b>\nO'zgartirish: /settings. Oy yakuni: /summary.",
   "welcome.privacy_warning":
     "⚠️ Hozircha bu guruhdagi oddiy xabarlarni ko'ra olmayman, shuning uchun kalit so'zlar va {prefix} prefiksi ishlamaydi. @BotFather → /setprivacy → men uchun <b>Disable</b> qiling, so'ng meni guruhdan chiqarib qayta qo'shing. Belgilash va javob berish darhol ishlaydi.",
   "help":
@@ -207,4 +207,12 @@ export const uz: LocaleStrings = {
   "correction.nothing": "🤔 Nimani o'zgartirishni tushunmadim. Tasdiqlashga javob yozing, masalan: «summa 2 mln», «15-sanaga» yoki «toifa transport».",
   "correction.confirm_amount": "🤔 Summani {old} dan <b>{new}</b> ga o'zgartiraymi? Avvalgisidan juda farq qiladi.",
   "correction.amount_kept": "👌 {amount} qoldirildi.",
+  "cmd.name": "Yordamchi nomini o'zgartirish",
+  "help.name": "<b>Mening ismim</b>\nMenga o'z ismingizni bering: <code>/name Keksik</code> yoki «Madat, endi seni Keksik deb chaqiramiz». Bu chatda shu ismga javob beraman.",
+  "rename.done": "🎉 Endi bu yerda mening ismim <b>{name}</b>.\n«{name}» bilan boshlangan xabarlar menga, masalan: <i>{name}, oziq-ovqat 150 ming</i>. «Madat» ismiga ham javob beraman.",
+  "rename.reset": "👌 Men yana Madatman.",
+  "rename.invalid": "🤔 Ism 1 dan 32 belgigacha bo'lishi va harf bilan boshlanishi kerak: harflar, raqamlar, bo'shliq yoki chiziqcha. Masalan: <code>/name Keksik</code>.",
+  "rename.current": "Bu chatda mening ismim <b>{name}</b>.\nO'zgartirish uchun: <code>/name Keksik</code> yoki «{name}, endi seni Keksik deb chaqiramiz». <code>/name reset</code> Madat ismini qaytaradi.",
+  "settings.name_line": "Yordamchi ismi: <b>{name}</b>",
+  "settings.btn_name": "✏️ Yordamchi ismi",
 };

@@ -497,6 +497,36 @@ describe("bot flow", () => {
     expect((await getPlan(handle.db, plan.id))?.amount).toBe(5000);
   });
 
+  it("lets the family rename the assistant and answers to the new name", async () => {
+    const cmd = (text: string) => ({ entities: [{ type: "bot_command", offset: 0, length: text.split(" ")[0]!.length }] });
+    await sendText(bot, "/name", cmd("/name"));
+    expect(lastSent().payload.text).toContain("меня зовут <b>Madat</b>");
+
+    await sendText(bot, "/name +++", cmd("/name +++"));
+    expect(lastSent().payload.text).toContain("Имя должно быть");
+    expect((await getHouseholdByChatId(handle.db, chat.id))?.assistantName).toBeNull();
+
+    await sendText(bot, "/name Кексик", cmd("/name Кексик"));
+    expect(lastSent().payload.text).toContain("зовут <b>Кексик</b>");
+    expect((await getHouseholdByChatId(handle.db, chat.id))?.assistantName).toBe("Кексик");
+
+    mockExtraction([item({ amount: 20000, category: "transport", note: "такси" })]);
+    await sendText(bot, "Кексик, такси 20к");
+    expect(extractItems).toHaveBeenLastCalledWith(expect.objectContaining({ text: "такси 20к", assistantName: "Кексик" }));
+    expect(lastSent().payload.text).toContain("Расход");
+
+    await sendText(bot, "/settings", cmd("/settings"));
+    expect(lastSent().payload.text).toContain("Имя помощника: <b>Кексик</b>");
+
+    // Renamed by a plain request; the built-in name still works.
+    mockExtraction([item({ kind: "rename", note: "Пончик" })]);
+    await sendText(bot, "мадат, теперь тебя зовут Пончик");
+    expect(lastSent().payload.text).toContain("зовут <b>Пончик</b>");
+    await sendText(bot, "/name reset", cmd("/name reset"));
+    expect(lastSent().payload.text).toContain("снова Мадат");
+    expect((await getHouseholdByChatId(handle.db, chat.id))?.assistantName).toBeNull();
+  });
+
   it("changes settings from inline buttons", async () => {
     await sendText(bot, "/settings", { entities: [{ type: "bot_command", offset: 0, length: 9 }] });
     const settingsMsg = lastSent();

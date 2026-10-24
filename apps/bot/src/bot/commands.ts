@@ -25,7 +25,7 @@ import {
 } from "@madat/core";
 import type { BotContext } from "./context.js";
 import * as R from "./render.js";
-import { undoLast } from "./actions.js";
+import { renameAssistant, undoLast } from "./actions.js";
 import { sendSummary } from "./summary.js";
 
 export async function ensureWelcome(ctx: BotContext, force = false): Promise<void> {
@@ -34,11 +34,12 @@ export async function ensureWelcome(ctx: BotContext, force = false): Promise<voi
   const isPrivate = ctx.chat?.type === "private";
   const prefix = R.prefixOf(scope);
   if (isPrivate) {
-    await ctx.reply(t(scope.locale, "welcome.private", { app: t(scope.locale, "app.name") }));
+    await ctx.reply(t(scope.locale, "welcome.private", { app: escapeHtml(R.assistantName(scope)) }));
   } else {
     await ctx.reply(
       t(scope.locale, "welcome.group", {
-        app: t(scope.locale, "app.name"),
+        app: escapeHtml(R.assistantName(scope)),
+        name: escapeHtml(R.assistantName(scope)),
         prefix: escapeHtml(prefix),
         bot: ctx.me.username,
         currency: scope.currency,
@@ -67,7 +68,7 @@ export function registerCommands(bot: Bot<BotContext>): void {
   bot.command("help", async (ctx) => {
     const scope = ctx.scope;
     const help = t(scope.locale, "help", { prefix: escapeHtml(R.prefixOf(scope)), days: scope.household.remindDaysBefore });
-    await ctx.reply(`${help}\n\n${t(scope.locale, "help.planning")}`);
+    await ctx.reply(`${help}\n\n${t(scope.locale, "help.planning")}\n\n${t(scope.locale, "help.name")}`);
   });
 
   bot.command("summary", async (ctx) => {
@@ -118,6 +119,13 @@ export function registerCommands(bot: Bot<BotContext>): void {
     const scope = ctx.scope;
     const stats = (await loadMonthlySummary(ctx.deps.db, scope.household, currentMonthKey(scope.tz))).outlook.goals;
     await ctx.reply(R.goalsListText(scope, stats));
+  });
+
+  bot.command("name", async (ctx) => {
+    const scope = ctx.scope;
+    const arg = argOf(ctx);
+    if (!arg) return ctx.reply(t(scope.locale, "rename.current", { name: escapeHtml(R.assistantName(scope)) }));
+    await ctx.reply(await renameAssistant(ctx, arg.toLowerCase() === "reset" ? "Madat" : arg));
   });
 
   bot.command("settings", async (ctx) => {
@@ -196,6 +204,7 @@ const COMMAND_KEYS: { command: string; key: LocaleKey }[] = [
   { command: "budgets", key: "cmd.budgets" },
   { command: "goals", key: "cmd.goals" },
   { command: "settings", key: "cmd.settings" },
+  { command: "name", key: "cmd.name" },
   { command: "keywords", key: "cmd.keywords" },
   { command: "help", key: "cmd.help" },
   { command: "start", key: "cmd.start" },

@@ -9,10 +9,9 @@ export interface ChatInfo {
   title?: string | null;
 }
 
+/** Only the Telegram id and language are stored; names stay in Telegram. */
 export interface TgUserInfo {
   id: number;
-  firstName?: string | null;
-  username?: string | null;
   languageCode?: string | null;
 }
 
@@ -107,18 +106,13 @@ export async function updateHousehold(db: Db, id: number, patch: Partial<Househo
 }
 
 export async function upsertUser(db: Db, tg: TgUserInfo): Promise<User> {
-  const values = {
-    telegramUserId: tg.id,
-    firstName: tg.firstName ?? null,
-    username: tg.username ?? null,
-    locale: tg.languageCode ?? null,
-  };
+  const values = { telegramUserId: tg.id, locale: tg.languageCode ?? null };
   const rows = await db
     .insert(users)
     .values(values)
     .onConflictDoUpdate({
       target: users.telegramUserId,
-      set: { firstName: values.firstName, username: values.username, locale: values.locale, updatedAt: new Date() },
+      set: { locale: values.locale, updatedAt: new Date() },
     })
     .returning();
   const row = rows[0];

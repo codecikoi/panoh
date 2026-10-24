@@ -47,6 +47,11 @@ export function kindLabel(scope: Scope, kind: "expense" | "income"): string {
   return t(scope.locale, kind === "expense" ? "kind.expense" : "kind.income");
 }
 
+/** The name this family gave the assistant, or the default. */
+export function assistantName(scope: Scope): string {
+  return scope.household.assistantName ?? t(scope.locale, "app.name");
+}
+
 export function prefixOf(scope: Scope): string {
   return scope.household.triggers.prefix ?? "+";
 }
@@ -514,7 +519,11 @@ export function settingsText(scope: Scope): string {
     days: h.remindDaysBefore,
     prefix: escapeHtml(prefixOf(scope)),
   });
-  return `${title}\n${t(scope.locale, "settings.reminder_time_line", { time: formatHour(h.reminderHour) })}`;
+  return [
+    title,
+    t(scope.locale, "settings.reminder_time_line", { time: formatHour(h.reminderHour) }),
+    t(scope.locale, "settings.name_line", { name: escapeHtml(assistantName(scope)) }),
+  ].join("\n");
 }
 
 export function settingsKeyboard(scope: Scope): InlineKeyboard {
@@ -523,7 +532,9 @@ export function settingsKeyboard(scope: Scope): InlineKeyboard {
     .text(t(scope.locale, "settings.btn_timezone"), "set:tz")
     .row()
     .text(t(scope.locale, "settings.btn_language"), "set:lang")
-    .text(t(scope.locale, "settings.btn_reminder_time"), "set:hour");
+    .text(t(scope.locale, "settings.btn_reminder_time"), "set:hour")
+    .row()
+    .text(t(scope.locale, "settings.btn_name"), "set:name");
 }
 
 export function currencyKeyboard(): InlineKeyboard {

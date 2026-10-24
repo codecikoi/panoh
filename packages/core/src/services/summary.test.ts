@@ -19,7 +19,6 @@ function tx(partial: Partial<Transaction>): Transaction {
     occurredOn: "2026-10-05",
     status: "confirmed",
     confidence: 1,
-    rawText: null,
     recurringPaymentId: null,
     period: null,
     planId: null,

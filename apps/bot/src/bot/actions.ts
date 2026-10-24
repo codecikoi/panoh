@@ -19,6 +19,8 @@ import {
   loadBudgetStat,
   loadMonthlySummary,
   matchByName,
+  normalizeAssistantName,
+  updateHousehold,
   plannedTotalForMonth,
   removeBudget,
   schedulePlanReminder,
@@ -117,7 +119,6 @@ export function describeTarget(target: ReplyTarget, tz = "UTC"): string {
 export interface ApplyMeta {
   chatId: number;
   sourceMessageId: number;
-  rawText: string;
   isPrivate: boolean;
   replyTarget?: ReplyTarget;
 }
@@ -174,6 +175,12 @@ export async function applyItems(ctx: BotContext, items: ExtractedItem[], meta: 
           if (result === "nothing" || result === "asked") outcome.clarified++;
           break;
         }
+        case "rename":
+          if (item.note) {
+            await ctx.reply(await renameAssistant(ctx, item.note), replyOpts(meta));
+            outcome.handled++;
+          }
+          break;
         case "clarify":
           if (item.note) {
             await ctx.reply(escapeHtml(item.note), replyOpts(meta));
@@ -219,7 +226,6 @@ async function handleTransaction(ctx: BotContext, item: ExtractedItem, meta: App
     occurredOn: item.date,
     status,
     confidence: item.confidence,
-    rawText: meta.rawText.slice(0, 500),
     sourceChatId: meta.chatId,
     sourceMessageId: meta.sourceMessageId,
   });
@@ -368,7 +374,6 @@ async function handleContribution(ctx: BotContext, item: ExtractedItem, meta: Ap
     occurredOn: item.date,
     status: "confirmed",
     confidence: item.confidence,
-    rawText: meta.rawText.slice(0, 500),
     goalId: goal.id,
     sourceChatId: meta.chatId,
     sourceMessageId: meta.sourceMessageId,
@@ -545,6 +550,16 @@ const RECENT_RECORD_MS = 30 * 60 * 1000;
 export async function recentRecord(db: Db, householdId: number): Promise<ReplyTarget | undefined> {
   const last = await findLastRecord(db, householdId);
   return last && Date.now() - last.row.createdAt.getTime() < RECENT_RECORD_MS ? last : undefined;
+}
+
+/** Gives the assistant a new name in this chat (or back to the default) and returns the reply text. */
+export async function renameAssistant(ctx: BotContext, raw: string): Promise<string> {
+  const scope = ctx.scope;
+  const name = normalizeAssistantName(raw);
+  if (name === "invalid") return t(scope.locale, "rename.invalid");
+  scope.household = await updateHousehold(ctx.deps.db, scope.household.id, { assistantName: name });
+  if (name === null) return t(scope.locale, "rename.reset");
+  return t(scope.locale, "rename.done", { name: escapeHtml(name) });
 }
 
 /** Loads a live record by the type/id pair used in callback data. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUILTIN_KEYWORDS, evaluateTrigger } from "./triggers.js";
+import { BUILTIN_KEYWORDS, evaluateTrigger, normalizeAssistantName } from "./triggers.js";
 import { SUPPORTED_LOCALES } from "./i18n/index.js";
 
 describe("evaluateTrigger", () => {
@@ -85,5 +85,27 @@ describe("evaluateTrigger", () => {
     expect(evaluateTrigger({ ...base, text: "# продукты 150к", config }).reason).toBe("prefix");
     expect(evaluateTrigger({ ...base, text: "кофе был вкусный", config }).reason).toBe("keyword");
     expect(evaluateTrigger({ ...base, text: "такси 25 000 сум", config }).process).toBe(false);
+  });
+});
+
+describe("assistant names", () => {
+  const base = { locale: "ru", isPrivateChat: false } as const;
+
+  it("answers to a custom name as well as the built-in ones", () => {
+    const names = ["Кексик"];
+    expect(evaluateTrigger({ ...base, names, text: "Кексик, продукты 150к" })).toMatchObject({ process: true, reason: "name", cleaned: "продукты 150к" });
+    expect(evaluateTrigger({ ...base, names, text: "кексик такси 20к" }).cleaned).toBe("такси 20к");
+    expect(evaluateTrigger({ ...base, names, text: "мадат такси 20к" }).reason).toBe("name");
+    expect(evaluateTrigger({ ...base, names, text: "Кексики вкусные" }).process).toBe(false);
+    expect(evaluateTrigger({ ...base, text: "Кексик, продукты 150к" }).reason).not.toBe("name");
+    expect(evaluateTrigger({ ...base, names: ["Кекс Бот"], text: "кекс бот: такси 20к" }).cleaned).toBe("такси 20к");
+  });
+
+  it("validates new names", () => {
+    expect(normalizeAssistantName("  «Кексик» ")).toBe("Кексик");
+    expect(normalizeAssistantName("Miss Penny")).toBe("Miss Penny");
+    expect(normalizeAssistantName("Мадат")).toBeNull();
+    expect(normalizeAssistantName("madad")).toBeNull();
+    for (const bad of ["", "   ", "123", "<b>x</b>", "a".repeat(33), "+кекс"]) expect(normalizeAssistantName(bad)).toBe("invalid");
   });
 });

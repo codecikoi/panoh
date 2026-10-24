@@ -17,12 +17,13 @@ export function scopeMiddleware(deps: Deps): Middleware<BotContext> {
     });
     const { household } = await getOrCreateHousehold(
       deps.db,
-      { chatId: chat.id, chatType: chat.type, title: "title" in chat ? chat.title : (from?.first_name ?? null) },
+      // Group titles help pick a family in the dashboard; private chats get no title (no personal names stored).
+      { chatId: chat.id, chatType: chat.type, title: "title" in chat ? chat.title : null },
       defaults,
     );
     let user;
     if (from && !from.is_bot) {
-      user = await upsertUser(deps.db, { id: from.id, firstName: from.first_name, username: from.username, languageCode: from.language_code });
+      user = await upsertUser(deps.db, { id: from.id, languageCode: from.language_code });
       await ensureMember(deps.db, household.id, user.id);
     }
     ctx.scope = scopeFromHousehold(household, user);

@@ -33,6 +33,7 @@ Mini App ──▶ apps/api  (Hono, Telegram initData auth) ──▶ packages/c
 * **Plans, limits and savings.** A planned expense («gift 300$ in December», a month or an exact day) reminds on its day with ✅ Paid / snooze / cancel buttons and books the expense with plan-vs-fact. A monthly limit per category adds «🎯 Groceries: $360 of $400 (90%)» to each expense confirmation. A savings goal with a deadline shows the monthly pace; «put 200$ aside for the vacation» records a savings expense linked to the goal.
 * **Free money this month.** The summary adds what is still ahead this month (unpaid bills, open plans, the goals' monthly pace) and the result: income already received − spent − ahead. Future income is deliberately not counted, so a negative number is a real shortfall.
 * **Reminders without a time** get the household's default reminder time (09:00 unless changed in /settings) and a 🕒 button to pick another hour; replying «at 15:00» to the confirmation also moves it.
+* **Little personal data.** Message texts and people's names are not stored: only Telegram ids, the language, group titles and the records themselves.
 * **Multi-currency.** Each household has a base currency; other currencies are converted with daily rates (open.er-api.com). Unconverted amounts are shown separately, never silently dropped.
 
 ## Repository layout
@@ -86,6 +87,7 @@ pnpm db:generate          # new SQL migration after changing packages/core/src/d
 | `/budgets` | Monthly limits per category with this month's usage; 🗑 buttons remove them |
 | `/goals` | Savings goals: progress, deadline, monthly pace |
 | `/settings` | Currency, timezone, language, default reminder time (inline buttons); also `/currency EUR`, `/timezone Europe/Berlin`, `/language ru` |
+| `/name` `[new name \| reset]` | Give the assistant its own name in this chat («Kex»); it answers to it like to "Madat" |
 | `/keywords` `[add \| remove words]` | Trigger words for this chat |
 | `/help` | Examples |
 

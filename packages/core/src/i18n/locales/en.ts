@@ -18,7 +18,7 @@ export const en = {
   "welcome.private":
     "👋 Hi, I'm {app}, your family finance buddy.\n\nJust write to me like you'd write to a person:\n• <i>groceries 45$</i>\n• <i>salary 3000$ received</i>\n• <i>remind me on Friday to pay for the kindergarten</i>\n• <i>loan 300$ every month on the 15th</i>\n\nI'll keep track of everything and give you a monthly summary with /summary.\n\n💡 Add me to a group with your partner to track a shared budget.",
   "welcome.group":
-    "👋 Hi! I'm {app}. I'll help this chat keep track of expenses, income, reminders and bills.\n\nI only react to marked messages:\n• start with <b>{prefix}</b> → <i>{prefix} groceries 45$</i>\n• mention me → <i>@{bot} remind me on Friday to pay the rent</i>\n• or call me by name → <i>Madat remind me on Friday to pay the rent</i>\n• or use keywords like <i>spent, paid, remind, salary</i>\n• messages with an amount and currency are also picked up\n\nEverything else in the chat is ignored and never stored.\n\n⚙️ Currency: <b>{currency}</b> · Timezone: <b>{timezone}</b> · Language: <b>{language}</b>\nChange with /settings. Get your monthly overview with /summary.",
+    "👋 Hi! I'm {app}. I'll help this chat keep track of expenses, income, reminders and bills.\n\nI only react to marked messages:\n• start with <b>{prefix}</b> → <i>{prefix} groceries 45$</i>\n• mention me → <i>@{bot} remind me on Friday to pay the rent</i>\n• or call me by name → <i>{name} remind me on Friday to pay the rent</i>\n• or use keywords like <i>spent, paid, remind, salary</i>\n• messages with an amount and currency are also picked up\n\nEverything else in the chat is ignored and never stored.\n\n⚙️ Currency: <b>{currency}</b> · Timezone: <b>{timezone}</b> · Language: <b>{language}</b>\nChange with /settings. Get your monthly overview with /summary.",
   "welcome.privacy_warning":
     "⚠️ I can't see regular messages in this group yet, so keywords and the {prefix} prefix won't work. Open @BotFather → /setprivacy → <b>Disable</b> for me, then remove and re-add me to the group. Mentions and replies work right away.",
   "help":
@@ -205,6 +205,14 @@ export const en = {
   "correction.nothing": "🤔 I didn't get what to change. Reply to the confirmation, e.g. «amount 2M», «move to the 15th» or «category transport».",
   "correction.confirm_amount": "🤔 Change the amount from {old} to <b>{new}</b>? That's very different from before.",
   "correction.amount_kept": "👌 Kept {amount}.",
+  "cmd.name": "Rename the assistant",
+  "help.name": "<b>My name</b>\nGive me a name of your own: <code>/name Kex</code> or «Madat, from now on your name is Kex». I'll answer to it in this chat.",
+  "rename.done": "🎉 From now on my name here is <b>{name}</b>.\nMessages that start with «{name}» are for me, e.g. <i>{name}, groceries 45$</i>. I still answer to Madat too.",
+  "rename.reset": "👌 I'm Madat again.",
+  "rename.invalid": "🤔 A name should be 1–32 characters and start with a letter: letters, digits, spaces or hyphens. E.g. <code>/name Kex</code>.",
+  "rename.current": "My name in this chat is <b>{name}</b>.\nTo rename me: <code>/name Kex</code> or «{name}, from now on your name is Kex». <code>/name reset</code> brings back Madat.",
+  "settings.name_line": "Assistant name: <b>{name}</b>",
+  "settings.btn_name": "✏️ Assistant name",
 } as const;
 
 export type LocaleStrings = { [K in keyof typeof en]: string };
