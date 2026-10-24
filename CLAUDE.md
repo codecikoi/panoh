@@ -106,7 +106,7 @@ pnpm db:generate        # новая миграция после правки pa
 
 Запущено 2026-10-24 на временном адресе **https://140-82-39-106.sslip.io/** (выбор Зоира; `madat.app` — на потом): в `/opt/madat/.env` `DOMAIN` и `COMPOSE_PROFILES=dashboard`, ufw открыт на 80/443, Caddy сам получил сертификат Let's Encrypt. У бота `DASHBOARD_URL` → кнопка меню «📊 Madat» в личке (проверено через `getChatMenuButton`) и кнопка дашборда под сводкой. При переезде на свой домен: поменять `DOMAIN`, `deploy/deploy.sh`, URL в BotFather (`/myapps` → Edit Web App URL).
 
-Осталось: Зоир создаёт Mini App в BotFather (`/newapp`: обложка `madat-app-A2.png`, демо `madat-demo.mp4`, URL выше, short name) → прописать `DASHBOARD_TME_LINK=https://t.me/panoh_fam_bot/<short>` в `/opt/madat/.env` для кнопки в группах. Обложка и демо собраны из HTML (`scratchpad`), демо-данные в долларах (`demo:seed`).
+Mini App в BotFather создана 2026-10-24: short name `dashboard`, ссылка `https://t.me/panoh_fam_bot/dashboard`, на сервере `DASHBOARD_TME_LINK` прописан — в группах под сводкой кнопка «📊 Открыть дашборд» со `startapp=<householdId>_<month>`. Обложка и демо собраны из HTML (`scratchpad`), демо-данные в долларах (`demo:seed`).
 
 ## Этап 3: публичный запуск (набросок)
 
