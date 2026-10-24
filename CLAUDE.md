@@ -104,10 +104,9 @@ pnpm db:generate        # новая миграция после правки pa
 
 Разработка: `PGLITE_DIR=./data/pglite-demo pnpm --filter @madat/api demo:seed` (демо-семья для пользователя 42), API на демо-базе (`PGLITE_DIR=... BOT_TOKEN=dev PORT=8081 pnpm dev:api`), `pnpm --filter @madat/dashboard dev` → `http://localhost:5173/?debugUser=42&tab=month|operations|plans|goals`. Vite запускать из `apps/dashboard` (в корне лежит Vite 7 от vitest, плагин React требует Vite 8). Скриншоты в мобильной ширине и тёмной теме: headless Chrome через DevTools-протокол (`Emulation.setDeviceMetricsOverride` 375px, `setEmulatedMedia` prefers-color-scheme); простой `--screenshot` на Mac не уже ~500px и снимает до загрузки данных.
 
-Осталось до запуска:
-1. Домен (вопрос Зоиру: купить `madat.app` ≈ 15 $/год — рекомендовано, или временный `140-82-39-106.sslip.io`). Mini App открывается только по HTTPS.
-2. На сервере: `DOMAIN=...` и `COMPOSE_PROFILES=dashboard` в `/opt/madat/.env`, `ufw allow 80,443/tcp` и `443/udp`, `deploy/deploy.sh` — поднимутся `api` и `web` (Caddy: статика, `/api` → api, сертификат Let's Encrypt сам). У бота появится `DASHBOARD_URL` → кнопка меню «📊 Madat» в личке и кнопка дашборда под сводкой.
-3. BotFather → `/newapp` (короткое имя, URL дашборда) → `DASHBOARD_TME_LINK=https://t.me/panoh_fam_bot/<short>` для кнопки в группах.
+Запущено 2026-10-24 на временном адресе **https://140-82-39-106.sslip.io/** (выбор Зоира; `madat.app` — на потом): в `/opt/madat/.env` `DOMAIN` и `COMPOSE_PROFILES=dashboard`, ufw открыт на 80/443, Caddy сам получил сертификат Let's Encrypt. У бота `DASHBOARD_URL` → кнопка меню «📊 Madat» в личке (проверено через `getChatMenuButton`) и кнопка дашборда под сводкой. При переезде на свой домен: поменять `DOMAIN`, `deploy/deploy.sh`, URL в BotFather (`/myapps` → Edit Web App URL).
+
+Осталось: Зоир создаёт Mini App в BotFather (`/newapp`: обложка `madat-app-A2.png`, демо `madat-demo.mp4`, URL выше, short name) → прописать `DASHBOARD_TME_LINK=https://t.me/panoh_fam_bot/<short>` в `/opt/madat/.env` для кнопки в группах. Обложка и демо собраны из HTML (`scratchpad`), демо-данные в долларах (`demo:seed`).
 
 ## Этап 3: публичный запуск (набросок)
 
