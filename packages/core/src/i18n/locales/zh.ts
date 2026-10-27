@@ -63,6 +63,7 @@ export const zh: LocaleStrings = {
   "hint.edit": "回复这条消息写上修改内容，比如「不是150，是115」或「分类 交通」。",
   "hint.not_found": "这条记录已经不存在了。",
   "ask.amount": "🤔 没看懂「{note}」的金额。请带上金额再发一次，比如 <i>{note} 45$</i>。",
+  "ask.category": "🤔 花在什么上了？请回复此消息，例如：买菜、咖啡馆、电影。",
   "ask.when": "🤔 「{title}」什么时候提醒？告诉我日期和时间。",
   "ask.day": "🤔 「{name}」每月几号到期？比如 <i>{name} 15号</i>。",
   "nothing.explicit": "🤷 没找到可以记录的内容。试试 <i>{prefix} 买菜 45$</i> 或 <i>明天10点提醒我给妈妈打电话</i>。",

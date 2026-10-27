@@ -63,6 +63,7 @@ export const vi: LocaleStrings = {
   "hint.edit": "Trả lời tin này kèm nội dung sửa, ví dụ «không phải 150, là 115» hoặc «mục đi lại».",
   "hint.not_found": "Ghi chép này không còn nữa.",
   "ask.amount": "🤔 Mình chưa rõ số tiền cho «{note}». Gửi lại kèm số tiền, ví dụ <i>{note} 45$</i>.",
+  "ask.category": "🤔 Chi cho việc gì? Hãy trả lời tin nhắn này, ví dụ: đi chợ, cà phê, xem phim.",
   "ask.when": "🤔 Nhắc «{title}» khi nào? Cho mình biết ngày và giờ.",
   "ask.day": "🤔 «{name}» đến hạn ngày mấy hằng tháng? Ví dụ <i>{name} ngày 15</i>.",
   "nothing.explicit": "🤷 Mình không thấy gì để ghi. Thử <i>{prefix} đi chợ 45$</i> hoặc <i>mai 10h nhắc gọi cho mẹ</i>.",

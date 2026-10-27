@@ -63,6 +63,7 @@ export const nl: LocaleStrings = {
   "hint.edit": "Antwoord op dit bericht met de correctie, bijv. „niet 150, 115” of „categorie vervoer”.",
   "hint.not_found": "Dit record bestaat niet meer.",
   "ask.amount": "🤔 Ik heb het bedrag voor „{note}” niet begrepen. Stuur het opnieuw met bedrag, bijv. <i>{note} 45$</i>.",
+  "ask.category": "🤔 Waaraan is het uitgegeven? Reageer op dit bericht, bijv. boodschappen, café, bioscoop.",
   "ask.when": "🤔 Wanneer moet ik je herinneren aan „{title}”? Geef datum en tijd.",
   "ask.day": "🤔 Op welke dag van de maand moet „{name}” betaald worden? Bijv. <i>{name} op de 15e</i>.",
   "nothing.explicit": "🤷 Ik heb niets gevonden om vast te leggen. Probeer <i>{prefix} boodschappen 45$</i> of <i>herinner me morgen om 10 uur mama te bellen</i>.",

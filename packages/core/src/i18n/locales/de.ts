@@ -63,6 +63,7 @@ export const de: LocaleStrings = {
   "hint.edit": "Antworte auf diese Nachricht mit der Korrektur, z. B. „nicht 150, 115“ oder „Kategorie Transport“.",
   "hint.not_found": "Diesen Eintrag gibt es nicht mehr.",
   "ask.amount": "🤔 Ich habe den Betrag für „{note}“ nicht verstanden. Schick es nochmal mit Betrag, z. B. <i>{note} 45$</i>.",
+  "ask.category": "🤔 Wofür wurde das ausgegeben? Antworte auf diese Nachricht, z. B. Lebensmittel, Café, Kino.",
   "ask.when": "🤔 Wann soll ich dich an „{title}“ erinnern? Nenn mir Datum und Uhrzeit.",
   "ask.day": "🤔 An welchem Tag im Monat ist „{name}“ fällig? Z. B. <i>{name} am 15.</i>.",
   "nothing.explicit": "🤷 Ich habe nichts zum Eintragen gefunden. Versuch <i>{prefix} Einkauf 45$</i> oder <i>erinnere mich morgen um 10, Mama anzurufen</i>.",

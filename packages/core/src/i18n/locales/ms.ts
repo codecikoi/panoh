@@ -63,6 +63,7 @@ export const ms: LocaleStrings = {
   "hint.edit": "Balas mesej ini dengan pembetulan, cth. «bukan 150, 115» atau «kategori pengangkutan».",
   "hint.not_found": "Rekod ini sudah tiada.",
   "ask.amount": "🤔 Saya tak faham jumlah untuk «{note}». Hantar semula dengan jumlahnya, cth. <i>{note} 45$</i>.",
+  "ask.category": "🤔 Dibelanjakan untuk apa? Balas mesej ini, cth. barang dapur, kafe, pawagam.",
   "ask.when": "🤔 Bila nak saya ingatkan «{title}»? Beritahu tarikh dan masa.",
   "ask.day": "🤔 «{name}» perlu dibayar pada hari ke berapa setiap bulan? Cth. <i>{name} pada 15 hb</i>.",
   "nothing.explicit": "🤷 Tiada apa yang boleh direkod. Cuba <i>{prefix} barang dapur 45$</i> atau <i>ingatkan esok pukul 10 telefon mak</i>.",

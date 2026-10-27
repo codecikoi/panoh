@@ -101,7 +101,8 @@ export function describeTarget(target: ReplyTarget, tz = "UTC"): string {
   switch (target.type) {
     case "transaction": {
       const r = target.row;
-      return `${r.kind} record: amount ${r.amount} ${r.currency}, category ${r.category}, note "${r.note}", date ${r.occurredOn}`;
+      const asked = r.kind === "expense" && r.category === "other" && !r.note ? " (the bot asked what it was spent on; category not stated yet)" : "";
+      return `${r.kind} record: amount ${r.amount} ${r.currency}, category ${r.category}, note "${r.note}", date ${r.occurredOn}${asked}`;
     }
     case "reminder":
       return `reminder: "${target.row.title}" due ${DateTime.fromJSDate(target.row.dueAt).setZone(tz).toFormat("yyyy-LL-dd HH:mm")} (local time)`;
@@ -220,7 +221,9 @@ async function handleTransaction(ctx: BotContext, item: ExtractedItem, meta: App
     return true;
   }
   const amountBase = toBase(item.amount, item.currency, scope.currency, rates);
-  const status = item.confidence >= 0.6 ? "confirmed" : "pending";
+  // An expense with no stated purpose is kept (as "other") rather than guessed; the bot asks and a reply fixes the category.
+  const askCategory = kind === "expense" && (item.category === null || (item.category === "other" && !item.note));
+  const status = item.confidence >= 0.6 || askCategory ? "confirmed" : "pending";
   const tx = await createTransaction(ctx.deps.db, {
     householdId: scope.household.id,
     userId: scope.user?.id ?? null,
@@ -238,7 +241,8 @@ async function handleTransaction(ctx: BotContext, item: ExtractedItem, meta: App
     sourceMessageId: meta.sourceMessageId,
   });
   const text = status === "pending" ? R.txPendingText(scope, tx) : R.txText(scope, tx) + (await budgetLineFor(ctx.deps.db, scope, tx));
-  const sent = await ctx.reply(text, replyOpts(meta, { reply_markup: R.txKeyboard(scope, tx) }));
+  const question = askCategory ? "\n" + t(scope.locale, "ask.category") : "";
+  const sent = await ctx.reply(text + question, replyOpts(meta, { reply_markup: R.txKeyboard(scope, tx) }));
   await updateTransaction(ctx.deps.db, tx.id, { botMessageId: sent.message_id });
   return true;
 }

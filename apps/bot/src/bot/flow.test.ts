@@ -121,6 +121,14 @@ describe("bot flow", () => {
     expect(sent()).toHaveLength(0);
   });
 
+  it("ignores messages addressed to another person, even with a keyword or an amount", async () => {
+    await sendText(bot, "@nb19_02 проверь вот как выглядит отчет", { entities: [{ type: "mention", offset: 0, length: 8 }] });
+    await sendText(bot, "проверь, отчёт @nb19_02 пришёл");
+    await sendText(bot, "Honey такси 25 000 сум", { entities: [{ type: "text_mention", offset: 0, length: 5, user: { id: 43, is_bot: false, first_name: "Honey" } }] });
+    expect(extractItems).not.toHaveBeenCalled();
+    expect(sent()).toHaveLength(0);
+  });
+
   it("sends the group welcome on /start", async () => {
     await sendText(bot, "/start", { entities: [{ type: "bot_command", offset: 0, length: 6 }] });
     expect(lastSent().payload.text).toContain("Привет");
@@ -148,6 +156,26 @@ describe("bot flow", () => {
     expect(extractItems).toHaveBeenCalledWith(expect.objectContaining({ text: "такси 25к" }));
     expect(lastSent().payload.text).toContain("Расход");
     expect(reactions().at(-1)).toContain("✍");
+  });
+
+  it("keeps an expense with no stated purpose as «other», asks what it was for and takes the reply", async () => {
+    mockExtraction([item({ amount: 94000, category: "other", note: "", confidence: 0.5 })]);
+    await sendText(bot, "расход 94к");
+    expect(extractItems).toHaveBeenLastCalledWith(expect.objectContaining({ addressed: false }));
+    const question = lastSent();
+    expect(question.payload.text).toContain("Другое");
+    expect(question.payload.text).toContain("На что потратили?");
+    const tx = (await listRecentTransactions(handle.db, 1))[0]!;
+    expect(tx).toMatchObject({ amount: 94000, category: "other", note: "", status: "confirmed" });
+
+    mockExtraction([item({ kind: "correction", changed: { category: "groceries", note: "продукты" } })]);
+    await sendText(bot, "продукты", { reply_to_message: { message_id: tx.botMessageId, from: me, chat, date: 1, text: "x" } });
+    expect(extractItems).toHaveBeenLastCalledWith(expect.objectContaining({ replyTo: expect.stringContaining("asked what it was spent on") }));
+    expect((await listRecentTransactions(handle.db, 1))[0]).toMatchObject({ id: tx.id, category: "groceries", note: "продукты", status: "confirmed" });
+    const edited = calls.filter((c) => c.method === "editMessageText").at(-1)!;
+    expect(edited.payload.text).toContain("Продукты");
+    expect(edited.payload.text).not.toContain("На что потратили?");
+    expect(reactions().at(-1)).toContain("👌");
   });
 
   it("asks for confirmation when the model is unsure, then confirms via button", async () => {

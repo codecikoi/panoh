@@ -74,6 +74,7 @@ export const en = {
   "hint.not_found": "This record no longer exists.",
 
   "ask.amount": "🤔 I didn't catch the amount for «{note}». Send it again with the amount, e.g. <i>{note} 45$</i>.",
+  "ask.category": "🤔 What was it spent on? Reply to this message, e.g. groceries, cafe, cinema.",
   "ask.when": "🤔 When should I remind you about «{title}»? Tell me the date and time.",
   "ask.day": "🤔 Which day of the month is «{name}» due? E.g. <i>{name} on the 15th</i>.",
   "nothing.explicit": "🤷 I didn't find anything to record. Try <i>{prefix} groceries 45$</i> or <i>remind me tomorrow at 10 to call mom</i>.",

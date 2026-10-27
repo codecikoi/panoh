@@ -38,6 +38,14 @@ export function registerMessages(bot: Bot<BotContext>): void {
     const replyTo = ctx.message.reply_to_message;
     const isReplyToBot = replyTo?.from?.id === ctx.me.id;
 
+    const botUsername = ctx.me.username.toLowerCase();
+    // Someone else is mentioned: a user without a username (text_mention) or an @username that is not the bot's.
+    const mentionsOthers = (ctx.message.entities ?? []).some(
+      (e) =>
+        (e.type === "text_mention" && e.user.id !== ctx.me.id) ||
+        (e.type === "mention" && text.slice(e.offset + 1, e.offset + e.length).toLowerCase() !== botUsername),
+    );
+
     const trigger = evaluateTrigger({
       text,
       locale: scope.locale,
@@ -46,6 +54,7 @@ export function registerMessages(bot: Bot<BotContext>): void {
       isPrivateChat: isPrivate,
       config: scope.household.triggers,
       names: scope.household.assistantName ? [scope.household.assistantName] : undefined,
+      mentionsOthers,
     });
     if (!trigger.process) return;
     if (!(await markProcessed(ctx.deps.db, chat.id, ctx.message.message_id))) return;

@@ -113,7 +113,7 @@ A household member sent a message (any language). Extract every actionable item 
 Return nothing but the structured output.
 
 ## Item kinds
-- expense: money spent. Needs amount (number) and category from the expense list.
+- expense: money spent. Needs amount (number) and category from the expense list. If the message does not say what the money went to ("расход 94к", "потратил 50к", "spent 100$"), category = "other" and note = "": never guess a category or invent a note, the bot asks the user. A missing category alone does not lower confidence.
 - income: money received. Needs amount and category from the income list.
 - reminder: a one-off thing to do at a date/time. Needs due_at (local date-time, "YYYY-MM-DDTHH:mm"), note (what to do) and time_specified.
 - recurring_payment: a bill that repeats every month on a fixed day (loan, rent, kindergarten, internet...). Needs day_of_month, note (short name), optional amount, optional remind_days_before.
@@ -145,11 +145,13 @@ Return nothing but the structured output.
 - category must be one of the lists below. Loan or mortgage instalments → loans. Taxi, fuel, bus → transport. Cafe, restaurant, delivery → dining. Supermarket, market, food at home → groceries. Pharmacy, doctor → health. Money sent to parents/relatives → family.
 - confidence: 0.9–1 clear and complete; 0.6–0.8 minor ambiguity (e.g. category guessed); ≤ 0.5 missing data or unclear intent.
 - If the message is a reply to a bot confirmation (provided as context) and it reads like a change, it is a correction, not a new record.
+- A reply to a record whose purpose the bot asked about (its description says so), or a bare purpose like "продукты" / "cafe with friends" sent right after such a record, is a correction: category = the matching expense category, note = the thing named (short).
 - A message that is not a reply but clearly refers to the most recent record ("make it 2 million", "move it to the 15th") is a correction of that record; a question about it is clarify.
 - "Put it back", "as it was", "undo the change" in a correction: take the old values from the edit history and return them as the changed fields. If the history does not have them, clarify.
 - A bare number with no currency or multiplier, replying to a planned expense or goal: if it is 1–31 and the record has no exact day (month only), it is the day of the month (a date correction), not an amount. Otherwise, if it is far off the current amount (e.g. "11" for 3 000 000), clarify whether it is a day or an amount.
 - A day of the month that has already passed this month, for a record in the current month ("on the 11th" when today is the 19th): clarify whether to move it to that day next month instead of moving it silently.
 - Never return a correction that changes nothing; clarify what should change instead.
+- summary_request and report_request only when the user asks the assistant for one. Talking about a report or summary with someone else ("check how the report looks", "did you see the summary?") is none.
 - When the message addresses the bot directly but holds no record (a greeting, thanks, declining a change you offered like "leave it", a question about how you work), return clarify with a short friendly answer instead of none. Otherwise chit-chat is none. Moving a planned expense or a goal deadline is a correction with the new date (and date_approximate).
 - language: BCP-47 code of the message language.
 - Ignore anything that is not a financial record, reminder, bill or correction. Do not moralize, do not add commentary.
@@ -187,6 +189,9 @@ export function buildExtractionUserMessage(ctx: ExtractionContext): string {
   else if (ctx.lastRecord) lines.push(`Most recent record in this chat (the message is not a reply): ${ctx.lastRecord}`);
   if (ctx.assistantName) lines.push(`In this chat the assistant is called "${ctx.assistantName}" (it also answers to Madat). Use that name when it refers to itself.`);
   if (ctx.addressed) lines.push("The message addresses the bot directly.");
+  else if (ctx.addressed === false) {
+    lines.push("The message does not address the bot: it was picked up by a keyword or an amount and may be meant for another person. Unless it clearly states a record, reminder, bill, plan or a request to the assistant, return none.");
+  }
   lines.push(`Author: ${ctx.authorName}`);
   lines.push(`Message: """${ctx.text}"""`);
   return lines.join("\n");

@@ -63,6 +63,7 @@ export const ro: LocaleStrings = {
   "hint.edit": "Răspunde la acest mesaj cu corectura, de ex. „nu 150, 115” sau „categoria transport”.",
   "hint.not_found": "Această înregistrare nu mai există.",
   "ask.amount": "🤔 Nu am înțeles suma pentru „{note}”. Trimite din nou cu suma, de ex. <i>{note} 45$</i>.",
+  "ask.category": "🤔 Pe ce s-au cheltuit banii? Răspundeți la acest mesaj, de ex. cumpărături, cafenea, cinema.",
   "ask.when": "🤔 Când să-ți amintesc de „{title}”? Spune-mi data și ora.",
   "ask.day": "🤔 În ce zi a lunii se plătește „{name}”? De ex. <i>{name} pe 15</i>.",
   "nothing.explicit": "🤷 Nu am găsit nimic de înregistrat. Încearcă <i>{prefix} cumpărături 45$</i> sau <i>amintește-mi mâine la 10 să o sun pe mama</i>.",

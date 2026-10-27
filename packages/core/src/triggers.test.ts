@@ -79,6 +79,20 @@ describe("evaluateTrigger", () => {
     expect(evaluateTrigger({ ...base, locale: "ja", text: "ランチ 1200円" }).reason).toBe("money");
   });
 
+  it("stays quiet when another person is mentioned, unless the bot is addressed explicitly", () => {
+    expect(evaluateTrigger({ ...base, text: "@nb19_02 проверь вот как выглядит отчет" }).process).toBe(false);
+    expect(evaluateTrigger({ ...base, text: "проверь @nb19_02 как выглядит отчет" }).process).toBe(false);
+    expect(evaluateTrigger({ ...base, text: "@nb19_02 такси 25 000 сум" }).process).toBe(false);
+    expect(evaluateTrigger({ ...base, text: "Дорогая, купи хлеб", mentionsOthers: true }).process).toBe(false);
+    expect(evaluateTrigger({ ...base, text: "@nb19_02 @MadatBot сводка" }).reason).toBe("mention");
+    expect(evaluateTrigger({ ...base, text: "сводка @madatbot @nb19_02" }).reason).toBe("mention");
+    expect(evaluateTrigger({ ...base, text: "+ @nb19_02 продукты 150к" }).reason).toBe("prefix");
+    expect(evaluateTrigger({ ...base, text: "мадат, @nb19_02 заплатила за садик" }).reason).toBe("name");
+    expect(evaluateTrigger({ ...base, text: "@nb19_02 не 150, а 115", isReplyToBot: true }).reason).toBe("reply");
+    expect(evaluateTrigger({ ...base, text: "@nb19_02 продукты 150к", isPrivateChat: true }).process).toBe(true);
+    expect(evaluateTrigger({ ...base, text: "пиши на zoir@gmail.com, потратил 20к" }).reason).toBe("keyword");
+  });
+
   it("respects household config", () => {
     const config = { prefix: "#", keywords: ["кофе"], moneyPattern: false };
     expect(evaluateTrigger({ ...base, text: "+ продукты 150к", config }).reason).toBe("money" === "money" ? "none" : "none");

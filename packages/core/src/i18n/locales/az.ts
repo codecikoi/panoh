@@ -63,6 +63,7 @@ export const az: LocaleStrings = {
   "hint.edit": "Bu mesaja düzəlişlə cavab yaz, məsələn «150 yox, 115» və ya «kateqoriya nəqliyyat».",
   "hint.not_found": "Bu qeyd artıq yoxdur.",
   "ask.amount": "🤔 «{note}» üçün məbləği başa düşmədim. Məbləğlə yenidən yaz, məsələn <i>{note} 45$</i>.",
+  "ask.category": "🤔 Nəyə xərcləndi? Bu mesaja cavab yazın, məs. ərzaq, kafe, kino.",
   "ask.when": "🤔 «{title}» haqqında nə vaxt xatırladım? Tarix və saatı de.",
   "ask.day": "🤔 «{name}» ayın neçəsində ödənilir? Məsələn <i>{name} 15-də</i>.",
   "nothing.explicit": "🤷 Qeyd edəcək bir şey tapmadım. <i>{prefix} ərzaq 45$</i> və ya <i>sabah saat 10-da anama zəng etməyi xatırlat</i> yaz.",

@@ -81,5 +81,8 @@ describe("normalizeItems", () => {
     expect(msg).not.toContain("Most recent record");
     expect(buildExtractionUserMessage({ ...ctx, lastRecord: "planned expense: \"x\"" })).toContain('Most recent record in this chat (the message is not a reply): planned expense: "x"');
     expect(msg).toContain(ctx.text);
+    expect(buildExtractionUserMessage({ ...ctx, addressed: true })).toContain("addresses the bot directly");
+    expect(buildExtractionUserMessage({ ...ctx, addressed: false })).toContain("does not address the bot");
+    expect(msg).not.toContain("address");
   });
 });

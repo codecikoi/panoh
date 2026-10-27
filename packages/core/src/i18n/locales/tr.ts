@@ -63,6 +63,7 @@ export const tr: LocaleStrings = {
   "hint.edit": "Bu mesaja düzeltmeyle yanıt ver, örn. «150 değil, 115» veya «kategori ulaşım».",
   "hint.not_found": "Bu kayıt artık yok.",
   "ask.amount": "🤔 «{note}» için tutarı anlayamadım. Tutarla birlikte tekrar gönder, örn. <i>{note} 45$</i>.",
+  "ask.category": "🤔 Ne için harcandı? Bu mesaja yanıt verin, örn. market, kafe, sinema.",
   "ask.when": "🤔 «{title}» için ne zaman hatırlatayım? Tarih ve saati söyle.",
   "ask.day": "🤔 «{name}» ayın hangi günü ödeniyor? Örn. <i>{name} ayın 15'inde</i>.",
   "nothing.explicit": "🤷 Kaydedecek bir şey bulamadım. <i>{prefix} market 45$</i> veya <i>yarın 10'da annemi aramayı hatırlat</i> dene.",

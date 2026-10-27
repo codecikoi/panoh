@@ -185,6 +185,8 @@ export interface TriggerInput {
   config?: TriggerConfig | null;
   /** Extra names the household gave the assistant (the built-in names always work). */
   names?: string[];
+  /** The message mentions another person (a text_mention entity for someone without a username, for example). */
+  mentionsOthers?: boolean;
 }
 
 export interface TriggerResult {
@@ -213,6 +215,18 @@ function stripName(text: string, extraNames: string[] = []): string | undefined 
   if (!match) return undefined;
   const rest = text.slice(match[0].length).trim();
   return rest.length > 0 ? rest : undefined;
+}
+
+/** Telegram usernames: 4–32 letters, digits and underscores. */
+const USERNAME_PATTERN = /(^|[^\p{L}\p{N}_@])@([a-z0-9_]{4,32})(?![\p{L}\p{N}_])/giu;
+
+/** True when the text mentions someone other than the bot by @username. */
+export function mentionsOtherUser(text: string, botUsername?: string): boolean {
+  const bot = botUsername?.toLowerCase();
+  for (const match of text.matchAll(USERNAME_PATTERN)) {
+    if (match[2]!.toLowerCase() !== bot) return true;
+  }
+  return false;
 }
 
 function containsKeyword(text: string, keywords: string[], locale: string): boolean {
@@ -246,6 +260,10 @@ export function evaluateTrigger(input: TriggerInput): TriggerResult {
     return { process: true, reason: "prefix", explicit: true, cleaned: text.slice(prefix.length).trim() };
   }
   if (named !== undefined) return { process: true, reason: "name", explicit: true, cleaned: named };
+  // A message addressed to another person is not for the bot unless it was addressed explicitly above.
+  if (input.mentionsOthers || mentionsOtherUser(text, input.botUsername)) {
+    return { process: false, reason: "none", explicit: false, cleaned: text };
+  }
   if (containsKeyword(text, effectiveKeywords(input.locale, config), input.locale)) {
     return { process: true, reason: "keyword", explicit: false, cleaned: text };
   }

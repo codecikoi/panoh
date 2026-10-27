@@ -76,6 +76,7 @@ export const uz: LocaleStrings = {
   "hint.not_found": "Bu yozuv allaqachon yo'q.",
 
   "ask.amount": "🤔 «{note}» uchun summani tushunmadim. Summa bilan qayta yozing, masalan <i>{note} 45k</i>.",
+  "ask.category": "🤔 Nimaga sarflandi? Shu xabarga javob yozing, masalan: oziq-ovqat, kafe, kino.",
   "ask.when": "🤔 «{title}» haqida qachon eslatay? Sana va vaqtni ayting.",
   "ask.day": "🤔 «{name}» oyning qaysi sanasida to'lanadi? Masalan <i>{name} 15-sanada</i>.",
   "nothing.explicit": "🤷 Yozadigan narsa topmadim. <i>{prefix} oziq-ovqat 150k</i> yoki <i>ertaga 10 da onamga qo'ng'iroq qilishni eslat</i> deb ko'ring.",

@@ -63,6 +63,7 @@ export const id: LocaleStrings = {
   "hint.edit": "Balas pesan ini dengan koreksinya, misalnya «bukan 150, 115» atau «kategori transportasi».",
   "hint.not_found": "Catatan ini sudah tidak ada.",
   "ask.amount": "🤔 Aku tidak menangkap jumlah untuk «{note}». Kirim lagi dengan jumlahnya, misalnya <i>{note} 45$</i>.",
+  "ask.category": "🤔 Untuk apa uangnya? Balas pesan ini, mis. belanja, kafe, bioskop.",
   "ask.when": "🤔 Kapan kuingatkan «{title}»? Sebutkan tanggal dan jamnya.",
   "ask.day": "🤔 «{name}» jatuh tempo tanggal berapa tiap bulan? Misalnya <i>{name} tanggal 15</i>.",
   "nothing.explicit": "🤷 Tidak ada yang bisa kucatat. Coba <i>{prefix} belanja 45$</i> atau <i>ingatkan besok jam 10 telepon ibu</i>.",
