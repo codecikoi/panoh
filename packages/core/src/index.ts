@@ -1,6 +1,7 @@
 export * from "./config.js";
 export * from "./logger.js";
 export * from "./categories.js";
+export * from "./brand/index.js";
 export * from "./money.js";
 export * from "./dates.js";
 export * from "./period.js";

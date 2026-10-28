@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import type { IconName } from "@madat/core/brand/icons";
 import { canAuthenticate } from "./api";
+import { Icon, Mark } from "./components";
 import { currentMonth, monthLabel, shiftMonth } from "./format";
 import { I18nContext, loadStrings, makeI18n, type I18n } from "./i18n";
 import { tg } from "./telegram";
@@ -11,11 +13,11 @@ import { OperationsScreen } from "./screens/OperationsScreen";
 import { PlansScreen } from "./screens/PlansScreen";
 
 type Tab = "month" | "operations" | "plans" | "goals";
-const TABS: { id: Tab; icon: string; key: string }[] = [
-  { id: "month", icon: "📊", key: "dash.tab_month" },
-  { id: "operations", icon: "🧾", key: "dash.tab_operations" },
-  { id: "plans", icon: "🗓", key: "dash.tab_plans" },
-  { id: "goals", icon: "🎯", key: "dash.tab_goals" },
+const TABS: { id: Tab; icon: IconName; key: string }[] = [
+  { id: "month", icon: "chart-column", key: "dash.tab_month" },
+  { id: "operations", icon: "receipt", key: "dash.tab_operations" },
+  { id: "plans", icon: "calendar", key: "dash.tab_plans" },
+  { id: "goals", icon: "target", key: "dash.tab_goals" },
 ];
 
 /** Opened from a group: t.me/<bot>/<app>?startapp=<householdId>_<YYYY-MM>; from a private chat: ?month=YYYY-MM. */
@@ -84,15 +86,20 @@ export function App() {
                 ))}
               </select>
             </div>
-          ) : null}
+          ) : (
+            <div className="brandrow">
+              <Mark size={18} color="var(--accent)" />
+              {t("app.name")}
+            </div>
+          )}
           {monthTabs ? (
             <div className="months">
               <button aria-label="previous month" onClick={() => (tg.tap(), setMonth(shiftMonth(shownMonth, -1)))}>
-                ‹
+                <Icon name="chevron-left" />
               </button>
               <h1>{monthLabel(shownMonth, locale)}</h1>
               <button aria-label="next month" disabled={shownMonth >= nowMonth!} onClick={() => (tg.tap(), setMonth(shiftMonth(shownMonth, 1)))}>
-                ›
+                <Icon name="chevron-right" />
               </button>
             </div>
           ) : (
@@ -107,7 +114,7 @@ export function App() {
         <nav className="tabs">
           {TABS.map((x) => (
             <button key={x.id} className={tab === x.id ? "on" : ""} onClick={() => (tg.tap(), setTab(x.id), window.scrollTo(0, 0))}>
-              <span>{x.icon}</span>
+              <Icon name={x.icon} />
               {t(x.key)}
             </button>
           ))}

@@ -122,7 +122,7 @@ export function registerMessages(bot: Bot<BotContext>): void {
     }
     if (outcome.handled === 0 && !outcome.summaryRequested) {
       if (trigger.explicit) {
-        await safeReact(ctx, "🤷");
+        await safeReact(ctx, "🤔");
         await ctx.reply(t(scope.locale, "nothing.explicit", { prefix: prefixOf(scope) }));
       } else {
         await safeReact(ctx, []);

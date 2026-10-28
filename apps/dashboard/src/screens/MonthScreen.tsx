@@ -1,8 +1,9 @@
 import { useState } from "react";
 import type { CategoryStat } from "@madat/core";
+import { categoryIcon } from "@madat/core/categories";
 import { apiPost } from "../api";
 import { monthChanges } from "../changes";
-import { Bar, CategoryName, LoadError, Loading, ShareBar } from "../components";
+import { CategoryName, LoadError, Loading, Plate, Row, ShareBar } from "../components";
 import { formatMoney, formatMoneyCompact, formatPercent, lastDayOf, monthLabel } from "../format";
 import { useI18n } from "../i18n";
 import { tg } from "../telegram";
@@ -64,9 +65,7 @@ export function MonthScreen({ household, month }: { household: Household; month:
         {f && f.ahead > 0 ? (
           <div className="kpi">
             <div className="label">{f.free >= 0 ? t("dash.free") : t("dash.short")}</div>
-            <div className="value num" style={f.free < 0 ? { color: "var(--destructive)" } : undefined}>
-              {formatMoneyCompact(Math.abs(f.free), s.currency, locale)}
-            </div>
+            <div className={`value num ${f.free < 0 ? "negative" : ""}`}>{formatMoneyCompact(Math.abs(f.free), s.currency, locale)}</div>
             <div className="sub">{f.free >= 0 && f.perDay ? t("dash.per_day", { amount: money(f.perDay) }) : t("dash.ahead", { amount: money(f.ahead) })}</div>
           </div>
         ) : (
@@ -79,7 +78,7 @@ export function MonthScreen({ household, month }: { household: Household; month:
       {f && f.ahead > 0 && f.free < 0 ? <div className="toast">{t("dash.only_received")}</div> : null}
 
       <div className="section-title">{t("dash.changes")}</div>
-      <div className="card">
+      <div className="card pad">
         {changes.firstMonth ? (
           <div className="hint">{t("dash.first_month")}</div>
         ) : !changes.grew.length && !changes.dropped.length && !changes.appeared.length ? (
@@ -96,19 +95,19 @@ export function MonthScreen({ household, month }: { household: Household; month:
       <div className="section-title">{t("dash.categories")}</div>
       <div className="card">
         <ShareBar categories={s.categories} total={s.expense} active={active} onPick={setActive} />
-        <div className="rows" style={{ marginTop: 6 }}>
-          {s.categories.map((c) => (
-            <div key={c.category} className={`row ${active === c.category ? "active" : ""}`}>
+        <div className="rows">
+          {s.categories.map((c, i) => (
+            <Row key={c.category} className={active === c.category ? "active" : ""} plate={<Plate icon={categoryIcon(c.category)} slot={i < 5 ? i : undefined} />}>
               <div className="title">
-                <CategoryName category={c.category} />
+                {t(`cat.${c.category}`)}
+                {c.prevAmount === 0 && s.hasPrev ? <span className="badge">{t("dash.new_badge")}</span> : null}
               </div>
-              <div className="right num">{money(c.amount)}</div>
+              <div className="right num strong">{money(c.amount)}</div>
               <div className="meta">
                 {c.share}% · {c.count}
               </div>
-              <div className="meta right num">{c.deltaPct !== null ? formatPercent(c.deltaPct, locale) : c.prevAmount === 0 && s.hasPrev ? t("dash.new_badge") : ""}</div>
-              <Bar value={c.share} />
-            </div>
+              <div className="meta right num">{c.deltaPct !== null ? formatPercent(c.deltaPct, locale) : ""}</div>
+            </Row>
           ))}
         </div>
       </div>
@@ -118,7 +117,7 @@ export function MonthScreen({ household, month }: { household: Household; month:
           {insights.highlights.length ? (
             <>
               <div className="section-title">{t("dash.insights")}</div>
-              <div className="card">
+              <div className="card pad">
                 <ul className="notes">{insights.highlights.map((h) => <li key={h}>{h}</li>)}</ul>
               </div>
             </>
@@ -126,7 +125,7 @@ export function MonthScreen({ household, month }: { household: Household; month:
           {insights.tips.length ? (
             <>
               <div className="section-title">{t("dash.tips")}</div>
-              <div className="card">
+              <div className="card pad">
                 <ul className="notes">{insights.tips.map((h) => <li key={h}>{h}</li>)}</ul>
               </div>
             </>

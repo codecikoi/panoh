@@ -39,6 +39,14 @@ describe("renderReportHtml", () => {
     expect(html).not.toContain("Лимиты");
   });
 
+  it("draws the mark and Lucide category icons instead of emoji, in the brand colours", () => {
+    const html = renderReportHtml({ locale: "en", tz: "UTC", assistantName: "Madat", title: null, data: data() });
+    expect(html).toContain('viewBox="0 0 64 64"'); // the mark in the header
+    expect(html).toContain('<span class="cat"><svg'); // category labels carry an icon
+    expect(html).toContain("--accent:#E40163");
+    expect(html).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
+  });
+
   it("goes right-to-left for Arabic and skips month-only blocks for a week", () => {
     const week = weekPeriod("2026-10-20");
     const html = renderReportHtml({ locale: "ar", tz: "UTC", assistantName: "Madat", title: null, data: data({ period: week, prevPeriod: previousPeriod(week) }) });

@@ -345,7 +345,7 @@ describe("bot flow", () => {
   it("tells the user when nothing was found in an explicit request", async () => {
     mockExtraction([]);
     await sendText(bot, "@MadatTestBot как дела?");
-    expect(lastSent().payload.text).toContain("🤷");
+    expect(lastSent().payload.text).toContain("🤔");
   });
 
   it("undoes the last record", async () => {

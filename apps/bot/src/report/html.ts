@@ -1,15 +1,19 @@
 import { DateTime } from "luxon";
 import {
-  CATEGORY_EMOJI,
+  PALETTE,
+  brandCssVars,
+  categoryIcon,
   escapeHtml,
   formatMoney,
   formatPercent,
   formatPeriod,
+  iconSvg,
+  markSvg,
   t,
   type BudgetStat,
-  type Category,
   type CategoryStat,
   type GoalStat,
+  type IconName,
   type LocaleKey,
   type ReportData,
 } from "@madat/core";
@@ -25,69 +29,86 @@ export interface ReportView {
 
 const RTL = new Set(["ar", "fa", "he", "ur"]);
 
-/** Categorical slots 1–5 of the validated reference palette (light); "Other" is hatched, never a sixth hue. */
-const SLOTS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4"];
-const STATUS = { warning: "#fab219", critical: "#d03b3b" };
+/** Print is always on white, so the light palette; categorical slots 1–5, "Other" is hatched, never a sixth hue. */
+const P = PALETTE.light;
 
 const CSS = `
-@page { size: A4; margin: 16mm 14mm 18mm; @bottom-center { content: counter(page) " / " counter(pages); font: 9px var(--font); color: #8a8984; } }
+@page { size: A4; margin: 16mm 14mm 18mm; @bottom-center { content: counter(page) " / " counter(pages); font: 9px var(--font); color: ${P.textTertiary}; } }
+:root { ${brandCssVars("light")}; }
 :root {
-  --font: "Noto Sans", "Noto Sans Arabic", "Noto Sans Hebrew", "Noto Sans Devanagari", "Noto Sans Bengali", "Noto Sans Thai",
-    "Noto Sans CJK SC", "Noto Sans CJK JP", "Noto Sans CJK KR", "Noto Color Emoji", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --surface: #ffffff; --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #8a8984; --hairline: #e6e5e0;
-  --accent: #2a78d6; --accent-track: #cde2fb; --tile: #f6f5f1;
+  /* Inter first (installed in the bot image), then Noto for every script the bot speaks, then the kit stack. */
+  --font: "Inter", "Noto Sans", "Noto Sans Arabic", "Noto Sans Hebrew", "Noto Sans Devanagari", "Noto Sans Bengali", "Noto Sans Thai",
+    "Noto Sans CJK SC", "Noto Sans CJK JP", "Noto Sans CJK KR", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 * { box-sizing: border-box; }
 html { color-scheme: light; }
-body { margin: 0; background: var(--surface); color: var(--text-primary); font: 10.5px/1.45 var(--font);
+body { margin: 0; background: var(--card); color: var(--text); font: 10.5px/1.45 var(--font);
   -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-h1 { font-size: 22px; line-height: 1.2; margin: 0; letter-spacing: -0.01em; }
-h2 { font-size: 13px; margin: 22px 0 8px; break-after: avoid; }
-.sub { color: var(--text-secondary); margin-top: 4px; }
-.muted { color: var(--text-muted); }
+h1 { font-size: 22px; line-height: 1.2; margin: 0; letter-spacing: -0.01em; color: var(--text-strong); font-weight: 600; }
+h2 { font-size: 13px; font-weight: 600; color: var(--text-strong); margin: 22px 0 8px; break-after: avoid; }
+.sub { color: var(--text-2); margin-top: 4px; }
+.muted { color: var(--text-3); }
 .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+svg { vertical-align: middle; }
 header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
-  padding-bottom: 12px; border-bottom: 1px solid var(--hairline); }
-.brand { font-size: 11px; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  padding-bottom: 12px; border-bottom: 1px solid var(--divider); }
+.brand { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--accent); font-weight: 600; letter-spacing: 0.02em; margin-bottom: 6px; }
 .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
-.tile { background: var(--tile); border-radius: 8px; padding: 10px 12px; }
-.tile .label { color: var(--text-secondary); font-size: 10px; }
-.tile .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
-.tile .delta { color: var(--text-secondary); font-size: 9.5px; margin-top: 2px; }
+.tile { background: var(--soft); border-radius: var(--r-plate); padding: 10px 12px; }
+.tile .label { color: var(--text-2); font-size: 10px; }
+.tile .value { font-size: 18px; font-weight: 600; color: var(--text-strong); margin-top: 2px; }
+.tile .delta { color: var(--text-2); font-size: 9.5px; margin-top: 2px; }
 .stack { display: flex; gap: 2px; height: 14px; margin: 4px 0 8px; }
 .stack span { display: block; height: 100%; }
 .stack span:first-child { border-start-start-radius: 4px; border-end-start-radius: 4px; }
 .stack span:last-child { border-start-end-radius: 4px; border-end-end-radius: 4px; }
-.hatch { background: repeating-linear-gradient(45deg, #b9b8b2 0 2px, #ecebe6 2px 5px); }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--text-secondary); }
+.hatch { background: repeating-linear-gradient(45deg, ${P.textTertiary} 0 2px, ${P.surfaceChip} 2px 5px); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--text-2); }
 .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-inline-end: 5px; vertical-align: -1px; }
+.cat { white-space: nowrap; }
+.cat svg { color: var(--text-2); margin-inline-end: 4px; vertical-align: -2px; }
 table { width: 100%; border-collapse: collapse; }
-th { text-align: start; font-weight: 600; color: var(--text-secondary); font-size: 9.5px; padding: 4px 6px; border-bottom: 1px solid var(--hairline); }
-td { padding: 4px 6px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+th { text-align: start; font-weight: 500; color: var(--text-2); font-size: 9.5px; padding: 4px 6px; border-bottom: 1px solid var(--divider); }
+td { padding: 4px 6px; border-bottom: 1px solid var(--divider); vertical-align: top; }
 tr { break-inside: avoid; }
 td.r, th.r { text-align: end; }
-.bar { position: relative; height: 6px; background: var(--accent-track); border-radius: 3px; min-width: 60px; margin-top: 4px; }
+.bar { position: relative; height: 6px; background: var(--muted); border-radius: 3px; min-width: 60px; margin-top: 4px; }
 .bar b { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--accent); border-radius: 3px; }
-.meter { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 6px 0; border-bottom: 1px solid var(--hairline); break-inside: avoid; }
+.meter { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 6px 0; border-bottom: 1px solid var(--divider); break-inside: avoid; }
 .meter .bar { grid-column: 1 / -1; height: 8px; border-radius: 4px; }
 .meter .bar b { border-radius: 4px; }
-.day td { background: var(--tile); font-weight: 600; color: var(--text-secondary); }
-.in { color: var(--text-primary); }
+.warning { color: var(--warning-text); }
+.critical { color: var(--error-text); }
+.warning svg, .critical svg { vertical-align: -2px; margin-inline-start: 3px; }
+.ok { color: var(--success-text); }
+.forecast svg { vertical-align: -2px; margin-inline-start: 0; }
+.day td { background: var(--soft); font-weight: 500; color: var(--text-2); }
+.in { color: var(--text-strong); font-weight: 500; }
 ul { margin: 4px 0 0; padding-inline-start: 18px; }
 li { margin: 2px 0; }
-.forecast { background: var(--tile); border-radius: 8px; padding: 10px 12px; }
+.forecast { background: var(--soft); border-radius: var(--r-plate); padding: 10px 12px; }
 .forecast div + div { margin-top: 3px; }
-footer { margin-top: 20px; color: var(--text-muted); font-size: 9px; }
+footer { margin-top: 20px; color: var(--text-3); font-size: 9px; display: flex; align-items: center; gap: 6px; }
 `;
 
 type Tr = (key: LocaleKey, params?: Record<string, string | number>) => string;
+
+/** Chat strings open with an emoji (see docs/BRAND.md); in print we drop it and use a Lucide icon where one helps. */
+function plain(text: string): string {
+  return text.replace(/^(?:[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{20E3}]+\s*)+/u, "");
+}
 
 function catName(tr: Tr, category: string): string {
   return tr(`cat.${category}` as LocaleKey);
 }
 
+function icon(name: IconName, size = 11): string {
+  return iconSvg(name, { size, strokeWidth: 2 });
+}
+
+/** Category label for tables: a small Lucide icon plus the translated name. */
 function catLabel(tr: Tr, category: string): string {
-  return `${CATEGORY_EMOJI[category as Category] ?? "📦"} ${escapeHtml(catName(tr, category))}`;
+  return `<span class="cat">${icon(categoryIcon(category))}${escapeHtml(catName(tr, category))}</span>`;
 }
 
 function delta(tr: Tr, locale: string, value: number | null): string {
@@ -103,7 +124,7 @@ function stackedBar(tr: Tr, locale: string, cats: CategoryStat[], total: number)
   if (total <= 0 || !cats.length) return "";
   const top = cats.slice(0, 5);
   const rest = cats.slice(5).reduce((sum, c) => sum + c.amount, 0);
-  const segments = top.map((c, i) => ({ label: catName(tr, c.category), amount: c.amount, color: SLOTS[i]!, hatch: false }));
+  const segments = top.map((c, i) => ({ label: catName(tr, c.category), amount: c.amount, color: P.slots[i]!, hatch: false }));
   if (rest > 0) segments.push({ label: tr("report.other"), amount: rest, color: "", hatch: true });
   const pctOf = (amount: number) => new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 }).format(amount / total);
   const bar = segments
@@ -141,9 +162,13 @@ function budgetMeters(tr: Tr, view: ReportView, budgets: BudgetStat[]): string {
   return budgets
     .map((b) => {
       // Severity rides on fill colour plus an icon, never colour alone.
-      const [color, track, icon] =
-        b.pct > 100 ? [STATUS.critical, "#f6d3d3", " 🚨"] : b.pct >= 80 ? [STATUS.warning, "#fdebc4", " ⚠️"] : ["var(--accent)", "var(--accent-track)", ""];
-      return meter(catLabel(tr, b.category), `${money(b.spent)} / ${money(b.limit)} · ${b.pct}%${icon}`, b.pct, color, track);
+      const [color, track, mark] =
+        b.pct > 100
+          ? [P.error, P.errorBg, `<span class="critical">${icon("octagon-alert")}</span>`]
+          : b.pct >= 80
+            ? [P.warning, P.warningBg, `<span class="warning">${icon("triangle-alert")}</span>`]
+            : ["var(--accent)", "var(--muted)", ""];
+      return meter(catLabel(tr, b.category), `${money(b.spent)} / ${money(b.limit)} · ${b.pct}%${mark}`, b.pct, color, track);
     })
     .join("");
 }
@@ -153,7 +178,13 @@ function goalMeters(view: ReportView, tr: Tr, goals: GoalStat[]): string {
     .map((g) => {
       const money = (n: number) => formatMoney(n, g.currency, view.locale);
       const pace = g.monthlyNeed && g.saved < g.target ? ` <span class="muted">· ${escapeHtml(tr("report.goal_pace", { amount: money(g.monthlyNeed) }))}</span>` : "";
-      return meter(`💰 <b>${escapeHtml(g.title)}</b>${pace}`, `${money(g.saved)} / ${money(g.target)} · ${g.pct}%`, g.pct, "var(--accent)", "var(--accent-track)");
+      return meter(
+        `<span class="cat">${icon("piggy-bank")}<b>${escapeHtml(g.title)}</b></span>${pace}`,
+        `${money(g.saved)} / ${money(g.target)} · ${g.pct}%`,
+        g.pct,
+        "var(--accent)",
+        "var(--muted)",
+      );
     })
     .join("");
 }
@@ -190,7 +221,7 @@ export function renderReportHtml(view: ReportView): string {
   const generated = DateTime.now().setZone(view.tz).setLocale(locale).toLocaleString(DateTime.DATETIME_MED);
   const parts: string[] = [];
 
-  parts.push(`<header><div><div class="brand">${escapeHtml(view.assistantName)}</div><h1>${escapeHtml(tr("report.title"))} · ${period}</h1>${
+  parts.push(`<header><div><div class="brand">${markSvg({ size: 16 })}${escapeHtml(view.assistantName)}</div><h1>${escapeHtml(tr("report.title"))} · ${period}</h1>${
     view.title ? `<div class="sub">${escapeHtml(view.title)}</div>` : ""
   }</div><div class="sub num">${escapeHtml(tr("report.generated", { date: generated }))}</div></header>`);
 
@@ -206,17 +237,20 @@ export function renderReportHtml(view: ReportView): string {
   if (forecast && forecast.ahead > 0) {
     const free =
       forecast.free >= 0
-        ? tr("summary.forecast_free", { amount: money(forecast.free) }) + (forecast.perDay ? tr("summary.forecast_per_day", { amount: money(forecast.perDay) }) : "")
-        : `${tr("summary.forecast_short", { amount: money(-forecast.free) })}<div class="muted">${tr("summary.forecast_note")}</div>`;
+        ? `<span class="ok">${icon("check")}</span> ${plain(tr("summary.forecast_free", { amount: money(forecast.free) }))}${
+            forecast.perDay ? tr("summary.forecast_per_day", { amount: money(forecast.perDay) }) : ""
+          }`
+        : `<span class="warning">${icon("triangle-alert")}</span> ${plain(tr("summary.forecast_short", { amount: money(-forecast.free) }))}<div class="muted">${plain(
+            tr("summary.forecast_note"),
+          )}</div>`;
     const partsAhead = [
       forecast.payments > 0 ? tr("summary.part_payments", { amount: money(forecast.payments) }) : "",
       forecast.plans > 0 ? tr("summary.part_plans", { amount: money(forecast.plans) }) : "",
       forecast.goals > 0 ? tr("summary.part_goals", { amount: money(forecast.goals) }) : "",
     ].filter(Boolean);
-    parts.push(`<h2>${escapeHtml(tr("report.month_balance"))}</h2><div class="forecast"><div>${tr("summary.forecast_ahead", {
-      amount: money(forecast.ahead),
-      parts: partsAhead.join(", "),
-    })}</div><div>${free}</div></div>`);
+    parts.push(`<h2>${escapeHtml(tr("report.month_balance"))}</h2><div class="forecast"><div><span class="muted">${icon("hourglass")}</span> ${plain(
+      tr("summary.forecast_ahead", { amount: money(forecast.ahead), parts: partsAhead.join(", ") }),
+    )}</div><div>${free}</div></div>`);
   }
 
   if (data.categories.length) {
@@ -226,32 +260,30 @@ export function renderReportHtml(view: ReportView): string {
   if (data.incomeCategories.length) {
     parts.push(`<h2>${escapeHtml(tr("report.income_by_category"))}</h2>${categoryTable(tr, view, data.incomeCategories, false)}`);
   }
-  if (data.month?.outlook.budgets.length) parts.push(`<h2>${tr("summary.budgets")}</h2>${budgetMeters(tr, view, data.month.outlook.budgets)}`);
-  if (data.month?.outlook.goals.length) parts.push(`<h2>${tr("summary.goals")}</h2>${goalMeters(view, tr, data.month.outlook.goals)}`);
+  if (data.month?.outlook.budgets.length) parts.push(`<h2>${plain(tr("summary.budgets"))}</h2>${budgetMeters(tr, view, data.month.outlook.budgets)}`);
+  if (data.month?.outlook.goals.length) parts.push(`<h2>${plain(tr("summary.goals"))}</h2>${goalMeters(view, tr, data.month.outlook.goals)}`);
   if (data.month?.outlook.plans.length) {
     const rows = data.month.outlook.plans
       .map(
         (p) =>
-          `<tr><td>${catLabel(tr, p.category)}</td><td>${escapeHtml(p.title)}${p.overdue ? ` <span class="muted">· ⏳ ${escapeHtml(tr("plans.overdue"))}</span>` : ""}</td><td class="r num">${formatMoney(
-            p.originalAmount,
-            p.currency,
-            locale,
-          )}</td></tr>`,
+          `<tr><td>${catLabel(tr, p.category)}</td><td>${escapeHtml(p.title)}${
+            p.overdue ? ` <span class="warning">· ${icon("hourglass")} ${escapeHtml(tr("plans.overdue"))}</span>` : ""
+          }</td><td class="r num">${formatMoney(p.originalAmount, p.currency, locale)}</td></tr>`,
       )
       .join("");
-    parts.push(`<h2>${tr("summary.plans")}</h2><table><tbody>${rows}</tbody></table>`);
+    parts.push(`<h2>${plain(tr("summary.plans"))}</h2><table><tbody>${rows}</tbody></table>`);
   }
   const insights = data.month?.insights;
   if (insights && (insights.highlights.length || insights.tips.length)) {
     const list = (items: string[]) => `<ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`;
-    if (insights.highlights.length) parts.push(`<h2>${tr("summary.insights")}</h2>${list(insights.highlights)}`);
-    if (insights.tips.length) parts.push(`<h2>${tr("summary.tips")}</h2>${list(insights.tips)}`);
+    if (insights.highlights.length) parts.push(`<h2>${plain(tr("summary.insights"))}</h2>${list(insights.highlights)}`);
+    if (insights.tips.length) parts.push(`<h2>${plain(tr("summary.tips"))}</h2>${list(insights.tips)}`);
   }
   if (data.unconverted.length) {
-    parts.push(`<p class="muted">${tr("summary.unconverted", { list: data.unconverted.map((u) => formatMoney(u.amount, u.currency, locale)).join(", ") })}</p>`);
+    parts.push(`<p class="muted">${plain(tr("summary.unconverted", { list: data.unconverted.map((u) => formatMoney(u.amount, u.currency, locale)).join(", ") }))}</p>`);
   }
   parts.push(`<h2>${escapeHtml(tr("report.transactions", { count: data.transactions.length }))}</h2>${transactionsTable(tr, view)}`);
-  parts.push(`<footer>${escapeHtml(view.assistantName)} · ${escapeHtml(tr("report.footer"))}</footer>`);
+  parts.push(`<footer>${markSvg({ size: 11, color: P.textTertiary })}${escapeHtml(view.assistantName)} · ${escapeHtml(tr("report.footer"))}</footer>`);
 
   return `<!doctype html><html lang="${escapeHtml(locale)}" dir="${RTL.has(locale) ? "rtl" : "ltr"}"><head><meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:">

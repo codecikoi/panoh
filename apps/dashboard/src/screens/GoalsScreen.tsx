@@ -1,4 +1,5 @@
-import { CategoryName, LoadError, Loading, Meter } from "../components";
+import { categoryIcon } from "@madat/core/categories";
+import { LoadError, Loading, Meter } from "../components";
 import { dayLabel, formatMoney, monthLabel } from "../format";
 import { useI18n } from "../i18n";
 import type { Household, Outlook } from "../types";
@@ -20,12 +21,13 @@ export function GoalsScreen({ household }: { household: Household }) {
   return (
     <>
       <div className="section-title">{t("dash.limits")}</div>
-      <div className="card rows">
+      <div className={`card rows ${budgets.length ? "" : "pad"}`}>
         {budgets.length ? (
           budgets.map((b) => (
             <Meter
               key={b.category}
-              label={<CategoryName category={b.category} />}
+              icon={categoryIcon(b.category)}
+              label={t(`cat.${b.category}`)}
               pct={b.pct}
               amounts={`${money(b.spent)} / ${money(b.limit)}`}
               status={b.remaining >= 0 ? t("dash.limit_left", { amount: money(b.remaining) }) : t("dash.limit_over", { amount: money(-b.remaining) })}
@@ -38,12 +40,13 @@ export function GoalsScreen({ household }: { household: Household }) {
       </div>
 
       <div className="section-title">{t("dash.goals")}</div>
-      <div className="card rows">
+      <div className={`card rows ${goals.length ? "" : "pad"}`}>
         {goals.length ? (
           goals.map((g) => (
             <Meter
               key={g.id}
-              label={`💰 ${g.title}`}
+              icon="piggy-bank"
+              label={g.title}
               pct={g.pct}
               amounts={`${money(g.saved, g.currency)} / ${money(g.target, g.currency)}`}
               {...(g.deadline ? { status: t("dash.goal_deadline", { date: deadline(g.deadline) }) } : {})}

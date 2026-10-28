@@ -1,13 +1,64 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { CategoryStat } from "@madat/core";
-import { CATEGORY_EMOJI, type Category } from "@madat/core/categories";
+import { ICONS, type IconName } from "@madat/core/brand/icons";
+import { MARK_VIEWBOX, markBody } from "@madat/core/brand/mark";
+import { categoryIcon } from "@madat/core/categories";
 import { useI18n } from "./i18n";
 
+/** A Lucide icon from the set vendored in core (24px grid, 2px round strokes), coloured by `currentColor`. */
+export function Icon({ name, size, className, label }: { name: IconName; size?: number; className?: string; label?: string }) {
+  return (
+    <svg
+      className={`icon ${className ?? ""}`}
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      role={label ? "img" : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
+      // Static markup from core, never user input.
+      dangerouslySetInnerHTML={{ __html: ICONS[name] }}
+    />
+  );
+}
+
+/** The Madat mark ("M = pair"), in `currentColor` unless a colour is given. */
+export function Mark({ size = 24, color = "currentColor", className }: { size?: number; color?: string; className?: string }) {
+  return <svg className={className} viewBox={MARK_VIEWBOX} width={size} height={size} aria-hidden dangerouslySetInnerHTML={{ __html: markBody(color) }} />;
+}
+
+/** Round icon plate at the start of a row; with `slot` (0–4) it takes that category colour and wash, otherwise neutral. */
+export function Plate({ icon, slot }: { icon: IconName; slot?: number }) {
+  const style: CSSProperties | undefined = slot === undefined ? undefined : { background: `var(--t${slot + 1})`, color: `var(--s${slot + 1})` };
+  return (
+    <span className="plate" style={style}>
+      <Icon name={icon} />
+    </span>
+  );
+}
+
+/** List row: an optional plate, then a two-column grid (title/right, meta/meta, full-width lines) passed as children. */
+export function Row({ plate, className, children }: { plate?: ReactNode; className?: string; children: ReactNode }) {
+  return (
+    <div className={`row ${className ?? ""}`}>
+      {plate}
+      <div className="body">{children}</div>
+    </div>
+  );
+}
+
+/** Inline category label: small icon plus the translated name, for chips, change lists and secondary lines. */
 export function CategoryName({ category }: { category: string }) {
   const { t } = useI18n();
   return (
     <>
-      {CATEGORY_EMOJI[category as Category] ?? "📦"} {t(`cat.${category}`)}
+      <Icon name={categoryIcon(category)} className="ci" />
+      {t(`cat.${category}`)}
     </>
   );
 }
@@ -64,17 +115,19 @@ export function Bar({ value, color }: { value: number; color?: string }) {
 }
 
 /**
- * Progress meter: name and percent, then amounts and status, then an optional note.
+ * Progress meter: plate, name and percent, then amounts and status, then an optional note.
  * For limits (`severity`) the fill turns warning/critical near and over 100%, always with an icon, never colour alone;
  * savings goals only ever show progress.
  */
-export function Meter({ label, pct, amounts, status, note, severity = false }: { label: ReactNode; pct: number; amounts: string; status?: string; note?: string; severity?: boolean }) {
-  const [color, icon] = !severity ? [undefined, ""] : pct > 100 ? ["var(--critical)", " 🚨"] : pct >= 80 ? ["var(--warning)", " ⚠️"] : [undefined, ""];
+export function Meter({ icon, label, pct, amounts, status, note, severity = false }: { icon: IconName; label: ReactNode; pct: number; amounts: string; status?: string; note?: string; severity?: boolean }) {
+  const level = !severity ? null : pct > 100 ? "critical" : pct >= 80 ? "warning" : null;
+  const color = level === "critical" ? "var(--error)" : level === "warning" ? "var(--warning)" : undefined;
   return (
-    <div className="row meter">
+    <Row className="meter" plate={<Plate icon={icon} />}>
       <div className="title">{label}</div>
-      <div className="right num">
-        {pct}%{icon}
+      <div className={`right num ${level ? `severity ${level}` : ""}`}>
+        {level ? <Icon name={level === "critical" ? "octagon-alert" : "triangle-alert"} /> : null}
+        {pct}%
       </div>
       <div className="line">
         <span className="num">{amounts}</span>
@@ -82,7 +135,7 @@ export function Meter({ label, pct, amounts, status, note, severity = false }: {
       </div>
       <Bar value={pct} {...(color ? { color } : {})} />
       {note ? <div className="meta" style={{ gridColumn: "1 / -1" }}>{note}</div> : null}
-    </div>
+    </Row>
   );
 }
 
@@ -100,6 +153,7 @@ export function LoadError({ onRetry }: { onRetry: () => void }) {
   const { t } = useI18n();
   return (
     <div className="empty">
+      <Mark className="mark" />
       <div>{t("dash.error")}</div>
       <button className="primary" onClick={onRetry}>
         {t("dash.retry")}
