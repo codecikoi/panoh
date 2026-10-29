@@ -7,6 +7,7 @@ import { buildCategoryStats, loadMonthlySummary, pct, type BiggestSpend, type Ca
 import { listTransactionsInRange } from "./transactions.js";
 import { getInsights } from "./insights.js";
 import type { MonthOutlook } from "./planning.js";
+import type { BalanceSummary } from "./summary.js";
 
 export interface ReportData {
   period: Period;
@@ -27,8 +28,8 @@ export interface ReportData {
   unconverted: { currency: string; amount: number }[];
   /** Every confirmed record of the period, oldest first. */
   transactions: Transaction[];
-  /** Limits, goals, plans and insights: only for a calendar-month report. */
-  month: { outlook: MonthOutlook; insights: Insights | null } | null;
+  /** Limits, goals, plans, the money on hand and insights: only for a calendar-month report. */
+  month: { outlook: MonthOutlook; insights: Insights | null; balance: BalanceSummary | null } | null;
 }
 
 /** Changes whenever a record of the period is added, edited or deleted, so a cached PDF can be reused until then. */
@@ -61,7 +62,7 @@ export async function loadReport(db: Db, household: Household, period: Period, o
   if (period.kind === "month") {
     const summary = await loadMonthlySummary(db, household, period.from.slice(0, 7));
     const insights = options.insights === false || summary.recordCount === 0 ? null : await getInsights(db, household, summary);
-    month = { outlook: summary.outlook, insights };
+    month = { outlook: summary.outlook, insights, balance: summary.balance };
   }
 
   const hasPrev = prevRows.length > 0;

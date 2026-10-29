@@ -1,8 +1,12 @@
 import { DateTime } from "luxon";
 import {
+  NO_CUSTOM_CATEGORIES,
   PALETTE,
+  TOTAL_BUDGET,
   brandCssVars,
   categoryIcon,
+  formatDate,
+  isCustomCategory,
   escapeHtml,
   formatMoney,
   formatPercent,
@@ -11,6 +15,7 @@ import {
   markSvg,
   t,
   type BudgetStat,
+  type CategoryLookup,
   type CategoryStat,
   type GoalStat,
   type IconName,
@@ -24,6 +29,8 @@ export interface ReportView {
   assistantName: string;
   /** Group title, when the report is for a group. */
   title: string | null;
+  /** The family's own categories, for their names. */
+  categories?: CategoryLookup;
   data: ReportData;
 }
 
@@ -92,23 +99,31 @@ footer { margin-top: 20px; color: var(--text-3); font-size: 9px; display: flex; 
 `;
 
 type Tr = (key: LocaleKey, params?: Record<string, string | number>) => string;
+type CatName = (category: string) => string;
 
 /** Chat strings open with an emoji (see docs/BRAND.md); in print we drop it and use a Lucide icon where one helps. */
 function plain(text: string): string {
   return text.replace(/^(?:[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{20E3}]+\s*)+/u, "");
 }
 
-function catName(tr: Tr, category: string): string {
-  return tr(`cat.${category}` as LocaleKey);
+/** Built-in names come from the locale, the family's own from the lookup, the month total has its own string. */
+function catNamer(tr: Tr, custom: CategoryLookup): CatName {
+  return (category) => {
+    const own = custom.get(category);
+    if (own) return own.name;
+    if (category === TOTAL_BUDGET) return tr("cat.total");
+    if (isCustomCategory(category)) return category;
+    return tr(`cat.${category}` as LocaleKey);
+  };
 }
 
 function icon(name: IconName, size = 11): string {
   return iconSvg(name, { size, strokeWidth: 2 });
 }
 
-/** Category label for tables: a small Lucide icon plus the translated name. */
-function catLabel(tr: Tr, category: string): string {
-  return `<span class="cat">${icon(categoryIcon(category))}${escapeHtml(catName(tr, category))}</span>`;
+/** Category label for tables: a small Lucide icon plus the name. */
+function catLabel(catName: CatName, category: string): string {
+  return `<span class="cat">${icon(categoryIcon(category))}${escapeHtml(catName(category))}</span>`;
 }
 
 function delta(tr: Tr, locale: string, value: number | null): string {
@@ -120,11 +135,11 @@ function shareBar(share: number): string {
 }
 
 /** Top five categories in palette order, everything else folded into one hatched "Other" segment. */
-function stackedBar(tr: Tr, locale: string, cats: CategoryStat[], total: number): string {
+function stackedBar(tr: Tr, catName: CatName, locale: string, cats: CategoryStat[], total: number): string {
   if (total <= 0 || !cats.length) return "";
   const top = cats.slice(0, 5);
   const rest = cats.slice(5).reduce((sum, c) => sum + c.amount, 0);
-  const segments = top.map((c, i) => ({ label: catName(tr, c.category), amount: c.amount, color: P.slots[i]!, hatch: false }));
+  const segments = top.map((c, i) => ({ label: catName(c.category), amount: c.amount, color: P.slots[i]!, hatch: false }));
   if (rest > 0) segments.push({ label: tr("report.other"), amount: rest, color: "", hatch: true });
   const pctOf = (amount: number) => new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 }).format(amount / total);
   const bar = segments
@@ -136,11 +151,11 @@ function stackedBar(tr: Tr, locale: string, cats: CategoryStat[], total: number)
   return `<div class="stack" role="img">${bar}</div><div class="legend">${legend}</div>`;
 }
 
-function categoryTable(tr: Tr, view: ReportView, cats: CategoryStat[], withChange: boolean): string {
+function categoryTable(tr: Tr, catName: CatName, view: ReportView, cats: CategoryStat[], withChange: boolean): string {
   const money = (n: number) => formatMoney(n, view.data.currency, view.locale);
   const rows = cats
     .map(
-      (c) => `<tr><td>${catLabel(tr, c.category)}${shareBar(c.share)}</td><td class="r num">${money(c.amount)}</td><td class="r num">${c.share}%</td>${
+      (c) => `<tr><td>${catLabel(catName, c.category)}${shareBar(c.share)}</td><td class="r num">${money(c.amount)}</td><td class="r num">${c.share}%</td>${
         withChange ? `<td class="r num">${c.deltaPct === null ? "—" : formatPercent(c.deltaPct, view.locale)}</td>` : ""
       }</tr>`,
     )
@@ -157,7 +172,7 @@ function meter(label: string, right: string, fill: number, color: string, track:
   )}%;background:${color}"></b></div></div>`;
 }
 
-function budgetMeters(tr: Tr, view: ReportView, budgets: BudgetStat[]): string {
+function budgetMeters(catName: CatName, view: ReportView, budgets: BudgetStat[]): string {
   const money = (n: number) => formatMoney(n, view.data.currency, view.locale);
   return budgets
     .map((b) => {
@@ -168,7 +183,7 @@ function budgetMeters(tr: Tr, view: ReportView, budgets: BudgetStat[]): string {
           : b.pct >= 80
             ? [P.warning, P.warningBg, `<span class="warning">${icon("triangle-alert")}</span>`]
             : ["var(--accent)", "var(--muted)", ""];
-      return meter(catLabel(tr, b.category), `${money(b.spent)} / ${money(b.limit)} · ${b.pct}%${mark}`, b.pct, color, track);
+      return meter(catLabel(catName, b.category), `${money(b.spent)} / ${money(b.limit)} · ${b.pct}%${mark}`, b.pct, color, track);
     })
     .join("");
 }
@@ -177,19 +192,16 @@ function goalMeters(view: ReportView, tr: Tr, goals: GoalStat[]): string {
   return goals
     .map((g) => {
       const money = (n: number) => formatMoney(n, g.currency, view.locale);
+      const label = `<span class="cat">${icon("piggy-bank")}<b>${escapeHtml(g.title)}</b></span>`;
+      // An open-ended stash: only what was put aside, no progress.
+      if (g.target === null) return `<div class="meter"><div>${label}</div><div class="num">${money(g.saved)}</div></div>`;
       const pace = g.monthlyNeed && g.saved < g.target ? ` <span class="muted">· ${escapeHtml(tr("report.goal_pace", { amount: money(g.monthlyNeed) }))}</span>` : "";
-      return meter(
-        `<span class="cat">${icon("piggy-bank")}<b>${escapeHtml(g.title)}</b></span>${pace}`,
-        `${money(g.saved)} / ${money(g.target)} · ${g.pct}%`,
-        g.pct,
-        "var(--accent)",
-        "var(--muted)",
-      );
+      return meter(`${label}${pace}`, `${money(g.saved)} / ${money(g.target)} · ${g.pct ?? 0}%`, g.pct ?? 0, "var(--accent)", "var(--muted)");
     })
     .join("");
 }
 
-function transactionsTable(tr: Tr, view: ReportView): string {
+function transactionsTable(tr: Tr, catName: CatName, view: ReportView): string {
   const { data, locale } = view;
   let lastDay = "";
   const rows: string[] = [];
@@ -204,7 +216,7 @@ function transactionsTable(tr: Tr, view: ReportView): string {
     const converted =
       tx.currency !== data.currency && tx.amountBase !== null ? `<div class="muted">≈ ${formatMoney(tx.amountBase, data.currency, locale)}</div>` : "";
     rows.push(
-      `<tr><td>${catLabel(tr, tx.category)}</td><td>${escapeHtml(tx.note)}</td><td class="r num ${tx.kind === "income" ? "in" : ""}">${sign}${own}${converted}</td></tr>`,
+      `<tr><td>${catLabel(catName, tx.category)}</td><td>${escapeHtml(tx.note)}</td><td class="r num ${tx.kind === "income" ? "in" : ""}">${sign}${own}${converted}</td></tr>`,
     );
   }
   return `<table><thead><tr><th>${tr("report.col_category")}</th><th>${tr("report.col_note")}</th><th class="r">${tr(
@@ -216,6 +228,7 @@ function transactionsTable(tr: Tr, view: ReportView): string {
 export function renderReportHtml(view: ReportView): string {
   const { data, locale } = view;
   const tr: Tr = (key, params) => t(locale, key, params);
+  const catName = catNamer(tr, view.categories ?? NO_CUSTOM_CATEGORIES);
   const money = (n: number) => formatMoney(n, data.currency, locale);
   const period = escapeHtml(formatPeriod(data.period, locale));
   const generated = DateTime.now().setZone(view.tz).setLocale(locale).toLocaleString(DateTime.DATETIME_MED);
@@ -234,6 +247,14 @@ export function renderReportHtml(view: ReportView): string {
   </div>`);
 
   const forecast = data.month?.outlook.forecast;
+  const balance = data.month?.balance;
+  const balanceLine =
+    balance && balance.current !== null
+      ? `<div><span class="muted">${icon("wallet")}</span> ${plain(tr("summary.balance", { amount: money(balance.current), date: formatDate(balance.asOf, locale) }))}</div>`
+      : "";
+  if (balanceLine && !(forecast && forecast.ahead > 0)) {
+    parts.push(`<h2>${escapeHtml(tr("report.month_balance"))}</h2><div class="forecast">${balanceLine}</div>`);
+  }
   if (forecast && forecast.ahead > 0) {
     const free =
       forecast.free >= 0
@@ -248,25 +269,25 @@ export function renderReportHtml(view: ReportView): string {
       forecast.plans > 0 ? tr("summary.part_plans", { amount: money(forecast.plans) }) : "",
       forecast.goals > 0 ? tr("summary.part_goals", { amount: money(forecast.goals) }) : "",
     ].filter(Boolean);
-    parts.push(`<h2>${escapeHtml(tr("report.month_balance"))}</h2><div class="forecast"><div><span class="muted">${icon("hourglass")}</span> ${plain(
+    parts.push(`<h2>${escapeHtml(tr("report.month_balance"))}</h2><div class="forecast">${balanceLine}<div><span class="muted">${icon("hourglass")}</span> ${plain(
       tr("summary.forecast_ahead", { amount: money(forecast.ahead), parts: partsAhead.join(", ") }),
     )}</div><div>${free}</div></div>`);
   }
 
   if (data.categories.length) {
-    parts.push(`<h2>${escapeHtml(tr("report.by_category"))}</h2>${stackedBar(tr, locale, data.categories, data.expense)}`);
-    parts.push(categoryTable(tr, view, data.categories, data.hasPrev));
+    parts.push(`<h2>${escapeHtml(tr("report.by_category"))}</h2>${stackedBar(tr, catName, locale, data.categories, data.expense)}`);
+    parts.push(categoryTable(tr, catName, view, data.categories, data.hasPrev));
   }
   if (data.incomeCategories.length) {
-    parts.push(`<h2>${escapeHtml(tr("report.income_by_category"))}</h2>${categoryTable(tr, view, data.incomeCategories, false)}`);
+    parts.push(`<h2>${escapeHtml(tr("report.income_by_category"))}</h2>${categoryTable(tr, catName, view, data.incomeCategories, false)}`);
   }
-  if (data.month?.outlook.budgets.length) parts.push(`<h2>${plain(tr("summary.budgets"))}</h2>${budgetMeters(tr, view, data.month.outlook.budgets)}`);
+  if (data.month?.outlook.budgets.length) parts.push(`<h2>${plain(tr("summary.budgets"))}</h2>${budgetMeters(catName, view, data.month.outlook.budgets)}`);
   if (data.month?.outlook.goals.length) parts.push(`<h2>${plain(tr("summary.goals"))}</h2>${goalMeters(view, tr, data.month.outlook.goals)}`);
   if (data.month?.outlook.plans.length) {
     const rows = data.month.outlook.plans
       .map(
         (p) =>
-          `<tr><td>${catLabel(tr, p.category)}</td><td>${escapeHtml(p.title)}${
+          `<tr><td>${catLabel(catName, p.category)}</td><td>${escapeHtml(p.title)}${
             p.overdue ? ` <span class="warning">· ${icon("hourglass")} ${escapeHtml(tr("plans.overdue"))}</span>` : ""
           }</td><td class="r num">${formatMoney(p.originalAmount, p.currency, locale)}</td></tr>`,
       )
@@ -282,7 +303,7 @@ export function renderReportHtml(view: ReportView): string {
   if (data.unconverted.length) {
     parts.push(`<p class="muted">${plain(tr("summary.unconverted", { list: data.unconverted.map((u) => formatMoney(u.amount, u.currency, locale)).join(", ") }))}</p>`);
   }
-  parts.push(`<h2>${escapeHtml(tr("report.transactions", { count: data.transactions.length }))}</h2>${transactionsTable(tr, view)}`);
+  parts.push(`<h2>${escapeHtml(tr("report.transactions", { count: data.transactions.length }))}</h2>${transactionsTable(tr, catName, view)}`);
   parts.push(`<footer>${markSvg({ size: 11, color: P.textTertiary })}${escapeHtml(view.assistantName)} · ${escapeHtml(tr("report.footer"))}</footer>`);
 
   return `<!doctype html><html lang="${escapeHtml(locale)}" dir="${RTL.has(locale) ? "rtl" : "ltr"}"><head><meta charset="utf-8">

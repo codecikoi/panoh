@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import type { Db } from "../db/client.js";
 import type { Household, Transaction } from "../db/schema.js";
-import { CATEGORY_EMOJI, type Category } from "../categories.js";
+import { categoryEmoji, type CategoryLookup, type CustomCategoryInfo } from "../categories.js";
 import { currentMonthKey, daysInMonth, monthDateRange, nowIn, shiftMonthKey } from "../dates.js";
 import { roundMoney } from "../money.js";
 import { listTransactionsForMonth } from "./transactions.js";
@@ -9,6 +9,8 @@ import { countReminders, listOpenReminders } from "./reminders.js";
 import { listRecurring, upcomingPayments } from "./recurring.js";
 import { getRates } from "./rates.js";
 import { EMPTY_OUTLOOK, computeOutlook, listActiveGoals, listBudgets, listGoalTransactions, listOpenPlans, type MonthOutlook } from "./planning.js";
+import { loadCategoryLookup } from "./categories.js";
+import { loadBalance } from "./balance.js";
 
 export interface CategoryStat {
   category: string;
@@ -34,6 +36,16 @@ export interface UpcomingPaymentInfo {
   currency: string;
   date: string;
   daysLeft: number;
+}
+
+/** The money on hand by the records (see services/balance.ts), for the current month. */
+export interface BalanceSummary {
+  /** Base currency; null when the checkpoint currency has no rate. */
+  current: number | null;
+  /** Day of the checkpoint and what the family said they had. */
+  asOf: string;
+  amount: number;
+  currency: string;
 }
 
 export interface MonthlySummary {
@@ -70,6 +82,10 @@ export interface MonthlySummary {
   doneReminders: number;
   /** Limits, savings goals, planned expenses and the "free money" forecast (forecast only for the current month). */
   outlook: MonthOutlook;
+  /** The family's own categories by key, so names can be shown wherever a key appears (chat, dashboard, insights). */
+  customCategories: Record<string, CustomCategoryInfo>;
+  /** Money on hand by the records; only for the current month and only once the family told the bot a balance. */
+  balance: BalanceSummary | null;
 }
 
 export interface SummaryInput {
@@ -83,6 +99,8 @@ export interface SummaryInput {
   openReminders?: number;
   doneReminders?: number;
   outlook?: MonthOutlook;
+  categories?: CategoryLookup;
+  balance?: BalanceSummary | null;
 }
 
 function baseAmount(tx: Transaction, currency: string): number | null {
@@ -101,6 +119,7 @@ export function buildCategoryStats(
   prev: Transaction[],
   kind: "expense" | "income",
   currency: string,
+  custom?: CategoryLookup,
 ): { stats: CategoryStat[]; total: number; prevTotal: number; unconverted: Map<string, number> } {
   const sums = new Map<string, { amount: number; count: number }>();
   const prevSums = new Map<string, number>();
@@ -134,7 +153,7 @@ export function buildCategoryStats(
     const prevAmount = prevSums.get(category) ?? 0;
     stats.push({
       category,
-      emoji: CATEGORY_EMOJI[category as Category] ?? "📦",
+      emoji: categoryEmoji(category, custom),
       amount: roundMoney(entry.amount),
       count: entry.count,
       share: total > 0 ? Math.round((entry.amount / total) * 100) : 0,
@@ -154,8 +173,8 @@ export function computeSummary(input: SummaryInput): MonthlySummary {
   const dim = daysInMonth(month);
   const daysElapsed = isCurrentMonth ? Math.max(1, now.day) : dim;
 
-  const expenses = buildCategoryStats(input.transactions, input.prevTransactions, "expense", currency);
-  const incomes = buildCategoryStats(input.transactions, input.prevTransactions, "income", currency);
+  const expenses = buildCategoryStats(input.transactions, input.prevTransactions, "expense", currency, input.categories);
+  const incomes = buildCategoryStats(input.transactions, input.prevTransactions, "income", currency, input.categories);
 
   const unconverted = new Map<string, number>();
   for (const [cur, amt] of [...expenses.unconverted, ...incomes.unconverted]) {
@@ -208,17 +227,20 @@ export function computeSummary(input: SummaryInput): MonthlySummary {
     openReminders: input.openReminders ?? 0,
     doneReminders: input.doneReminders ?? 0,
     outlook: input.outlook ?? EMPTY_OUTLOOK,
+    customCategories: Object.fromEntries([...(input.categories ?? new Map()).entries()]),
+    balance: input.balance ?? null,
   };
 }
 
 export async function loadMonthlySummary(db: Db, household: Household, month = currentMonthKey(household.timezone)): Promise<MonthlySummary> {
   const prevMonth = shiftMonthKey(month, -1);
-  const [transactions, withPending, prevTransactions, recurring, open] = await Promise.all([
+  const [transactions, withPending, prevTransactions, recurring, open, categories] = await Promise.all([
     listTransactionsForMonth(db, household.id, month),
     listTransactionsForMonth(db, household.id, month, { includePending: true }),
     listTransactionsForMonth(db, household.id, prevMonth),
     listRecurring(db, household.id),
     listOpenReminders(db, household.id, 100),
+    loadCategoryLookup(db, household.id),
   ]);
   const range = monthDateRange(month);
   const from = DateTime.fromISO(range.start, { zone: household.timezone }).toJSDate();
@@ -232,6 +254,15 @@ export async function loadMonthlySummary(db: Db, household: Household, month = c
     daysLeft: u.daysLeft,
   }));
   const now = nowIn(household.timezone);
+  const [{ rates }, openPlans, budgetRows, goalRows, goalTransactions] = await Promise.all([
+    getRates(db),
+    listOpenPlans(db, household.id),
+    listBudgets(db, household.id),
+    listActiveGoals(db, household.id),
+    listGoalTransactions(db, household.id),
+  ]);
+  const isCurrent = month === now.toFormat("yyyy-LL");
+  const balanceInfo = isCurrent ? await loadBalance(db, household, rates) : null;
   const summary = computeSummary({
     month,
     currency: household.baseCurrency,
@@ -242,14 +273,11 @@ export async function loadMonthlySummary(db: Db, household: Household, month = c
     upcomingPayments: upcoming,
     openReminders: open.filter((r) => r.kind === "reminder").length,
     doneReminders,
+    categories,
+    balance: balanceInfo
+      ? { current: balanceInfo.current, asOf: balanceInfo.checkpoint.asOf, amount: balanceInfo.checkpoint.amount, currency: balanceInfo.checkpoint.currency }
+      : null,
   });
-  const [{ rates }, openPlans, budgetRows, goalRows, goalTransactions] = await Promise.all([
-    getRates(db),
-    listOpenPlans(db, household.id),
-    listBudgets(db, household.id),
-    listActiveGoals(db, household.id),
-    listGoalTransactions(db, household.id),
-  ]);
   summary.outlook = computeOutlook({
     month,
     currency: household.baseCurrency,
@@ -263,6 +291,7 @@ export async function loadMonthlySummary(db: Db, household: Household, month = c
     goals: goalRows,
     goalTransactions,
     rates,
+    categories,
   });
   return summary;
 }

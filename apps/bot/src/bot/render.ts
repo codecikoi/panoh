@@ -1,8 +1,14 @@
 import { InlineKeyboard } from "grammy";
 import { DateTime } from "luxon";
 import {
-  CATEGORY_EMOJI,
+  BALANCE_SCOPE,
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
+  TOTAL_BUDGET,
+  activeCustomCategories,
   availableLocales,
+  categoryEmoji,
+  isCustomCategory,
   currentMonthKey,
   escapeHtml,
   formatDate,
@@ -16,8 +22,12 @@ import {
   periodKey,
   t,
   endOfMonthISO,
+  type AlertEvent,
+  type Alert,
+  type BalanceInfo,
   type BudgetStat,
   type Category,
+  type CustomCategoryInfo,
   type Goal,
   type GoalStat,
   type Insights,
@@ -39,10 +49,17 @@ export function money(scope: Scope, amount: number, currency = scope.currency): 
   return formatMoney(amount, currency, scope.locale);
 }
 
+/** Translated name of a built-in category, the family's own name for a custom one, "Monthly budget" for the total. */
+export function catName(scope: Scope, category: string): string {
+  const own = scope.categories.get(category);
+  if (own) return escapeHtml(own.name);
+  if (category === TOTAL_BUDGET) return t(scope.locale, "cat.total");
+  if (isCustomCategory(category)) return category;
+  return t(scope.locale, `cat.${category as Category}`);
+}
+
 export function catLabel(scope: Scope, category: string): string {
-  const emoji = CATEGORY_EMOJI[category as Category] ?? "📦";
-  const key = `cat.${category}` as Parameters<typeof t>[1];
-  return `${emoji} ${t(scope.locale, key)}`;
+  return `${categoryEmoji(category, scope.categories)} ${catName(scope, category)}`;
 }
 
 export function kindLabel(scope: Scope, kind: "expense" | "income"): string {
@@ -209,7 +226,7 @@ export function budgetsLines(scope: Scope, stats: BudgetStat[]): string[] {
     (b) =>
       t(scope.locale, "budgets.line", {
         emoji: b.emoji,
-        category: t(scope.locale, `cat.${b.category}` as Parameters<typeof t>[1]),
+        category: catName(scope, b.category),
         spent: money(scope, b.spent),
         limit: money(scope, b.limit),
         pct: b.pct,
@@ -235,13 +252,17 @@ export function budgetsListText(scope: Scope, stats: BudgetStat[]): string {
 export function budgetsKeyboard(scope: Scope, stats: BudgetStat[]): InlineKeyboard {
   const kb = new InlineKeyboard();
   stats.forEach((b, i) => {
-    kb.text(`🗑 ${b.emoji} ${t(scope.locale, `cat.${b.category}` as Parameters<typeof t>[1])}`, `bud:rm:${b.category}`);
+    kb.text(`🗑 ${b.emoji} ${catName(scope, b.category).replace(/&amp;/g, "&")}`, `bud:rm:${b.category}`);
     if (i % 2 === 1) kb.row();
   });
   return kb;
 }
 
 export function goalText(scope: Scope, goal: Goal, stat?: GoalStat): string {
+  if (goal.targetAmount === null) {
+    const saved = stat ? t(scope.locale, "confirm.goal_open_saved", { saved: money(scope, stat.saved, goal.currency) }) : "";
+    return t(scope.locale, "confirm.goal_open", { title: escapeHtml(goal.title), saved });
+  }
   const deadline = goal.deadline ? t(scope.locale, "confirm.goal_deadline", { date: deadlineText(scope, goal.deadline) }) : "";
   let text = t(scope.locale, "confirm.goal", { title: escapeHtml(goal.title), amount: money(scope, goal.targetAmount, goal.currency), deadline });
   if (stat?.monthlyNeed) text += t(scope.locale, "confirm.goal_pace", { amount: money(scope, stat.monthlyNeed, goal.currency) });
@@ -253,24 +274,28 @@ export function goalKeyboard(scope: Scope, goal: Goal): InlineKeyboard {
 }
 
 export function contributionText(scope: Scope, tx: Transaction, stat: GoalStat): string {
+  if (stat.target === null) {
+    return t(scope.locale, "confirm.goal_contribution_open", { title: escapeHtml(stat.title), amount: money(scope, tx.amount, tx.currency), saved: money(scope, stat.saved, stat.currency) });
+  }
   return (
     t(scope.locale, "confirm.goal_contribution", {
       title: escapeHtml(stat.title),
       amount: money(scope, tx.amount, tx.currency),
       saved: money(scope, stat.saved, stat.currency),
       target: money(scope, stat.target, stat.currency),
-      pct: stat.pct,
+      pct: stat.pct ?? 0,
     }) + (stat.saved >= stat.target ? t(scope.locale, "confirm.goal_reached") : "")
   );
 }
 
 export function goalsLines(scope: Scope, stats: GoalStat[]): string[] {
   return stats.map((g) => {
+    if (g.target === null) return t(scope.locale, "goals.line_open", { title: escapeHtml(g.title), saved: money(scope, g.saved, g.currency) });
     let line = t(scope.locale, "goals.line", {
       title: escapeHtml(g.title),
       saved: money(scope, g.saved, g.currency),
       target: money(scope, g.target, g.currency),
-      pct: g.pct,
+      pct: g.pct ?? 0,
     });
     if (g.deadline) line += t(scope.locale, "goals.line_deadline", { date: deadlineText(scope, g.deadline) });
     if (g.monthlyNeed && g.saved < g.target) {
@@ -384,6 +409,9 @@ export function summaryText(scope: Scope, s: MonthlySummary, insights?: Insights
   if (s.isCurrentMonth && s.daysElapsed >= 3 && s.projected !== null) {
     lines.push(t(L, "summary.avg_day", { avg: money(scope, s.avgPerDay), projected: money(scope, s.projected) }));
   }
+  if (s.balance && s.balance.current !== null) {
+    lines.push(t(L, "summary.balance", { amount: money(scope, s.balance.current), date: formatDate(s.balance.asOf, L) }));
+  }
   const f = s.outlook.forecast;
   if (s.isCurrentMonth && f && f.ahead > 0) {
     const parts: string[] = [];
@@ -410,7 +438,7 @@ export function summaryText(scope: Scope, s: MonthlySummary, insights?: Insights
       lines.push(
         t(L, "summary.category_line", {
           emoji: c.emoji,
-          category: t(L, `cat.${c.category}` as Parameters<typeof t>[1]),
+          category: catName(scope, c.category),
           amount: money(scope, c.amount),
           share: c.share,
           delta,
@@ -440,7 +468,7 @@ export function summaryText(scope: Scope, s: MonthlySummary, insights?: Insights
   if (s.topGrowth && s.topGrowth.deltaPct !== null) {
     extras.push(
       t(L, "summary.top_growth", {
-        category: t(L, `cat.${s.topGrowth.category}` as Parameters<typeof t>[1]),
+        category: catName(scope, s.topGrowth.category),
         pct: formatPercent(s.topGrowth.deltaPct, L),
         month: formatMonth(s.prevMonth, L),
       }),
@@ -449,7 +477,7 @@ export function summaryText(scope: Scope, s: MonthlySummary, insights?: Insights
   if (s.topDrop && s.topDrop.deltaPct !== null) {
     extras.push(
       t(L, "summary.top_drop", {
-        category: t(L, `cat.${s.topDrop.category}` as Parameters<typeof t>[1]),
+        category: catName(scope, s.topDrop.category),
         pct: formatPercent(s.topDrop.deltaPct, L),
         month: formatMonth(s.prevMonth, L),
       }),
@@ -563,6 +591,137 @@ export function languageKeyboard(): InlineKeyboard {
   availableLocales().forEach((code, i) => {
     kb.text(languageName(code, code), `set:lang:${code}`);
     if (i % 3 === 2) kb.row();
+  });
+  return kb;
+}
+
+// ---------- balance, alerts, categories ----------
+
+/** Confirmation of "we have 800k left": the first time an explanation, later the gap against the records. */
+export function balanceSetText(scope: Scope, amount: number, currency: string, previous: BalanceInfo | null): string {
+  const stated = money(scope, amount, currency);
+  if (!previous || previous.current === null) return t(scope.locale, "confirm.balance", { amount: stated });
+  const base = currency === scope.currency ? amount : null;
+  const diff = base === null ? null : base - previous.current;
+  if (diff === null || Math.abs(diff) < 1) return t(scope.locale, "confirm.balance_matches", { amount: stated });
+  return t(scope.locale, "confirm.balance_diff", {
+    amount: stated,
+    expected: money(scope, previous.current),
+    diff: (diff > 0 ? "+" : "−") + money(scope, Math.abs(diff)),
+  });
+}
+
+export function balanceKeyboard(scope: Scope, id: number): InlineKeyboard {
+  return new InlineKeyboard().text(t(scope.locale, "btn.delete"), `bal:del:${id}`);
+}
+
+/** "How much is left?": the balance, then the limits asked about (or all of them), then the month forecast. */
+export function balanceAnswerText(
+  scope: Scope,
+  input: { balance: BalanceInfo | null; budgets: BudgetStat[]; category: string | null; spentInCategory: number | null; forecast: MonthlySummary["outlook"]["forecast"] },
+): string {
+  const L = scope.locale;
+  const lines: string[] = [];
+  const onlyCategory = input.category !== null;
+  if (!onlyCategory) {
+    if (input.balance && input.balance.current !== null) {
+      lines.push(t(L, "balance.answer", { amount: money(scope, input.balance.current), date: formatDate(input.balance.checkpoint.asOf, L) }));
+    } else {
+      lines.push(t(L, "balance.unknown"));
+    }
+  }
+  const shown = onlyCategory ? input.budgets.filter((b) => b.category === input.category) : input.budgets;
+  for (const b of shown) {
+    lines.push(
+      b.remaining >= 0
+        ? t(L, "balance.limit_line", { category: catLabel(scope, b.category), left: money(scope, b.remaining), limit: money(scope, b.limit) })
+        : t(L, "balance.limit_over", { category: catLabel(scope, b.category), amount: money(scope, -b.remaining), limit: money(scope, b.limit) }),
+    );
+  }
+  if (onlyCategory && !shown.length) {
+    lines.push(t(L, "balance.no_limit", { category: catLabel(scope, input.category!), spent: money(scope, input.spentInCategory ?? 0) }));
+  }
+  const f = input.forecast;
+  if (!onlyCategory && f && f.ahead > 0) {
+    lines.push(f.free >= 0 ? t(L, "summary.forecast_free", { amount: money(scope, f.free) }) : t(L, "summary.forecast_short", { amount: money(scope, -f.free) }));
+  }
+  return lines.join("\n");
+}
+
+/** Confirmation of a threshold alert, with where the watched value stands now. */
+export function alertSetText(scope: Scope, alert: Alert, now: { value: number | null; limit?: number } | null): string {
+  const L = scope.locale;
+  const threshold = money(scope, alert.amount, alert.currency);
+  let text: string;
+  if (alert.scope === BALANCE_SCOPE) {
+    text = t(L, "confirm.alert_balance", { amount: threshold });
+    if (now && now.value !== null) text += t(L, "confirm.alert_now", { amount: money(scope, now.value) });
+    else text += "\n" + t(L, "balance.unknown");
+  } else {
+    text = t(L, "confirm.alert_category", { category: catLabel(scope, alert.scope), amount: threshold });
+    if (now && now.value !== null) text += t(L, "confirm.alert_now", { amount: money(scope, now.value) });
+    else text += "\n" + t(L, "confirm.alert_no_limit", { category: catLabel(scope, alert.scope) });
+  }
+  return text;
+}
+
+export function alertKeyboardFor(scope: Scope, alert: Alert): InlineKeyboard {
+  return new InlineKeyboard().text(t(scope.locale, "btn.delete"), `alr:del:${alert.scope}`);
+}
+
+/** The notice sent when an alert fires. */
+export function alertFiredText(scope: Scope, event: AlertEvent): string {
+  const L = scope.locale;
+  if (event.alert.scope === BALANCE_SCOPE) {
+    return t(L, "alert.balance_low", { threshold: money(scope, event.threshold), amount: money(scope, event.value) });
+  }
+  return t(L, "alert.category_low", {
+    category: catLabel(scope, event.alert.scope),
+    threshold: money(scope, event.threshold),
+    left: money(scope, Math.max(0, event.value)),
+    limit: money(scope, event.limit ?? 0),
+  });
+}
+
+export function categoryCreatedText(scope: Scope, c: CustomCategoryInfo): string {
+  return t(scope.locale, "confirm.category_created", {
+    kind: kindLabel(scope, c.kind).toLowerCase(),
+    emoji: c.emoji,
+    name: escapeHtml(c.name),
+  });
+}
+
+export function categoryKeyboard(scope: Scope, c: CustomCategoryInfo): InlineKeyboard {
+  return new InlineKeyboard().text(t(scope.locale, "btn.delete"), `cat:del:${c.key}`);
+}
+
+/** Built-in and own categories for /categories; own ones get a delete button each. */
+export function categoriesListText(scope: Scope): string {
+  const L = scope.locale;
+  const list = (builtin: readonly string[], kind: "expense" | "income") => {
+    const own = activeCustomCategories(scope.categories, kind).map((c) => `${c.emoji} <b>${escapeHtml(c.name)}</b>`);
+    return [...own, ...builtin.map((c) => catLabel(scope, c))].join(" · ");
+  };
+  return [
+    t(L, "categories.title"),
+    "",
+    t(L, "categories.expense"),
+    list(EXPENSE_CATEGORIES, "expense"),
+    "",
+    t(L, "categories.income"),
+    list(INCOME_CATEGORIES, "income"),
+    "",
+    t(L, "categories.hint"),
+  ].join("\n");
+}
+
+export function categoriesKeyboard(scope: Scope): InlineKeyboard | undefined {
+  const own = [...activeCustomCategories(scope.categories, "expense"), ...activeCustomCategories(scope.categories, "income")];
+  if (!own.length) return undefined;
+  const kb = new InlineKeyboard();
+  own.forEach((c, i) => {
+    kb.text(`🗑 ${c.emoji} ${c.name}`, `cat:rm:${c.key}`);
+    if (i % 2 === 1) kb.row();
   });
   return kb;
 }

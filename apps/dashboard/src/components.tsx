@@ -119,21 +119,21 @@ export function Bar({ value, color }: { value: number; color?: string }) {
  * For limits (`severity`) the fill turns warning/critical near and over 100%, always with an icon, never colour alone;
  * savings goals only ever show progress.
  */
-export function Meter({ icon, label, pct, amounts, status, note, severity = false }: { icon: IconName; label: ReactNode; pct: number; amounts: string; status?: string; note?: string; severity?: boolean }) {
-  const level = !severity ? null : pct > 100 ? "critical" : pct >= 80 ? "warning" : null;
+export function Meter({ icon, label, pct, amounts, status, note, severity = false }: { icon: IconName; label: ReactNode; pct: number | null; amounts: string; status?: string; note?: string; severity?: boolean }) {
+  const level = !severity || pct === null ? null : pct > 100 ? "critical" : pct >= 80 ? "warning" : null;
   const color = level === "critical" ? "var(--error)" : level === "warning" ? "var(--warning)" : undefined;
   return (
     <Row className="meter" plate={<Plate icon={icon} />}>
       <div className="title">{label}</div>
       <div className={`right num ${level ? `severity ${level}` : ""}`}>
         {level ? <Icon name={level === "critical" ? "octagon-alert" : "triangle-alert"} /> : null}
-        {pct}%
+        {pct === null ? "" : `${pct}%`}
       </div>
       <div className="line">
         <span className="num">{amounts}</span>
         {status ? <span>{status}</span> : null}
       </div>
-      <Bar value={pct} {...(color ? { color } : {})} />
+      {pct === null ? null : <Bar value={pct} {...(color ? { color } : {})} />}
       {note ? <div className="meta" style={{ gridColumn: "1 / -1" }}>{note}</div> : null}
     </Row>
   );

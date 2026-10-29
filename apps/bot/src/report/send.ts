@@ -100,7 +100,7 @@ export async function sendReport(api: Api, deps: Deps, scope: Scope, chatId: num
   const name = assistantName(scope);
   const caption = t(L, "report.caption", { name, period: label });
   const key = createHash("sha1")
-    .update(JSON.stringify([scope.household.id, L, name, scope.household.title, { ...data, transactions: reportFingerprint(data.transactions) }]))
+    .update(JSON.stringify([scope.household.id, L, name, scope.household.title, [...scope.categories.values()], { ...data, transactions: reportFingerprint(data.transactions) }]))
     .digest("hex");
   const cached = sentFiles.get(key);
   if (cached) {
@@ -126,6 +126,7 @@ export async function sendReport(api: Api, deps: Deps, scope: Scope, chatId: num
       tz: scope.tz,
       assistantName: name,
       title: scope.household.chatType === "private" ? null : scope.household.title,
+      categories: scope.categories,
       data,
     });
     const pdf = await queue.run(() => htmlToPdf(html));

@@ -1,5 +1,6 @@
 import type { Bot } from "grammy";
 import {
+  activeCustomCategories,
   currentMonthKey,
   evaluateTrigger,
   extractItems,
@@ -82,6 +83,11 @@ export function registerMessages(bot: Bot<BotContext>): void {
         recurringPayments: recurring.map((p) => ({ name: p.name, amount: p.amount, currency: p.currency, dayOfMonth: p.dayOfMonth })),
         plans: plans.slice(0, 20).map((p) => ({ name: p.title, amount: p.amount, currency: p.currency, date: p.plannedOn })),
         goals: goals.map((g) => ({ name: g.title, target: g.targetAmount, currency: g.currency })),
+        customCategories: [...activeCustomCategories(scope.categories, "expense"), ...activeCustomCategories(scope.categories, "income")].map((c) => ({
+          key: c.key,
+          kind: c.kind,
+          name: c.name,
+        })),
         replyTo: replyTarget ? await describeWithHistory(ctx.deps.db, replyTarget, scope.tz) : undefined,
         lastRecord: lastRecord ? await describeWithHistory(ctx.deps.db, lastRecord, scope.tz) : undefined,
         addressed: trigger.explicit,

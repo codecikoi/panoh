@@ -28,6 +28,15 @@ const samples = process.argv.slice(2).length
       "купили подарок на свадьбу за 2.8 млн",
       "dekabrda to'yga sovg'a 3 mln",
       "купили продукты 200к",
+      "у нас в бюджете осталось 800к, напомни когда останется 100к",
+      "сколько у нас осталось?",
+      "сколько осталось на продукты?",
+      "бюджет на месяц 5 млн",
+      "создай категорию Машина",
+      "новая категория доходов Аренда 🏡",
+      "мойка машины 50к",
+      "копим в заначку",
+      "в заначку 300к",
     ];
 
 for (const text of samples) {
@@ -40,7 +49,8 @@ for (const text of samples) {
     baseCurrency: "UZS",
     recurringPayments: [{ name: "кредит", amount: 2000000, currency: "UZS", dayOfMonth: 15 }],
     plans: [{ name: "подарок на свадьбу", amount: 3000000, currency: "UZS", date: "2026-12-31" }],
-    goals: [{ name: "отпуск", target: 10000000, currency: "UZS" }],
+    goals: [{ name: "отпуск", target: 10000000, currency: "UZS" }, { name: "заначка", target: null, currency: "UZS" }],
+    customCategories: [{ key: "custom_12", kind: "expense", name: "Машина" }],
     replyTo: text.startsWith("не ") ? "expense record: amount 150000 UZS, category groceries, note \"продукты\", date 2026-10-13" : undefined,
   });
   console.log(`\n> ${text}  (${Date.now() - started} ms, tokens in/out/cached: ${result.usage?.input}/${result.usage?.output}/${result.usage?.cacheRead})`);

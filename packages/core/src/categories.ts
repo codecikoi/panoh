@@ -91,9 +91,68 @@ export const CATEGORY_ICON: Record<Category, IconName> = {
   other_income: "banknote",
 };
 
-/** Icon for any category string coming from the database, falling back to the "other" box. */
+/** Key of the household-wide monthly limit in `budgets.category` ("budget for the month 5M"). */
+export const TOTAL_BUDGET = "total";
+
+/** Icon for any category string coming from the database: the month total gets a wallet, custom categories a tag. */
 export function categoryIcon(category: string): IconName {
+  if (category === TOTAL_BUDGET) return "wallet";
+  if (isCustomCategory(category)) return "tag";
   return CATEGORY_ICON[category as Category] ?? "package";
+}
+
+// ---------- custom categories ----------
+
+const CUSTOM_PREFIX = "custom_";
+
+/** A category the family added; `key` is what records store ("custom_12"). */
+export interface CustomCategoryInfo {
+  key: string;
+  kind: "expense" | "income";
+  name: string;
+  emoji: string;
+  /** Removed by the family: still named in old records, not offered for new ones. */
+  archived: boolean;
+}
+
+/** Custom categories of one household, by key. Empty means none. */
+export type CategoryLookup = ReadonlyMap<string, CustomCategoryInfo>;
+
+export const NO_CUSTOM_CATEGORIES: CategoryLookup = new Map();
+
+export function customCategoryKey(id: number): string {
+  return `${CUSTOM_PREFIX}${id}`;
+}
+
+export function isCustomCategory(value: string): boolean {
+  return /^custom_\d+$/.test(value);
+}
+
+export function customCategoryId(key: string): number | null {
+  const m = /^custom_(\d+)$/.exec(key);
+  return m ? Number(m[1]) : null;
+}
+
+/** Emoji for any category key: built-in, the month total, or a custom one (📦 when unknown). */
+export function categoryEmoji(category: string, custom: CategoryLookup = NO_CUSTOM_CATEGORIES): string {
+  if (category === TOTAL_BUDGET) return "🧮";
+  return custom.get(category)?.emoji ?? CATEGORY_EMOJI[category as Category] ?? "📦";
+}
+
+/** Custom categories the family can still use, of one kind. */
+export function activeCustomCategories(custom: CategoryLookup, kind: "expense" | "income"): CustomCategoryInfo[] {
+  return [...custom.values()].filter((c) => c.kind === kind && !c.archived);
+}
+
+/** Finds an active custom category by its key or its name (case-insensitive). */
+export function findCustomCategory(custom: CategoryLookup, kind: "expense" | "income" | null, value: string): CustomCategoryInfo | undefined {
+  const v = value.trim().toLowerCase();
+  if (!v) return undefined;
+  for (const c of custom.values()) {
+    if (c.archived || (kind && c.kind !== kind)) continue;
+    if (c.key === v || c.name.toLowerCase() === v) return c;
+  }
+  return undefined;
 }
 
 export function isExpenseCategory(value: string): value is ExpenseCategory {
@@ -104,8 +163,18 @@ export function isIncomeCategory(value: string): value is IncomeCategory {
   return (INCOME_CATEGORIES as readonly string[]).includes(value);
 }
 
-export function normalizeCategory(kind: "expense" | "income", value: string | null | undefined): Category {
+/** Built-in category key, or the key of an active custom category (by key or name); "other" / "other_income" otherwise. */
+export function normalizeCategory(kind: "expense" | "income", value: string | null | undefined, custom: CategoryLookup = NO_CUSTOM_CATEGORIES): string {
   const v = (value ?? "").trim().toLowerCase();
+  const own = custom.size ? findCustomCategory(custom, kind, v) : undefined;
+  if (own) return own.key;
   if (kind === "expense") return isExpenseCategory(v) ? v : "other";
   return isIncomeCategory(v) ? v : "other_income";
+}
+
+/** Whether a stored category key belongs to the expense side (built-in or custom). */
+export function categoryKind(category: string, custom: CategoryLookup = NO_CUSTOM_CATEGORIES): "expense" | "income" {
+  const own = custom.get(category);
+  if (own) return own.kind;
+  return isIncomeCategory(category) ? "income" : "expense";
 }

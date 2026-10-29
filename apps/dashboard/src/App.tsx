@@ -3,7 +3,7 @@ import type { IconName } from "@madat/core/brand/icons";
 import { canAuthenticate } from "./api";
 import { Icon, Mark } from "./components";
 import { currentMonth, monthLabel, shiftMonth } from "./format";
-import { I18nContext, loadStrings, makeI18n, type I18n } from "./i18n";
+import { I18nContext, loadStrings, makeI18n, type I18n, type Strings } from "./i18n";
 import { tg } from "./telegram";
 import type { Household, MeResponse } from "./types";
 import { useApi } from "./useApi";
@@ -40,7 +40,7 @@ export function App() {
     const requested = new URLSearchParams(location.search).get("tab");
     return TABS.some((x) => x.id === requested) ? (requested as Tab) : "month";
   });
-  const [i18n, setI18n] = useState<I18n | null>(null);
+  const [base, setBase] = useState<{ locale: string; strings: Strings } | null>(null);
 
   const households = me.data?.households ?? [];
   const household: Household | undefined = households.find((h) => h.id === householdId) ?? households[0];
@@ -51,12 +51,19 @@ export function App() {
     const locale = household?.locale ?? tg.languageCode.split("-")[0] ?? "en";
     loadStrings(locale)
       .then(({ locale: l, strings }) => {
-        setI18n(makeI18n(l, strings));
+        setBase({ locale: l, strings });
         document.documentElement.lang = l;
         document.documentElement.dir = ["ar", "fa", "he", "ur"].includes(l) ? "rtl" : "ltr";
       })
-      .catch(() => setI18n(makeI18n("en", {})));
+      .catch(() => setBase({ locale: "en", strings: {} }));
   }, [household?.locale]);
+
+  // The family's own categories are named like built-in ones: `cat.<key>` → their name.
+  const i18n: I18n | null = useMemo(() => {
+    if (!base) return null;
+    const own = Object.fromEntries((household?.categories ?? []).map((c) => [`cat.${c.key}`, c.name]));
+    return makeI18n(base.locale, { ...base.strings, ...own });
+  }, [base, household]);
 
   if (!i18n) return null;
   const { t, locale } = i18n;

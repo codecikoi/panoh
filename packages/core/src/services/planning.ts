@@ -17,7 +17,7 @@ import {
   type Reminder,
   type Transaction,
 } from "../db/schema.js";
-import { CATEGORY_EMOJI, type Category } from "../categories.js";
+import { TOTAL_BUDGET, categoryEmoji, type CategoryLookup } from "../categories.js";
 import { clampDay, daysInMonth, monthDateRange } from "../dates.js";
 import { convert, roundMoney, type RateTable } from "../money.js";
 import { createReminder, updateReminder } from "./reminders.js";
@@ -225,9 +225,11 @@ export interface GoalStat {
   id: number;
   title: string;
   currency: string;
-  target: number;
+  /** Null for an open-ended stash: nothing to reach, contributions are only counted. */
+  target: number | null;
   saved: number;
-  pct: number;
+  /** Progress towards the target; null without one. */
+  pct: number | null;
   deadline: string | null;
   monthsLeft: number | null;
   /** Even monthly contribution needed to reach the target by the deadline (null without a deadline). */
@@ -296,6 +298,8 @@ export interface OutlookInput {
   goals: Goal[];
   goalTransactions: Transaction[];
   rates: RateTable;
+  /** The household's own categories, for emoji. */
+  categories?: CategoryLookup;
 }
 
 function inBase(tx: Transaction, currency: string, rates: RateTable): number | null {
@@ -320,19 +324,22 @@ export function computeOutlook(input: OutlookInput): MonthOutlook {
     if (limit === null || limit <= 0) continue;
     let spent = 0;
     for (const tx of input.transactions) {
-      if (tx.kind !== "expense" || tx.category !== b.category) continue;
+      if (tx.kind !== "expense") continue;
+      // The month total counts every expense; a category limit only its own.
+      if (b.category !== TOTAL_BUDGET && tx.category !== b.category) continue;
       spent += inBase(tx, currency, rates) ?? 0;
     }
     budgetStats.push({
       category: b.category,
-      emoji: CATEGORY_EMOJI[b.category as Category] ?? "📦",
+      emoji: categoryEmoji(b.category, input.categories),
       limit: roundMoney(limit),
       spent: roundMoney(spent),
       pct: Math.round((spent / limit) * 100),
       remaining: roundMoney(limit - spent),
     });
   }
-  budgetStats.sort((a, b) => b.pct - a.pct);
+  // The month total first, then the fullest limits.
+  budgetStats.sort((a, b) => (a.category === TOTAL_BUDGET ? -1 : b.category === TOTAL_BUDGET ? 1 : b.pct - a.pct));
 
   if (!isCurrentMonth) return { ...EMPTY_OUTLOOK, budgets: budgetStats };
 
@@ -347,7 +354,7 @@ export function computeOutlook(input: OutlookInput): MonthOutlook {
     }
     let monthsLeft: number | null = null;
     let monthlyNeed: number | null = null;
-    if (g.deadline) {
+    if (g.deadline && g.targetAmount !== null) {
       monthsLeft = Math.max(1, monthIndex(g.deadline) - monthIndex(today) + 1);
       monthlyNeed = Math.ceil(Math.max(0, g.targetAmount - (saved - thisMonth)) / monthsLeft);
     }
@@ -357,7 +364,7 @@ export function computeOutlook(input: OutlookInput): MonthOutlook {
       currency: g.currency,
       target: g.targetAmount,
       saved: roundMoney(saved),
-      pct: g.targetAmount > 0 ? Math.min(100, Math.round((saved / g.targetAmount) * 100)) : 0,
+      pct: g.targetAmount === null ? null : g.targetAmount > 0 ? Math.min(100, Math.round((saved / g.targetAmount) * 100)) : 0,
       deadline: g.deadline,
       monthsLeft,
       monthlyNeed,
@@ -427,8 +434,8 @@ export function plannedTotalForMonth(openPlans: Plan[], month: string, currency:
   return roundMoney(total);
 }
 
-/** Limit usage of one category in a month, or undefined when the category has no limit. */
-export async function loadBudgetStat(db: Db, household: Household, category: string, month: string): Promise<BudgetStat | undefined> {
+/** Limit usage of one category (or the month total) in a month, or undefined when there is no such limit. */
+export async function loadBudgetStat(db: Db, household: Household, category: string, month: string, categories?: CategoryLookup): Promise<BudgetStat | undefined> {
   const rows = await listBudgets(db, household.id);
   const budget = rows.find((b) => b.category === category);
   if (!budget) return undefined;
@@ -447,6 +454,7 @@ export async function loadBudgetStat(db: Db, household: Household, category: str
     goals: [],
     goalTransactions: [],
     rates,
+    ...(categories ? { categories } : {}),
   });
   return outlook.budgets[0];
 }

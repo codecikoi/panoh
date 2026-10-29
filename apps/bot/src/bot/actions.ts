@@ -1,6 +1,24 @@
 import { DateTime } from "luxon";
 import {
+  BALANCE_SCOPE,
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
+  TOTAL_BUDGET,
+  archiveCustomCategory,
   cancelPlan,
+  categoryKind,
+  createCustomCategory,
+  customCategoryId,
+  evaluateAlerts,
+  findCustomCategory,
+  loadBalance,
+  loadCategoryLookup,
+  normalizeCategoryName,
+  normalizeEmoji,
+  setAlert,
+  setBalance,
+  toCategoryInfo,
+  updateBalance,
   cancelReminder,
   completePlan,
   createGoal,
@@ -66,7 +84,7 @@ import {
   type Transaction,
 } from "@madat/core";
 import { InlineKeyboard, type Api } from "grammy";
-import type { BotContext, Scope } from "./context.js";
+import type { BotContext, Deps, Scope } from "./context.js";
 import * as R from "./render.js";
 import { safeEdit } from "./telegram.js";
 
@@ -114,7 +132,7 @@ export function describeTarget(target: ReplyTarget, tz = "UTC"): string {
     }
     case "goal": {
       const r = target.row;
-      return `savings goal: "${r.title}" target ${r.targetAmount} ${r.currency}, deadline ${r.deadline ?? "none"}`;
+      return `savings goal: "${r.title}" ${r.targetAmount === null ? "no target (open-ended stash)" : `target ${r.targetAmount} ${r.currency}`}, deadline ${r.deadline ?? "none"}`;
     }
   }
 }
@@ -129,7 +147,7 @@ export interface ApplyMeta {
 export interface ApplyOutcome {
   handled: number;
   corrected: number;
-  /** Replies where the bot asked or explained instead of recording. */
+  /** Replies where the bot asked, explained or answered a question instead of recording. */
   clarified: number;
   summaryRequested: boolean;
   /** A PDF report was asked for: the period, or "ask" when none was named. */
@@ -172,6 +190,22 @@ export async function applyItems(ctx: BotContext, items: ExtractedItem[], meta: 
           break;
         case "goal_contribution":
           if (await handleContribution(ctx, item, meta, rates)) outcome.handled++;
+          break;
+        case "balance_set":
+          if (await handleBalanceSet(ctx, item, meta)) outcome.handled++;
+          break;
+        case "balance_request":
+          if (await handleBalanceRequest(ctx, item, meta)) {
+            outcome.handled++;
+            outcome.clarified++;
+          }
+          break;
+        case "balance_alert":
+          if (await handleBalanceAlert(ctx, item, meta)) outcome.handled++;
+          break;
+        case "category_create":
+        case "category_remove":
+          if (await handleCategory(ctx, item, meta)) outcome.handled++;
           break;
         case "correction": {
           const result = await handleCorrection(ctx, item, meta, rates);
@@ -244,13 +278,136 @@ async function handleTransaction(ctx: BotContext, item: ExtractedItem, meta: App
   const question = askCategory ? "\n" + t(scope.locale, "ask.category") : "";
   const sent = await ctx.reply(text + question, replyOpts(meta, { reply_markup: R.txKeyboard(scope, tx) }));
   await updateTransaction(ctx.deps.db, tx.id, { botMessageId: sent.message_id });
+  if (status === "confirmed") await notifyAlerts(ctx.api, ctx.deps, scope, meta.chatId);
   return true;
 }
 
-/** "🎯 Groceries: 2.6M of 3M (87%)" for a confirmed expense in a category with a monthly limit. */
+/** "🎯 Groceries: 2.6M of 3M (87%)" for a confirmed expense in a category with a monthly limit, plus the month total if set. */
 export async function budgetLineFor(db: Db, scope: Scope, tx: Transaction): Promise<string> {
   if (tx.kind !== "expense" || tx.status !== "confirmed") return "";
-  return R.budgetLine(scope, await loadBudgetStat(db, scope.household, tx.category, tx.occurredOn.slice(0, 7)));
+  const month = tx.occurredOn.slice(0, 7);
+  const own = await loadBudgetStat(db, scope.household, tx.category, month, scope.categories);
+  const total = await loadBudgetStat(db, scope.household, TOTAL_BUDGET, month, scope.categories);
+  return R.budgetLine(scope, own) + R.budgetLine(scope, total);
+}
+
+/** Sends the alerts that just fired (balance or limit below a threshold); the scheduler catches anything missed here. */
+export async function notifyAlerts(api: Api, deps: Deps, scope: Scope, chatId: number): Promise<void> {
+  try {
+    for (const event of await evaluateAlerts(deps.db, scope.household)) {
+      await api.sendMessage(chatId, R.alertFiredText(scope, event));
+    }
+  } catch (err) {
+    log.error("alerts check failed", { err, householdId: scope.household.id });
+  }
+}
+
+// ---------- balance, alerts, categories ----------
+
+/** The built-in category whose key or translated name matches, if any. */
+function builtinCategoryByName(scope: Scope, name: string): string | undefined {
+  const needle = name.trim().toLowerCase();
+  return [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].find((k) => k === needle || R.catName(scope, k).toLowerCase() === needle);
+}
+
+async function handleBalanceSet(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta): Promise<boolean> {
+  const scope = ctx.scope;
+  if (item.amount === null) {
+    await ctx.reply(t(scope.locale, "ask.balance_amount"), replyOpts(meta));
+    return true;
+  }
+  const { balance, previous } = await setBalance(ctx.deps.db, scope.household, {
+    amount: item.amount,
+    currency: item.currency,
+    userId: scope.user?.id ?? null,
+    sourceChatId: meta.chatId,
+    sourceMessageId: meta.sourceMessageId,
+  });
+  const sent = await ctx.reply(R.balanceSetText(scope, item.amount, item.currency, previous), replyOpts(meta, { reply_markup: R.balanceKeyboard(scope, balance.id) }));
+  await updateBalance(ctx.deps.db, balance.id, { botMessageId: sent.message_id });
+  await notifyAlerts(ctx.api, ctx.deps, scope, meta.chatId);
+  return true;
+}
+
+async function handleBalanceRequest(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta): Promise<boolean> {
+  const scope = ctx.scope;
+  const db = ctx.deps.db;
+  const summary = await loadMonthlySummary(db, scope.household, currentMonthKey(scope.tz));
+  // "How much is left of the month budget" without one set reads as the general question.
+  const category = item.category === TOTAL_BUDGET && !summary.outlook.budgets.some((b) => b.category === TOTAL_BUDGET) ? null : item.category;
+  const balance = category === null ? await loadBalance(db, scope.household) : null;
+  const spent = category === null ? null : (summary.categories.find((c) => c.category === category)?.amount ?? 0);
+  await ctx.reply(
+    R.balanceAnswerText(scope, { balance, budgets: summary.outlook.budgets, category, spentInCategory: spent, forecast: summary.outlook.forecast }),
+    replyOpts(meta),
+  );
+  return true;
+}
+
+async function handleBalanceAlert(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta): Promise<boolean> {
+  const scope = ctx.scope;
+  const db = ctx.deps.db;
+  if (item.amount === null) {
+    await ctx.reply(t(scope.locale, "ask.alert_amount"), replyOpts(meta));
+    return true;
+  }
+  // A threshold on "the month budget" when none is set means the money on hand.
+  let alertScope = item.category ?? BALANCE_SCOPE;
+  if (alertScope === TOTAL_BUDGET && !(await loadBudgetStat(db, scope.household, TOTAL_BUDGET, currentMonthKey(scope.tz)))) alertScope = BALANCE_SCOPE;
+  const alert = await setAlert(db, scope.household.id, alertScope, item.amount, item.currency, scope.user?.id ?? null);
+  let now: { value: number | null; limit?: number } | null = null;
+  if (alertScope === BALANCE_SCOPE) {
+    now = { value: (await loadBalance(db, scope.household))?.current ?? null };
+  } else {
+    const stat = await loadBudgetStat(db, scope.household, alertScope, currentMonthKey(scope.tz), scope.categories);
+    now = stat ? { value: stat.remaining, limit: stat.limit } : null;
+  }
+  await ctx.reply(R.alertSetText(scope, alert, now), replyOpts(meta, { reply_markup: R.alertKeyboardFor(scope, alert) }));
+  await notifyAlerts(ctx.api, ctx.deps, scope, meta.chatId);
+  return true;
+}
+
+async function handleCategory(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta): Promise<boolean> {
+  const scope = ctx.scope;
+  const db = ctx.deps.db;
+  const name = normalizeCategoryName(item.note);
+  if (!name) {
+    await ctx.reply(t(scope.locale, "category.invalid"), replyOpts(meta));
+    return true;
+  }
+  if (item.kind === "category_remove") {
+    const own = findCustomCategory(scope.categories, null, name);
+    if (!own) {
+      // A built-in name: say so instead of pretending it was removed.
+      const builtin = builtinCategoryByName(scope, name);
+      await ctx.reply(t(scope.locale, builtin ? "category.builtin" : "category.not_found", { name: escapeHtml(name) }), replyOpts(meta));
+      return true;
+    }
+    await archiveCustomCategory(db, customCategoryId(own.key)!);
+    scope.categories = await loadCategoryLookup(db, scope.household.id);
+    await ctx.reply(t(scope.locale, "confirm.category_removed", { name: escapeHtml(own.name) }), replyOpts(meta));
+    return true;
+  }
+  const kind = item.target === "income" ? "income" : "expense";
+  const existing = findCustomCategory(scope.categories, kind, name);
+  const builtin = builtinCategoryByName(scope, name);
+  if (existing || builtin) {
+    const emoji = existing?.emoji ?? R.catLabel(scope, builtin!).split(" ")[0]!;
+    const label = existing ? escapeHtml(existing.name) : R.catName(scope, builtin!);
+    await ctx.reply(t(scope.locale, "confirm.category_exists", { emoji, name: label }), replyOpts(meta));
+    return true;
+  }
+  const row = await createCustomCategory(db, {
+    householdId: scope.household.id,
+    userId: scope.user?.id ?? null,
+    kind,
+    name,
+    emoji: normalizeEmoji(item.emoji) ?? (kind === "income" ? "💵" : "📦"),
+  });
+  scope.categories = await loadCategoryLookup(db, scope.household.id);
+  const info = toCategoryInfo(row);
+  await ctx.reply(R.categoryCreatedText(scope, info), replyOpts(meta, { reply_markup: R.categoryKeyboard(scope, info) }));
+  return true;
 }
 
 /** How a plan changes the month: free money / shortfall for this month, the planned total for a later month. */
@@ -340,10 +497,7 @@ async function handleGoal(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta)
   const scope = ctx.scope;
   const db = ctx.deps.db;
   const title = item.note || item.target || "…";
-  if (item.amount === null) {
-    await ctx.reply(t(scope.locale, "ask.amount", { note: escapeHtml(title) }), replyOpts(meta));
-    return true;
-  }
+  // No amount means an open-ended stash: contributions are counted, nothing to reach.
   const goal = await createGoal(db, {
     householdId: scope.household.id,
     userId: scope.user?.id ?? null,
@@ -394,6 +548,7 @@ async function handleContribution(ctx: BotContext, item: ExtractedItem, meta: Ap
   const text = stat ? R.contributionText(scope, tx, stat) : R.txText(scope, tx);
   const sent = await ctx.reply(text, replyOpts(meta, { reply_markup: R.txKeyboard(scope, tx) }));
   await updateTransaction(db, tx.id, { botMessageId: sent.message_id });
+  await notifyAlerts(ctx.api, ctx.deps, scope, meta.chatId);
   return true;
 }
 
@@ -528,6 +683,7 @@ async function handlePaymentDone(ctx: BotContext, item: ExtractedItem, meta: App
       const text = R.planPaidText(scope, plan, tx) + (await budgetLineFor(ctx.deps.db, scope, tx));
       const sent = await ctx.reply(text, replyOpts(meta, { reply_markup: R.txKeyboard(scope, tx) }));
       await updateTransaction(ctx.deps.db, tx.id, { botMessageId: sent.message_id });
+      await notifyAlerts(ctx.api, ctx.deps, scope, meta.chatId);
       return true;
     }
     return handleTransaction(ctx, { ...item, kind: "expense", category: item.category ?? "loans" }, meta, rates);
@@ -542,7 +698,10 @@ async function handlePaymentDone(ctx: BotContext, item: ExtractedItem, meta: App
   });
   const text = R.paidText(scope, match.name, tx?.amount ?? null, tx?.currency ?? match.currency);
   const sent = await ctx.reply(text, replyOpts(meta, tx ? { reply_markup: R.txKeyboard(scope, tx) } : {}));
-  if (tx) await updateTransaction(ctx.deps.db, tx.id, { botMessageId: sent.message_id });
+  if (tx) {
+    await updateTransaction(ctx.deps.db, tx.id, { botMessageId: sent.message_id });
+    await notifyAlerts(ctx.api, ctx.deps, scope, meta.chatId);
+  }
   return true;
 }
 
@@ -615,6 +774,7 @@ export function correctionOf(changed: ExtractedItem["changed"]): ExtractedItem {
     dayOfMonth: null,
     remindDaysBefore: null,
     target: null,
+    emoji: null,
     timeSpecified: false,
     confidence: 1,
     changed,
@@ -634,7 +794,7 @@ function amountOf(target: ReplyTarget): { amount: number; currency: string } | n
     case "plan":
       return { amount: target.row.amount, currency: target.row.currency };
     case "goal":
-      return { amount: target.row.targetAmount, currency: target.row.currency };
+      return target.row.targetAmount === null ? null : { amount: target.row.targetAmount, currency: target.row.currency };
     case "recurring":
       return target.row.amount === null ? null : { amount: target.row.amount, currency: target.row.currency };
     case "reminder":
@@ -714,10 +874,12 @@ async function applyChanges(ctx: BotContext, target: ReplyTarget, item: Extracte
   const c = item.changed;
   if (target.type === "transaction") {
     const row = target.row;
+    // A category of the other side (an income category on an expense) is not applied.
+    const category = c.category !== undefined && categoryKind(c.category, scope.categories) === row.kind ? c.category : row.category;
     const next = {
       amount: c.amount ?? row.amount,
       currency: c.currency ?? row.currency,
-      category: c.category ?? row.category,
+      category,
       note: c.note ?? row.note,
       occurredOn: c.date ?? row.occurredOn,
     };
@@ -732,6 +894,7 @@ async function applyChanges(ctx: BotContext, target: ReplyTarget, item: Extracte
     await logEdit(db, hid, "transaction", row.id, diff);
     const text = R.txText(scope, updated) + (await budgetLineFor(db, scope, updated));
     await refreshConfirmation(ctx.api, scope, row.botMessageId, text, R.txKeyboard(scope, updated), place);
+    await notifyAlerts(ctx.api, ctx.deps, scope, place.chatId);
     return true;
   }
   if (target.type === "plan") {
@@ -886,5 +1049,6 @@ export async function undoLast(ctx: BotContext, meta?: ApplyMeta): Promise<boole
   const chatId = last.row.sourceChatId ?? scope.household.telegramChatId;
   if (last.row.botMessageId) await safeEdit(ctx.api, chatId, last.row.botMessageId, R.deletedText(scope, what));
   await ctx.reply(t(scope.locale, "undo.done", { what }), opts);
+  if (last.type === "transaction") await notifyAlerts(ctx.api, ctx.deps, scope, chatId);
   return true;
 }

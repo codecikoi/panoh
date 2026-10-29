@@ -1,9 +1,15 @@
 import type { Bot } from "grammy";
 import { DateTime } from "luxon";
 import {
+  archiveCustomCategory,
   cancelPlan,
   cancelReminder,
   currentMonthKey,
+  customCategoryId,
+  deleteBalance,
+  getBalance,
+  loadCategoryLookup,
+  removeAlert,
   getGoal,
   getPlan,
   loadMonthlySummary,
@@ -35,7 +41,7 @@ import {
 } from "@madat/core";
 import type { BotContext } from "./context.js";
 import * as R from "./render.js";
-import { applyCorrection, budgetLineFor, correctionOf, loadTarget, payPlan, recordPayment } from "./actions.js";
+import { applyCorrection, budgetLineFor, correctionOf, loadTarget, notifyAlerts, payPlan, recordPayment } from "./actions.js";
 import { sendSummary } from "./summary.js";
 import { sendReport } from "../report/send.js";
 import { safeEdit } from "./telegram.js";
@@ -62,6 +68,7 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
         if (action === "del" || action === "no") {
           await softDeleteTransaction(db, id);
           await edit(action === "no" ? t(scope.locale, "confirm.not_recorded") : R.deletedText(scope, currentText));
+          if (tx.status === "confirmed") await notifyAlerts(ctx.api, ctx.deps, scope, chatId);
           return answer();
         }
         if (action === "yes") {
@@ -71,7 +78,8 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
             amountBase: toBase(tx.amount, tx.currency, scope.currency, rates),
             baseCurrency: scope.currency,
           });
-          if (updated) await edit(R.txText(scope, updated), R.txKeyboard(scope, updated));
+          if (updated) await edit(R.txText(scope, updated) + (await budgetLineFor(db, scope, updated)), R.txKeyboard(scope, updated));
+          await notifyAlerts(ctx.api, ctx.deps, scope, chatId);
           return answer();
         }
         if (action === "edit") return answer(t(scope.locale, "hint.edit"), true);
@@ -137,6 +145,7 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
           const text = R.paidText(scope, rp.name, tx?.amount ?? null, tx?.currency ?? rp.currency);
           await edit(text, tx ? R.txKeyboard(scope, tx) : undefined);
           if (tx && messageId) await updateTransaction(db, tx.id, { botMessageId: messageId });
+          if (tx) await notifyAlerts(ctx.api, ctx.deps, scope, chatId);
           return answer(t(scope.locale, "confirm.done"));
         }
         return answer();
@@ -155,6 +164,7 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
           const tx = await payPlan(db, scope, plan, { chatId, rates });
           await edit(R.planPaidText(scope, plan, tx) + (await budgetLineFor(db, scope, tx)), R.txKeyboard(scope, tx));
           if (messageId) await updateTransaction(db, tx.id, { botMessageId: messageId });
+          await notifyAlerts(ctx.api, ctx.deps, scope, chatId);
           return answer(t(scope.locale, "confirm.done"));
         }
         return answer();
@@ -174,7 +184,7 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
           return answer(t(scope.locale, "confirm.done"));
         }
         if (action === "keep") {
-          const row = target.row as { amount?: number | null; targetAmount?: number; currency: string };
+          const row = target.row as { amount?: number | null; targetAmount?: number | null; currency: string };
           const amount = row.amount ?? row.targetAmount;
           await edit(t(scope.locale, "correction.amount_kept", { amount: amount != null ? R.money(scope, amount, row.currency) : "—" }));
         }
@@ -202,6 +212,42 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
           await edit(R.deletedText(scope, currentText));
         }
         return answer(t(scope.locale, "confirm.budget_removed", { category: R.catLabel(scope, category) }));
+      }
+
+      if (ns === "bal") {
+        // 🗑 on a balance checkpoint: the previous one (if any) is current again.
+        const balance = await getBalance(db, Number(rest[0]));
+        if (!balance || balance.householdId !== scope.household.id) return answer(t(scope.locale, "hint.not_found"));
+        if (action === "del") {
+          await deleteBalance(db, balance.id);
+          await edit(R.deletedText(scope, currentText));
+        }
+        return answer();
+      }
+
+      if (ns === "alr") {
+        if (action === "del") {
+          const alertScope = rest.join(":");
+          await removeAlert(db, scope.household.id, alertScope);
+          await edit(R.deletedText(scope, currentText));
+          return answer(t(scope.locale, "alert.removed"));
+        }
+        return answer();
+      }
+
+      if (ns === "cat") {
+        const id = customCategoryId(rest[0] ?? "");
+        if (id === null) return answer();
+        const row = await archiveCustomCategory(db, id);
+        if (!row || row.householdId !== scope.household.id) return answer(t(scope.locale, "hint.not_found"));
+        scope.categories = await loadCategoryLookup(db, scope.household.id);
+        if (action === "rm") {
+          // Pressed in the /categories list: show what is left.
+          await edit(R.categoriesListText(scope), R.categoriesKeyboard(scope));
+        } else {
+          await edit(R.deletedText(scope, currentText));
+        }
+        return answer(t(scope.locale, "confirm.category_removed", { name: row.name }).replace(/<[^>]+>/g, ""));
       }
 
       if (ns === "set") {

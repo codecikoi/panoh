@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { webhookCallback, type Bot } from "grammy";
 import { env, getHouseholdById, log, makePeriod } from "@madat/core";
-import { scopeFromHousehold, type BotContext, type Deps } from "./bot/context.js";
+import { loadScope, type BotContext, type Deps } from "./bot/context.js";
 import { sendReport } from "./report/send.js";
 import type { Scheduler } from "./scheduler.js";
 
@@ -36,9 +36,9 @@ export function createServer(bot: Bot<BotContext>, scheduler: Scheduler, deps: D
     const household = Number.isInteger(body.householdId) ? await getHouseholdById(deps.db, body.householdId!) : undefined;
     const period = body.from && body.to ? makePeriod(body.from, body.to) : null;
     if (!household || !period) return c.json({ error: "bad request" }, 400);
-    void sendReport(bot.api, deps, scopeFromHousehold(household), household.telegramChatId, period).catch((err) =>
-      log.error("internal report failed", { err, householdId: household.id }),
-    );
+    void loadScope(deps.db, household)
+      .then((scope) => sendReport(bot.api, deps, scope, household.telegramChatId, period))
+      .catch((err) => log.error("internal report failed", { err, householdId: household.id }));
     return c.json({ ok: true }, 202);
   });
 

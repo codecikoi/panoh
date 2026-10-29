@@ -36,6 +36,13 @@
       "when": 1792834293675,
       "tag": "0004_privacy_and_assistant_name",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793298743563,
+      "tag": "0005_balance_categories",
+      "breakpoints": true
     }
   ]
 }

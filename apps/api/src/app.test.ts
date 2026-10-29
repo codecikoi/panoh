@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 vi.mock("../../../packages/core/src/ai/insights.ts", () => ({ generateInsights: vi.fn().mockResolvedValue({ highlights: ["ok"], tips: [], mood: "neutral" }) }));
 process.env.LOG_LEVEL = "warn";
 
-import { createTestDb, createTransaction, ensureMember, getOrCreateHousehold, setBudget, signInitData, upsertUser, type DbHandle } from "@madat/core";
+import { createCustomCategory, createTestDb, createTransaction, ensureMember, getOrCreateHousehold, setBudget, signInitData, upsertUser, type DbHandle } from "@madat/core";
 import { createApp } from "./app.js";
 
 const token = "123:ABC";
@@ -42,10 +42,12 @@ describe("api", () => {
   });
 
   it("returns the user's households and summary", async () => {
+    await createCustomCategory(handle.db, { householdId, kind: "expense", name: "Car", emoji: "🚗" });
     const me = await app.request("/api/me", { headers: { authorization: tma(42) } });
     expect(me.status).toBe(200);
-    const body = (await me.json()) as { households: { id: number }[] };
+    const body = (await me.json()) as { households: { id: number; categories: { key: string; name: string }[] }[] };
     expect(body.households.map((h) => h.id)).toEqual([householdId]);
+    expect(body.households[0]?.categories).toEqual([expect.objectContaining({ key: "custom_1", name: "Car", emoji: "🚗", kind: "expense", archived: false })]);
 
     const summary = await app.request(`/api/households/${householdId}/summary`, { headers: { authorization: tma(42) } });
     expect(summary.status).toBe(200);

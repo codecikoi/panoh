@@ -1,6 +1,6 @@
 import type { Middleware } from "grammy";
 import { ensureMember, env, getOrCreateHousehold, guessDefaults, upsertUser } from "@madat/core";
-import { scopeFromHousehold, type BotContext, type Deps } from "./context.js";
+import { loadScope, type BotContext, type Deps } from "./context.js";
 
 /** Resolves the household (chat) and member (user) for every update and attaches them to the context. */
 export function scopeMiddleware(deps: Deps): Middleware<BotContext> {
@@ -26,7 +26,7 @@ export function scopeMiddleware(deps: Deps): Middleware<BotContext> {
       user = await upsertUser(deps.db, { id: from.id, languageCode: from.language_code });
       await ensureMember(deps.db, household.id, user.id);
     }
-    ctx.scope = scopeFromHousehold(household, user);
+    ctx.scope = await loadScope(deps.db, household, user);
     await next();
   };
 }

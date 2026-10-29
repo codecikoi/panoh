@@ -5,7 +5,8 @@
  */
 import {
   nowIn,
-  createDb, createGoal, createPlan, createRecurring, createReminder, createTransaction, ensureMember, getOrCreateHousehold, setBudget, upsertUser,
+  createBalance, createCustomCategory, createDb, createGoal, createPlan, createRecurring, createReminder, createTransaction, customCategoryKey, ensureMember,
+  getOrCreateHousehold, setBudget, upsertUser,
 } from "@madat/core";
 
 const handle = await createDb();
@@ -32,6 +33,15 @@ const spends: [number, string, string, number][] = [
   [70, "travel", "билеты в Самарканд", 13], [40, "entertainment", "Netflix + Spotify", 3],
 ];
 for (const [a, c, n, d] of spends) await add("expense", a, c, n, day(d));
+// A family category, the month budget, an open stash and a balance checkpoint, so every new block has data.
+const car = await createCustomCategory(db, { householdId: household.id, kind: "expense", name: "Машина", emoji: "🚗" });
+await add("expense", 22, customCategoryKey(car.id), "мойка", day(9));
+await add("expense", 45, customCategoryKey(car.id), "страховка", day(15));
+await setBudget(db, household.id, "total", 1200, "USD");
+await setBudget(db, household.id, customCategoryKey(car.id), 60, "USD");
+const stash = await createGoal(db, { householdId: household.id, title: "заначка", targetAmount: null, currency: "USD", deadline: null });
+await add("expense", 50, "savings", "заначка", day(6), { goalId: stash.id });
+await createBalance(db, { householdId: household.id, amount: 1800, currency: "USD", asOf: day(1).toISODate()!, expected: null, createdAt: day(1).startOf("day").toJSDate() });
 await add("expense", 9, "dining", "кофе", day(16), { status: "pending" });
 const prev = now.minus({ months: 1 });
 for (const [a, c] of [[95, "groceries"], [40, "dining"], [160, "loans"], [50, "kids"], [25, "transport"], [20, "beauty"], [8, "pets"]] as const) {

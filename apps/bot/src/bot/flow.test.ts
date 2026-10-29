@@ -12,8 +12,10 @@ process.env.LOG_LEVEL = "warn";
 
 import {
   createTestDb,
+  customCategoryKey,
   extractItems,
   getHouseholdByChatId,
+  listCustomCategories,
   getPlan,
   getPlanReminder,
   getReminder,
@@ -60,7 +62,7 @@ let updateId = 1;
 function item(partial: Partial<ExtractedItem>): ExtractedItem {
   return {
     kind: "expense", amount: null, currency: "UZS", category: null, note: "", date: "2026-10-13", hasDate: false, dateApproximate: false, dateTo: null, dueAt: null,
-    dayOfMonth: null, remindDaysBefore: null, target: null, timeSpecified: true, confidence: 0.95, changed: {}, ...partial,
+    dayOfMonth: null, remindDaysBefore: null, target: null, emoji: null, timeSpecified: true, confidence: 0.95, changed: {}, ...partial,
   };
 }
 
@@ -595,5 +597,150 @@ describe("bot flow", () => {
     await press(bot, "set:cur:USD", 555, "settings");
     const edited = calls.filter((c) => c.method === "editMessageText").at(-1);
     expect(edited?.payload.text).toContain("USD");
+  });
+
+  it("keeps the money on hand from a stated balance, answers how much is left and warns below a threshold", async () => {
+    const cmd = (text: string) => ({ entities: [{ type: "bot_command", offset: 0, length: text.split(" ")[0]!.length }] });
+    const digits = (text: unknown) => String(text).replace(/\D/g, "");
+    // The settings test above switched the family to USD; sums are stated in UZS again from here on.
+    await press(bot, "set:cur:UZS", 555, "settings");
+    // Records dated before the checkpoint day do not move the balance, so these are dated today.
+    const today = DateTime.now().setZone("Asia/Tashkent").toISODate()!;
+    mockExtraction([item({ kind: "balance_set", amount: 800000 })]);
+    await sendText(bot, "Мадат у нас осталось 800к");
+    expect(lastSent().payload.text).toContain("Остаток");
+    expect(digits(lastSent().payload.text)).toContain("800000");
+    expect(JSON.stringify(lastSent().payload.reply_markup)).toContain("bal:del:");
+
+    mockExtraction([item({ kind: "balance_alert", amount: 700000 })]);
+    await sendText(bot, "Мадат предупреди когда останется 700к");
+    expect(lastSent().payload.text).toContain("Предупрежу");
+    expect(lastSent().payload.text).toContain("Сейчас");
+    expect(JSON.stringify(lastSent().payload.reply_markup)).toContain("alr:del:balance");
+
+    calls.length = 0;
+    mockExtraction([item({ amount: 150000, category: "transport", note: "такси", date: today })]);
+    await sendText(bot, "+ такси 150к");
+    const texts = sent().map((c) => String(c.payload.text));
+    expect(texts[0]).toContain("Расход");
+    expect(texts.some((x) => x.includes("Остаток ниже"))).toBe(true);
+    // Still below: no second warning on the next expense.
+    calls.length = 0;
+    mockExtraction([item({ amount: 10000, category: "transport", note: "автобус", date: today })]);
+    await sendText(bot, "+ автобус 10к");
+    expect(sent().some((c) => String(c.payload.text).includes("Остаток ниже"))).toBe(false);
+
+    mockExtraction([item({ kind: "balance_request", amount: null })]);
+    await sendText(bot, "Мадат сколько осталось?");
+    expect(lastSent().payload.text).toContain("Остаток");
+    expect(digits(lastSent().payload.text)).toContain("640000");
+    expect(reactions().at(-1)).toContain("🤔");
+
+    // Restated: the gap against the records is shown and the new amount is the base from now on.
+    mockExtraction([item({ kind: "balance_set", amount: 500000 })]);
+    await sendText(bot, "Мадат у нас сейчас 500к");
+    expect(lastSent().payload.text).toContain("разница −");
+    expect(digits(lastSent().payload.text)).toContain("140000");
+    await sendText(bot, "/balance", cmd("/balance"));
+    expect(digits(lastSent().payload.text)).toContain("500000");
+
+    // Income above the threshold re-arms the alert; the next drop warns again.
+    calls.length = 0;
+    mockExtraction([item({ kind: "income", amount: 400000, category: "salary", note: "аванс", date: today })]);
+    await sendText(bot, "+ аванс 400к");
+    expect(sent().some((c) => String(c.payload.text).includes("Остаток ниже"))).toBe(false);
+    calls.length = 0;
+    mockExtraction([item({ amount: 300000, category: "groceries", note: "рынок", date: today })]);
+    await sendText(bot, "+ рынок 300к");
+    expect(sent().some((c) => String(c.payload.text).includes("Остаток ниже"))).toBe(true);
+  });
+
+  it("keeps a budget for the whole month and shows it under every expense", async () => {
+    const cmd = (text: string) => ({ entities: [{ type: "bot_command", offset: 0, length: text.split(" ")[0]!.length }] });
+    mockExtraction([item({ kind: "budget_limit", category: "total", amount: 10000000 })]);
+    await sendText(bot, "+ бюджет на месяц 10 млн");
+    expect(lastSent().payload.text).toContain("Бюджет на месяц");
+    mockExtraction([item({ amount: 100000, category: "transport", note: "такси" })]);
+    await sendText(bot, "+ такси 100к");
+    expect(lastSent().payload.text).toContain("🧮 Бюджет на месяц");
+    await sendText(bot, "/budgets", cmd("/budgets"));
+    expect(lastSent().payload.text).toContain("Бюджет на месяц");
+    mockExtraction([item({ kind: "balance_request", category: "total", amount: null })]);
+    await sendText(bot, "Мадат сколько осталось от бюджета?");
+    expect(lastSent().payload.text).toContain("Бюджет на месяц");
+    expect(lastSent().payload.text).toContain("осталось");
+    mockExtraction([item({ kind: "balance_request", category: "beauty", amount: null })]);
+    await sendText(bot, "Мадат сколько осталось на красоту?");
+    expect(lastSent().payload.text).toContain("лимита нет");
+  });
+
+  it("creates a family category, files records under it, limits it and lists it", async () => {
+    const cmd = (text: string) => ({ entities: [{ type: "bot_command", offset: 0, length: text.split(" ")[0]!.length }] });
+    mockExtraction([item({ kind: "category_create", note: "Машина", target: "expense", emoji: "🚗", amount: null })]);
+    await sendText(bot, "Мадат создай категорию Машина");
+    expect(lastSent().payload.text).toContain("🚗 Машина");
+    const car = (await listCustomCategories(handle.db, 1)).find((c) => c.name === "Машина")!;
+    expect(car).toMatchObject({ kind: "expense", emoji: "🚗", status: "active" });
+    const key = customCategoryKey(car.id);
+    expect(JSON.stringify(lastSent().payload.reply_markup)).toContain(`cat:del:${key}`);
+
+    mockExtraction([item({ amount: 50000, category: key, note: "мойка" })]);
+    await sendText(bot, "+ мойка машины 50к");
+    expect(extractItems).toHaveBeenLastCalledWith(expect.objectContaining({ customCategories: [expect.objectContaining({ key, kind: "expense", name: "Машина" })] }));
+    expect(lastSent().payload.text).toContain("🚗 Машина");
+    expect((await listRecentTransactions(handle.db, 1, 1))[0]).toMatchObject({ category: key });
+
+    mockExtraction([item({ kind: "budget_limit", category: key, amount: 300000 })]);
+    await sendText(bot, "+ лимит на машину 300к");
+    expect(lastSent().payload.text).toContain("Лимит на 🚗 Машина");
+    await sendText(bot, "/summary", cmd("/summary"));
+    expect(lastSent().payload.text).toContain("🚗 Машина");
+    await sendText(bot, "/categories", cmd("/categories"));
+    expect(lastSent().payload.text).toContain("Машина");
+    expect(lastSent().payload.text).toContain("Продукты");
+    expect(JSON.stringify(lastSent().payload.reply_markup)).toContain(`cat:rm:${key}`);
+
+    // An income category, a duplicate, and a built-in one that cannot be removed.
+    mockExtraction([item({ kind: "category_create", note: "Аренда", target: "income", emoji: null, amount: null })]);
+    await sendText(bot, "Мадат новая категория доходов Аренда");
+    expect(lastSent().payload.text).toContain("💵 Аренда");
+    mockExtraction([item({ kind: "category_create", note: "аренда", target: "income", emoji: null, amount: null })]);
+    await sendText(bot, "Мадат новая категория доходов аренда");
+    expect(lastSent().payload.text).toContain("уже есть");
+    mockExtraction([item({ kind: "category_remove", note: "Продукты", amount: null })]);
+    await sendText(bot, "Мадат удали категорию Продукты");
+    expect(lastSent().payload.text).toContain("встроенная");
+    mockExtraction([item({ kind: "category_create", note: "Транспорт", target: "expense", emoji: "🚌", amount: null })]);
+    await sendText(bot, "Мадат создай категорию Транспорт");
+    expect(lastSent().payload.text).toContain("🚕 Транспорт уже есть");
+
+    mockExtraction([item({ kind: "category_remove", note: "машина", amount: null })]);
+    await sendText(bot, "Мадат удали категорию машина");
+    expect(lastSent().payload.text).toContain("убрал");
+    expect((await listCustomCategories(handle.db, 1)).find((c) => c.id === car.id)?.status).toBe("archived");
+    expect((await listBudgets(handle.db, 1)).some((b) => b.category === key)).toBe(false);
+    // Old records keep the name; the model no longer gets the category.
+    await sendText(bot, "/last", cmd("/last"));
+    expect(lastSent().payload.text).toContain("🚗 Машина");
+    mockExtraction([item({ amount: 1000, category: "other", note: "" })]);
+    await sendText(bot, "+ расход 1к");
+    expect(extractItems).toHaveBeenLastCalledWith(expect.objectContaining({ customCategories: [expect.objectContaining({ name: "Аренда" })] }));
+  });
+
+  it("keeps an open-ended stash without a target", async () => {
+    const cmd = (text: string) => ({ entities: [{ type: "bot_command", offset: 0, length: text.split(" ")[0]!.length }] });
+    mockExtraction([item({ kind: "goal", note: "заначка", amount: null })]);
+    await sendText(bot, "+ копим в заначку");
+    expect(lastSent().payload.text).toContain("Без цели");
+    const goal = (await listActiveGoals(handle.db, 1)).find((g) => g.title === "заначка")!;
+    expect(goal.targetAmount).toBeNull();
+    mockExtraction([item({ kind: "goal_contribution", target: "заначка", amount: 300000 })]);
+    await sendText(bot, "+ в заначку 300к");
+    expect(lastSent().payload.text).toContain("Отложено");
+    expect((await listRecentTransactions(handle.db, 1, 1))[0]).toMatchObject({ goalId: goal.id, category: "savings" });
+    await sendText(bot, "/goals", cmd("/goals"));
+    expect(lastSent().payload.text).toContain("заначка");
+    await sendText(bot, "/summary", cmd("/summary"));
+    expect(lastSent().payload.text).toContain("заначка");
   });
 });

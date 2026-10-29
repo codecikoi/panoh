@@ -127,6 +127,29 @@ describe("computeOutlook", () => {
     expect(past.budgets).toHaveLength(1);
   });
 
+  it("counts every expense against the month total, keeps it first and leaves open stashes without a pace", () => {
+    const stash = goal({ title: "заначка", targetAmount: null, deadline: "2027-01-31" });
+    const put = tx({ amount: 500000, category: "savings", goalId: stash.id, occurredOn: "2026-10-02" });
+    const custom = new Map([["custom_3", { key: "custom_3", kind: "expense" as const, name: "Машина", emoji: "🚗", archived: false }]]);
+    const outlook = computeOutlook({
+      ...base,
+      income: 0,
+      expense: 0,
+      transactions: [tx({ amount: 2600000, category: "groceries" }), tx({ amount: 400000, category: "custom_3" }), put],
+      budgets: [budget("groceries", 3000000), budget("total", 4000000), budget("custom_3", 1000000)],
+      goals: [stash],
+      goalTransactions: [put],
+      categories: custom,
+    });
+    expect(outlook.budgets.map((b) => [b.category, b.spent, b.pct, b.emoji])).toEqual([
+      ["total", 3500000, 88, "🧮"],
+      ["groceries", 2600000, 87, "🛒"],
+      ["custom_3", 400000, 40, "🚗"],
+    ]);
+    expect(outlook.goals[0]).toMatchObject({ target: null, pct: null, saved: 500000, monthlyNeed: null, remainingThisMonth: 0 });
+    expect(outlook.forecast?.goals).toBe(0);
+  });
+
   it("sums plans per month", () => {
     const list = [plan({ amount: 100, currency: "USD", plannedOn: "2026-12-31" }), plan({ amount: 1000000, plannedOn: "2026-12-05" }), plan({ plannedOn: "2026-11-05" })];
     expect(plannedTotalForMonth(list, "2026-12", "UZS", base.rates)).toBe(2280000);

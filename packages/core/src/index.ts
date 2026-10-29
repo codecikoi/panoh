@@ -26,6 +26,11 @@ export type {
   RecordEdit,
   RecordType,
   TriggerConfig,
+  CustomCategory,
+  NewCustomCategory,
+  Balance,
+  NewBalance,
+  Alert,
 } from "./db/schema.js";
 export * from "./ai/extract.js";
 export * from "./ai/insights.js";
@@ -40,5 +45,7 @@ export * from "./services/processed.js";
 export * from "./services/records.js";
 export * from "./services/planning.js";
 export * from "./services/edits.js";
+export * from "./services/categories.js";
+export * from "./services/balance.js";
 export * from "./services/report.js";
 export * from "./telegram/initData.js";

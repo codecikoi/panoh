@@ -32,6 +32,8 @@ Mini App ──▶ apps/api  (Hono, Telegram initData auth) ──▶ packages/c
 * **Bills remind themselves.** A recurring payment reminds N days before and on the day, with a ✅ Paid button that also books the expense.
 * **Plans, limits and savings.** A planned expense («gift 300$ in December», a month or an exact day) reminds on its day with ✅ Paid / snooze / cancel buttons and books the expense with plan-vs-fact. A monthly limit per category adds «🎯 Groceries: $360 of $400 (90%)» to each expense confirmation. A savings goal with a deadline shows the monthly pace; «put 200$ aside for the vacation» records a savings expense linked to the goal.
 * **Free money this month.** The summary adds what is still ahead this month (unpaid bills, open plans, the goals' monthly pace) and the result: income already received − spent − ahead. Future income is deliberately not counted, so a negative number is a real shortfall.
+* **Money on hand.** «We have 800k left» sets a checkpoint; from then on the bot counts the balance from the records («how much is left?», /balance, a line in the summary and the dashboard). Restating the amount shows the gap against the records and starts from the new figure. «Warn me when 100k is left» (or «when groceries have 200k left») fires once when the balance or a limit's remainder drops below the threshold and re-arms when it climbs back. A limit can also cover the whole month («budget for the month 5M»).
+* **Own categories.** «New category Car 🚗» or «new income category Rent» adds a family category next to the built-in ones; the model files records under it, limits and reports work the same, /categories lists and removes them (old records keep the name). A savings goal without a target («rainy-day fund») just counts what was put aside.
 * **Reminders without a time** get the household's default reminder time (09:00 unless changed in /settings) and a 🕒 button to pick another hour; replying «at 15:00» to the confirmation also moves it.
 * **Little personal data.** Message texts and people's names are not stored: only Telegram ids, the language, group titles and the records themselves.
 * **Multi-currency.** Each household has a base currency; other currencies are converted with daily rates (open.er-api.com). Unconverted amounts are shown separately, never silently dropped.
@@ -86,7 +88,9 @@ pnpm db:generate          # new SQL migration after changing packages/core/src/d
 | `/payments` | Recurring payments and their next due dates |
 | `/plans` | Planned expenses, overdue ones marked |
 | `/budgets` | Monthly limits per category with this month's usage; 🗑 buttons remove them |
-| `/goals` | Savings goals: progress, deadline, monthly pace |
+| `/goals` | Savings goals: progress, deadline, monthly pace; open-ended stashes just show what was put aside |
+| `/balance` | Money on hand by the records, what is left of each limit, free money this month |
+| `/categories` | Built-in and own categories; 🗑 buttons remove own ones |
 | `/settings` | Currency, timezone, language, default reminder time (inline buttons); also `/currency EUR`, `/timezone Europe/Berlin`, `/language ru` |
 | `/name` `[new name \| reset]` | Give the assistant its own name in this chat («Kex»); it answers to it like to "Madat" |
 | `/keywords` `[add \| remove words]` | Trigger words for this chat |
@@ -119,5 +123,5 @@ See [docs/DEPLOY.md](docs/DEPLOY.md) for Google Cloud Run + Cloud SQL (recommend
 ## Testing strategy
 
 * `packages/core`: pure-function tests (triggers, money, dates, summary math, initData signatures) and integration tests against an in-memory PGlite with real migrations.
-* `apps/bot`: end-to-end flow tests drive the real grammY bot with a fake Telegram API transformer and a mocked extractor: welcome, expense confirmation, pending → confirm, reply corrections, reminders, recurring payments, payment done, planned expenses (date by reply, plan alert, paid button), limits, savings goals, summary, undo, settings.
+* `apps/bot`: end-to-end flow tests drive the real grammY bot with a fake Telegram API transformer and a mocked extractor: welcome, expense confirmation, pending → confirm, reply corrections, reminders, recurring payments, payment done, planned expenses (date by reply, plan alert, paid button), limits (per category and for the month), savings goals and open stashes, balance checkpoints and threshold alerts, own categories, summary, undo, settings.
 * Prompts are exercised against the live model with `pnpm simulate`.

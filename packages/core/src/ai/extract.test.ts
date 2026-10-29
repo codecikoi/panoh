@@ -14,9 +14,9 @@ describe("normalizeItems", () => {
   it("applies defaults and validates categories", () => {
     const items = normalizeItems(
       [
-        { kind: "expense", amount: 150000, currency: null, category: "groceries", note: "продукты", date: null, date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.95 },
-        { kind: "expense", amount: -20000, currency: "сум", category: "spaceships", note: "такси", date: "2026-10-12", date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 7 },
-        { kind: "none", amount: null, currency: null, category: null, note: "", date: null, date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 1 },
+        { kind: "expense", amount: 150000, currency: null, category: "groceries", note: "продукты", date: null, date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, emoji: null, time_specified: false, confidence: 0.95 },
+        { kind: "expense", amount: -20000, currency: "сум", category: "spaceships", note: "такси", date: "2026-10-12", date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, emoji: null, time_specified: false, confidence: 7 },
+        { kind: "none", amount: null, currency: null, category: null, note: "", date: null, date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, emoji: null, time_specified: false, confidence: 1 },
       ],
       ctx,
     );
@@ -27,7 +27,7 @@ describe("normalizeItems", () => {
 
   it("keeps only changed fields for corrections", () => {
     const [item] = normalizeItems(
-      [{ kind: "correction", amount: 115000, currency: null, category: null, note: "", date: null, date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 }],
+      [{ kind: "correction", amount: 115000, currency: null, category: null, note: "", date: null, date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, emoji: null, time_specified: false, confidence: 0.9 }],
       ctx,
     );
     expect(item?.changed).toEqual({ amount: 115000 });
@@ -36,13 +36,13 @@ describe("normalizeItems", () => {
 
   it("converts reminder times from household timezone and keeps the time_specified flag", () => {
     const [item] = normalizeItems(
-      [{ kind: "reminder", amount: null, currency: null, category: null, note: "позвонить маме", date: null, date_approximate: false, date_to: null, due_at: "2026-10-15T10:00", day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 }],
+      [{ kind: "reminder", amount: null, currency: null, category: null, note: "позвонить маме", date: null, date_approximate: false, date_to: null, due_at: "2026-10-15T10:00", day_of_month: null, remind_days_before: null, target: null, emoji: null, time_specified: false, confidence: 0.9 }],
       ctx,
     );
     expect(item?.dueAt?.toISOString()).toBe("2026-10-15T05:00:00.000Z");
     expect(item?.timeSpecified).toBe(false);
     const [explicit] = normalizeItems(
-      [{ kind: "reminder", amount: null, currency: null, category: null, note: "врач", date: null, date_approximate: false, date_to: null, due_at: "2026-10-15T15:30", day_of_month: null, remind_days_before: null, target: null, time_specified: true, confidence: 0.9 }],
+      [{ kind: "reminder", amount: null, currency: null, category: null, note: "врач", date: null, date_approximate: false, date_to: null, due_at: "2026-10-15T15:30", day_of_month: null, remind_days_before: null, target: null, emoji: null, time_specified: true, confidence: 0.9 }],
       ctx,
     );
     expect(explicit?.timeSpecified).toBe(true);
@@ -51,15 +51,15 @@ describe("normalizeItems", () => {
   it("puts month-only plans on the last day of the month", () => {
     const [plan, exact] = normalizeItems(
       [
-        { kind: "planned_expense", amount: 3000000, currency: null, category: "gifts", note: "подарок на свадьбу", date: "2026-12-01", date_approximate: true, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 },
-        { kind: "planned_expense", amount: 2000000, currency: null, category: null, note: "коляска", date: "2026-10-17", date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 },
+        { kind: "planned_expense", amount: 3000000, currency: null, category: "gifts", note: "подарок на свадьбу", date: "2026-12-01", date_approximate: true, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, emoji: null, time_specified: false, confidence: 0.9 },
+        { kind: "planned_expense", amount: 2000000, currency: null, category: null, note: "коляска", date: "2026-10-17", date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, emoji: null, time_specified: false, confidence: 0.9 },
       ],
       ctx,
     );
     expect(plan).toMatchObject({ date: "2026-12-31", hasDate: true, dateApproximate: true, category: "gifts", timeSpecified: false });
     expect(exact).toMatchObject({ date: "2026-10-17", dateApproximate: false, category: "other" });
     const [fix] = normalizeItems(
-      [{ kind: "correction", amount: null, currency: null, category: null, note: "", date: "2026-12-15", date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, time_specified: false, confidence: 0.9 }],
+      [{ kind: "correction", amount: null, currency: null, category: null, note: "", date: "2026-12-15", date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, emoji: null, time_specified: false, confidence: 0.9 }],
       ctx,
     );
     expect(fix?.changed).toEqual({ date: "2026-12-15", dateApproximate: false });
@@ -84,5 +84,39 @@ describe("normalizeItems", () => {
     expect(buildExtractionUserMessage({ ...ctx, addressed: true })).toContain("addresses the bot directly");
     expect(buildExtractionUserMessage({ ...ctx, addressed: false })).toContain("does not address the bot");
     expect(msg).not.toContain("address");
+  });
+
+  it("files records under the household's own categories, keeps the month total and category requests", () => {
+    const own = { ...ctx, customCategories: [{ key: "custom_12", kind: "expense" as const, name: "Машина" }, { key: "custom_13", kind: "income" as const, name: "Аренда" }] };
+    const raw = (partial: Partial<Parameters<typeof normalizeItems>[0][number]>) => ({
+      kind: "expense" as const, amount: 50000, currency: null, category: null, note: "", date: null, date_approximate: false, date_to: null, due_at: null,
+      day_of_month: null, remind_days_before: null, target: null, emoji: null, time_specified: false, confidence: 0.9, ...partial,
+    });
+    const items = normalizeItems(
+      [
+        raw({ category: "custom_12", note: "мойка" }),
+        raw({ category: "машина", note: "мойка" }),
+        raw({ kind: "income", category: "Аренда", amount: 3000000 }),
+        raw({ kind: "expense", category: "Аренда" }),
+        raw({ kind: "budget_limit", category: "total", amount: 5000000 }),
+        raw({ kind: "expense", category: "total" }),
+        raw({ kind: "balance_request", category: "custom_12", amount: null }),
+        raw({ kind: "balance_alert", category: null, amount: 100000 }),
+        raw({ kind: "category_create", note: "Дача", target: "Income", emoji: "🏡", amount: null }),
+        raw({ kind: "category_create", note: "Хобби", target: null, emoji: null, amount: null }),
+        raw({ kind: "goal", note: "заначка", amount: null }),
+      ],
+      own,
+    );
+    expect(items.map((i) => i.category)).toEqual(["custom_12", "custom_12", "custom_13", "other", "total", "other", "custom_12", null, null, null, null]);
+    expect(items[8]).toMatchObject({ kind: "category_create", note: "Дача", target: "income", emoji: "🏡" });
+    expect(items[9]).toMatchObject({ kind: "category_create", note: "Хобби", target: "expense", emoji: null });
+    expect(items[10]).toMatchObject({ kind: "goal", amount: null });
+    // Without the household list, a custom key is not accepted.
+    expect(normalizeItems([raw({ category: "custom_12" })], ctx)[0]?.category).toBe("other");
+    const msg = buildExtractionUserMessage(own);
+    expect(msg).toContain('Household\'s own expense categories (key = name): custom_12 = "Машина"');
+    expect(msg).toContain('Household\'s own income categories (key = name): custom_13 = "Аренда"');
+    expect(buildExtractionUserMessage({ ...ctx, goals: [{ name: "заначка", target: null, currency: "UZS" }] })).toContain('"заначка" (no target)');
   });
 });

@@ -138,7 +138,7 @@ export const plans = pgTable(
   ],
 );
 
-/** Monthly spending limit for one expense category. */
+/** Monthly spending limit for one expense category, or for the whole month (category = TOTAL_BUDGET, "total"). */
 export const budgets = pgTable(
   "budgets",
   {
@@ -164,7 +164,8 @@ export const goals = pgTable(
       .references(() => households.id, { onDelete: "cascade" }),
     userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
     title: text("title").notNull(),
-    targetAmount: money("target_amount").notNull(),
+    /** Null for an open-ended stash ("заначка"): contributions are counted, there is nothing to reach. */
+    targetAmount: money("target_amount"),
     currency: text("currency").notNull(),
     deadline: date("deadline", { mode: "string" }),
     status: text("status").$type<"active" | "done" | "cancelled">().notNull().default("active"),
@@ -178,6 +179,75 @@ export const goals = pgTable(
     index("goals_household_idx").on(t.householdId, t.status),
     index("goals_bot_msg_idx").on(t.sourceChatId, t.botMessageId),
   ],
+);
+
+/** A category the family added on top of the built-in list; records refer to it as `custom_<id>`. */
+export const customCategories = pgTable(
+  "custom_categories",
+  {
+    id: serial("id").primaryKey(),
+    householdId: integer("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+    kind: text("kind").$type<"expense" | "income">().notNull().default("expense"),
+    name: text("name").notNull(),
+    emoji: text("emoji").notNull().default("📦"),
+    /** Archived categories keep their name for old records but are no longer offered to the model. */
+    status: text("status").$type<"active" | "archived">().notNull().default("active"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("custom_categories_household_idx").on(t.householdId, t.status)],
+);
+
+/**
+ * "We have 800k left": a checkpoint of the money on hand. The current balance is the latest checkpoint plus the
+ * income and minus the expenses recorded after it (and dated on or after its day).
+ */
+export const balances = pgTable(
+  "balances",
+  {
+    id: serial("id").primaryKey(),
+    householdId: integer("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+    amount: money("amount").notNull(),
+    currency: text("currency").notNull(),
+    /** Local date of the checkpoint. */
+    asOf: date("as_of", { mode: "string" }).notNull(),
+    /** What the records said the balance was at that moment (base currency); null for the first checkpoint. */
+    expected: money("expected"),
+    sourceChatId: tgId("source_chat_id"),
+    sourceMessageId: tgId("source_message_id"),
+    botMessageId: tgId("bot_message_id"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("balances_household_idx").on(t.householdId, t.createdAt)],
+);
+
+/**
+ * "Warn me when 100k is left": fires once when the watched value (the balance, or what is left of a category's monthly
+ * limit) drops below the amount, then re-arms once the value climbs back above it.
+ */
+export const alerts = pgTable(
+  "alerts",
+  {
+    householdId: integer("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+    /** "balance", or a category key for its monthly limit. */
+    scope: text("scope").notNull(),
+    amount: money("amount").notNull(),
+    currency: text("currency").notNull(),
+    armed: boolean("armed").notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.scope] })],
 );
 
 export const transactions = pgTable(
@@ -312,4 +382,9 @@ export type Budget = typeof budgets.$inferSelect;
 export type Goal = typeof goals.$inferSelect;
 export type NewGoal = typeof goals.$inferInsert;
 export type RecordEdit = typeof recordEdits.$inferSelect;
+export type CustomCategory = typeof customCategories.$inferSelect;
+export type NewCustomCategory = typeof customCategories.$inferInsert;
+export type Balance = typeof balances.$inferSelect;
+export type NewBalance = typeof balances.$inferInsert;
+export type Alert = typeof alerts.$inferSelect;
 export type RecordType = RecordEdit["recordType"];

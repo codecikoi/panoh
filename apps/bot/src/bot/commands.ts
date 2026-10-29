@@ -4,6 +4,7 @@ import {
   availableLocales,
   currentMonthKey,
   getRates,
+  loadBalance,
   listOpenPlans,
   loadMonthlySummary,
   parsePeriod,
@@ -71,7 +72,9 @@ export function registerCommands(bot: Bot<BotContext>): void {
   bot.command("help", async (ctx) => {
     const scope = ctx.scope;
     const help = t(scope.locale, "help", { prefix: escapeHtml(R.prefixOf(scope)), days: scope.household.remindDaysBefore });
-    await ctx.reply(`${help}\n\n${t(scope.locale, "help.planning")}\n\n${t(scope.locale, "help.report")}\n\n${t(scope.locale, "help.name")}`);
+    await ctx.reply(
+      `${help}\n\n${t(scope.locale, "help.planning")}\n\n${t(scope.locale, "help.balance")}\n\n${t(scope.locale, "help.report")}\n\n${t(scope.locale, "help.name")}`,
+    );
   });
 
   bot.command("summary", async (ctx) => {
@@ -131,6 +134,18 @@ export function registerCommands(bot: Bot<BotContext>): void {
     const scope = ctx.scope;
     const stats = (await loadMonthlySummary(ctx.deps.db, scope.household, currentMonthKey(scope.tz))).outlook.goals;
     await ctx.reply(R.goalsListText(scope, stats));
+  });
+
+  bot.command("balance", async (ctx) => {
+    const scope = ctx.scope;
+    const summary = await loadMonthlySummary(ctx.deps.db, scope.household, currentMonthKey(scope.tz));
+    const balance = await loadBalance(ctx.deps.db, scope.household);
+    await ctx.reply(R.balanceAnswerText(scope, { balance, budgets: summary.outlook.budgets, category: null, spentInCategory: null, forecast: summary.outlook.forecast }));
+  });
+
+  bot.command("categories", async (ctx) => {
+    const kb = R.categoriesKeyboard(ctx.scope);
+    await ctx.reply(R.categoriesListText(ctx.scope), kb ? { reply_markup: kb } : {});
   });
 
   bot.command("name", async (ctx) => {
@@ -216,6 +231,8 @@ const COMMAND_KEYS: { command: string; key: LocaleKey }[] = [
   { command: "plans", key: "cmd.plans" },
   { command: "budgets", key: "cmd.budgets" },
   { command: "goals", key: "cmd.goals" },
+  { command: "balance", key: "cmd.balance" },
+  { command: "categories", key: "cmd.categories" },
   { command: "settings", key: "cmd.settings" },
   { command: "name", key: "cmd.name" },
   { command: "keywords", key: "cmd.keywords" },

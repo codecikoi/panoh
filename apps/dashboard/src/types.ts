@@ -1,4 +1,4 @@
-import type { Insights, MonthlySummary, Plan, RecurringPayment, Reminder, Transaction, MonthOutlook } from "@madat/core";
+import type { CustomCategoryInfo, Insights, MonthlySummary, Plan, RecurringPayment, Reminder, Transaction, MonthOutlook } from "@madat/core";
 
 /** Dates arrive as ISO strings over JSON. */
 type Json<T> = { [K in keyof T]: T[K] extends Date ? string : T[K] extends Date | null ? string | null : T[K] };
@@ -10,6 +10,8 @@ export interface Household {
   baseCurrency: string;
   timezone: string;
   locale: string;
+  /** The family's own categories; their names are merged into the strings as `cat.<key>`. */
+  categories: CustomCategoryInfo[];
 }
 
 export interface MeResponse {

@@ -6,8 +6,10 @@ import {
   getInsights,
   isMember,
   isValidMonthKey,
+  listCustomCategories,
   listHouseholdsForTelegramUser,
   listOpenPlans,
+  toCategoryInfo,
   listOpenReminders,
   listRecurring,
   listTransactionsForMonth,
@@ -17,6 +19,7 @@ import {
   makePeriod,
   nextDue,
   t,
+  type CustomCategoryInfo,
   type Db,
   type Household,
 } from "@madat/core";
@@ -57,9 +60,13 @@ export function createApp(options: ApiOptions): Hono<{ Variables: AuthVariables 
   app.get("/api/me", async (c) => {
     const user = c.get("tgUser");
     const households = await listHouseholdsForTelegramUser(db, user.id);
+    // The family's own categories ride along so the dashboard can name them wherever a key appears.
+    const withCategories = await Promise.all(
+      households.map(async (h) => publicHousehold(h, (await listCustomCategories(db, h.id)).map(toCategoryInfo))),
+    );
     return c.json({
       user: { id: user.id, firstName: user.first_name, username: user.username ?? null, languageCode: user.language_code ?? null },
-      households: households.map(publicHousehold),
+      households: withCategories,
     });
   });
 
@@ -137,7 +144,7 @@ export function createApp(options: ApiOptions): Hono<{ Variables: AuthVariables 
   return app;
 }
 
-function publicHousehold(h: Household) {
+function publicHousehold(h: Household, categories: CustomCategoryInfo[] = []) {
   return {
     id: h.id,
     title: h.title,
@@ -145,5 +152,6 @@ function publicHousehold(h: Household) {
     baseCurrency: h.baseCurrency,
     timezone: h.timezone,
     locale: h.locale,
+    categories,
   };
 }

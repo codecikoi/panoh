@@ -3,8 +3,8 @@ import type { CategoryStat } from "@madat/core";
 import { categoryIcon } from "@madat/core/categories";
 import { apiPost } from "../api";
 import { monthChanges } from "../changes";
-import { CategoryName, LoadError, Loading, Plate, Row, ShareBar } from "../components";
-import { formatMoney, formatMoneyCompact, formatPercent, lastDayOf, monthLabel } from "../format";
+import { CategoryName, Icon, LoadError, Loading, Plate, Row, ShareBar } from "../components";
+import { dayLabel, formatMoney, formatMoneyCompact, formatPercent, lastDayOf, monthLabel } from "../format";
 import { useI18n } from "../i18n";
 import { tg } from "../telegram";
 import type { Household, SummaryResponse } from "../types";
@@ -76,6 +76,14 @@ export function MonthScreen({ household, month }: { household: Household; month:
         )}
       </div>
       {f && f.ahead > 0 && f.free < 0 ? <div className="toast">{t("dash.only_received")}</div> : null}
+      {s.balance && s.balance.current !== null ? (
+        <div className="card pad balance">
+          <Icon name="wallet" />
+          <span>{t("dash.money_left")}</span>
+          <b className="num">{money(s.balance.current)}</b>
+          <span className="meta">{t("dash.since", { date: dayLabel(s.balance.asOf, locale, true) })}</span>
+        </div>
+      ) : null}
 
       <div className="section-title">{t("dash.changes")}</div>
       <div className="card pad">

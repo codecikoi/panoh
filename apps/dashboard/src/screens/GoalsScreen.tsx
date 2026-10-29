@@ -48,9 +48,9 @@ export function GoalsScreen({ household }: { household: Household }) {
               icon="piggy-bank"
               label={g.title}
               pct={g.pct}
-              amounts={`${money(g.saved, g.currency)} / ${money(g.target, g.currency)}`}
-              {...(g.deadline ? { status: t("dash.goal_deadline", { date: deadline(g.deadline) }) } : {})}
-              {...(g.monthlyNeed && g.saved < g.target ? { note: t("report.goal_pace", { amount: money(g.monthlyNeed, g.currency) }) } : {})}
+              amounts={g.target === null ? money(g.saved, g.currency) : `${money(g.saved, g.currency)} / ${money(g.target, g.currency)}`}
+              {...(g.target === null ? { status: t("dash.goal_open") } : g.deadline ? { status: t("dash.goal_deadline", { date: deadline(g.deadline) }) } : {})}
+              {...(g.monthlyNeed && g.target !== null && g.saved < g.target ? { note: t("report.goal_pace", { amount: money(g.monthlyNeed, g.currency) }) } : {})}
             />
           ))
         ) : (

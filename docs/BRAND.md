@@ -71,7 +71,8 @@ product needs are vendored as inner SVG markup in `packages/core/src/brand/icons
 (`packages/core/src/categories.ts`) next to the emoji map; new categories get both.
 
 Tabs: month `chart-column`, operations `receipt`, plans `calendar`, goals `target`. Payments `credit-card`, reminders `bell`,
-savings `piggy-bank`, overdue and pending `hourglass`, limit warning `triangle-alert`, limit exceeded `octagon-alert`.
+savings `piggy-bank`, overdue and pending `hourglass`, limit warning `triangle-alert`, limit exceeded `octagon-alert`,
+the month budget and money on hand `wallet`, a family's own category `tag` (its emoji stays in chat).
 
 ## Emoji in chat
 
@@ -84,11 +85,13 @@ always at the start of the line:
 | 🗑 | deleted, cancel |
 | ✏️ | edit, updated |
 | 🤔 | a question back, waiting for confirmation, nothing recognised |
-| ⚠️ / 🚨 | attention (limit at 80%+, shortfall) / limit exceeded |
-| ⏰ / 🔁 / 💳 | reminder / recurring payment / payment alert |
+| ⚠️ / 🚨 | attention (limit at 80%+, shortfall, threshold alert fired) / limit exceeded |
+| ⏰ / 🔁 / 💳 | reminder, threshold alert set / recurring payment / payment alert |
 | 🗓 | plan, date, upcoming |
 | ⏳ | still ahead, overdue, snoozed, preparing |
 | 🎯 / 💰 | limit, tip / savings, income |
+| 🧮 | money on hand (balance), the month budget |
+| 🏷 | categories, biggest spends |
 | 📊 / 📄 | summary, dashboard / PDF report |
 | 💡 / 👋 / 🎉 | insight / greeting / celebration |
 

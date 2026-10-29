@@ -5,7 +5,9 @@ import {
   cleanupStalePending,
   dueReminders,
   ensureRemindersFor,
+  evaluateAlerts,
   getHouseholdById,
+  listHouseholdsWithAlerts,
   getPlan,
   getRecurring,
   listAllActiveRecurring,
@@ -21,8 +23,8 @@ import {
   updateReminder,
   type Household,
 } from "@madat/core";
-import { scopeFromHousehold, type Deps } from "./bot/context.js";
-import { alertKeyboard, alertText } from "./bot/render.js";
+import { loadScope, scopeFromHousehold, type Deps } from "./bot/context.js";
+import { alertFiredText, alertKeyboard, alertText } from "./bot/render.js";
 import { sendSummary } from "./bot/summary.js";
 import { isChatGone } from "./bot/telegram.js";
 
@@ -106,10 +108,26 @@ export function createScheduler(api: Api, deps: Deps): Scheduler {
         await updateHousehold(deps.db, h.id, { lastMonthlySummary: prevMonth });
         householdCache.delete(h.id);
         if (!rows.length) continue;
-        const scope = scopeFromHousehold(h);
+        const scope = await loadScope(deps.db, h);
         await sendSummary(api, deps, scope, h.telegramChatId, prevMonth, { intro: t(h.locale, "summary.monthly_auto") });
       } catch (err) {
         if (!isChatGone(err)) log.error("monthly summary failed", { err, householdId: h.id });
+      }
+    }
+  }
+
+  /** Threshold alerts: the bot checks them right after a record; this catches edits made elsewhere (dashboard, deletions). */
+  async function thresholdAlerts(): Promise<void> {
+    for (const id of await listHouseholdsWithAlerts(deps.db)) {
+      const h = await household(id);
+      if (!h) continue;
+      try {
+        const fired = await evaluateAlerts(deps.db, h);
+        if (!fired.length) continue;
+        const scope = await loadScope(deps.db, h);
+        for (const event of fired) await api.sendMessage(h.telegramChatId, alertFiredText(scope, event));
+      } catch (err) {
+        if (!isChatGone(err)) log.error("threshold alert failed", { err, householdId: id });
       }
     }
   }
@@ -134,6 +152,7 @@ export function createScheduler(api: Api, deps: Deps): Scheduler {
     try {
       await hourlyJobs();
       await sendDueReminders();
+      await thresholdAlerts();
       await monthlySummaries();
     } catch (err) {
       log.error("scheduler tick failed", { err });
