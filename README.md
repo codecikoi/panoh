@@ -1,6 +1,6 @@
 # Madat
 
-A friendly family helper for money that lives in your Telegram chat. Mention an expense, an income, a bill, a planned purchase or a reminder in your own words and Madat keeps the books, nudges you about payments, watches limits and savings goals, tells you how much free money is left this month and sends a monthly summary with insights.
+A family butler for money that lives in your Telegram chat. Mention an expense, an income, a bill, a planned purchase or a reminder in your own words and Madat keeps the books, nudges you about payments, watches limits and savings goals, tells you how much free money is left this month and sends a monthly summary with insights.
 
 ```
 + groceries 45$                      → ✍ Expense · $45 · 🛒 Groceries

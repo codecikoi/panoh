@@ -1,9 +1,9 @@
 export const en = {
   "app.name": "Madat",
-  "bot.name": "Madat — Family Helper",
+  "bot.name": "Madat — Family Butler",
   "bot.short_description": "Write expenses as usual — Madat keeps the family budget, plans, limits and savings, and reminds you about bills.",
   "bot.description":
-    "👋 I'm Madat, your family helper.\n\nJust write like you would to a person:\n• groceries 45$\n• salary 3000$ received\n• gift for the wedding 300$ in December\n• saving for a vacation 2000$ by July\n\nI record expenses and income, remind you about bills, plan upcoming spending, watch category limits and savings goals, and show how much free money is left this month.\n\nUse me in a private chat or add me to a group with your partner.",
+    "👋 I'm Madat, your family butler.\n\nJust write like you would to a person:\n• groceries 45$\n• salary 3000$ received\n• gift for the wedding 300$ in December\n• saving for a vacation 2000$ by July\n\nI record expenses and income, remind you about bills, plan upcoming spending, watch category limits and savings goals, and show how much free money is left this month.\n\nUse me in a private chat or add me to a group with your partner.",
 
   "cmd.start": "Start / setup",
   "cmd.help": "How to use",
@@ -16,7 +16,7 @@ export const en = {
   "cmd.keywords": "Trigger keywords",
 
   "welcome.private":
-    "👋 Hi, I'm {app}, your family finance buddy.\n\nJust write to me like you'd write to a person:\n• <i>groceries 45$</i>\n• <i>salary 3000$ received</i>\n• <i>remind me on Friday to pay for the kindergarten</i>\n• <i>loan 300$ every month on the 15th</i>\n\nI'll keep track of everything and give you a monthly summary with /summary.\n\n💡 Add me to a group with your partner to track a shared budget.",
+    "👋 Hi, I'm {app}, your family butler.\n\nJust write to me like you'd write to a person:\n• <i>groceries 45$</i>\n• <i>salary 3000$ received</i>\n• <i>remind me on Friday to pay for the kindergarten</i>\n• <i>loan 300$ every month on the 15th</i>\n\nI'll keep track of everything and give you a monthly summary with /summary.\n\n💡 Add me to a group with your partner to track a shared budget.",
   "welcome.group":
     "👋 Hi! I'm {app}. I'll help this chat keep track of expenses, income, reminders and bills.\n\nI only react to marked messages:\n• start with <b>{prefix}</b> → <i>{prefix} groceries 45$</i>\n• mention me → <i>@{bot} remind me on Friday to pay the rent</i>\n• or call me by name → <i>{name} remind me on Friday to pay the rent</i>\n• or use keywords like <i>spent, paid, remind, salary</i>\n• messages with an amount and currency are also picked up\n\nEverything else in the chat is ignored and never stored.\n\n⚙️ Currency: <b>{currency}</b> · Timezone: <b>{timezone}</b> · Language: <b>{language}</b>\nChange with /settings. Get your monthly overview with /summary.",
   "welcome.privacy_warning":
@@ -248,7 +248,7 @@ export const en = {
   "report.col_note": "Note",
   "report.goal_pace": "≈ {amount} a month to make it",
   "report.transactions": "All records ({count})",
-  "report.footer": "family helper in Telegram",
+  "report.footer": "family butler in Telegram",
   "dash.tab_month": "Month",
   "dash.tab_operations": "Records",
   "dash.tab_plans": "Plans",

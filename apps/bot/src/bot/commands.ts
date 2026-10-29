@@ -237,7 +237,7 @@ export async function setCommands(bot: Bot<BotContext>): Promise<void> {
 }
 
 /**
- * Display name ("Madat — Family Helper") and the descriptions shown before /start, per language.
+ * Display name ("Madat — Family Butler") and the descriptions shown before /start, per language.
  * Telegram rate-limits these setters hard (setMyName especially), so read first and only write what changed.
  */
 export async function setProfile(bot: Bot<BotContext>): Promise<void> {

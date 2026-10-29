@@ -546,7 +546,7 @@ describe("bot flow", () => {
     expect(lastSent().payload.text).toContain("Расход");
 
     await sendText(bot, "/settings", cmd("/settings"));
-    expect(lastSent().payload.text).toContain("Имя помощника: <b>Кексик</b>");
+    expect(lastSent().payload.text).toContain("Имя ассистента: <b>Кексик</b>");
 
     // Renamed by a plain request; the built-in name still works.
     mockExtraction([item({ kind: "rename", note: "Пончик" })]);

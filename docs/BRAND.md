@@ -8,8 +8,11 @@ there changes both. Chat messages are plain Telegram text and use a small, fixed
 
 **Madat** (also *madad*): "help" in Arabic, Persian, Uzbek and Tajik. Two syllables, reads the same in every script,
 and does not collide with everyday words, so "Madat, groceries 150k" is unambiguous as an address to the bot.
-The Telegram display name is "Madat — family helper" (set by the bot on start-up, in 30 languages). Families may rename
-the assistant for their own chat (`/name`); the brand name and the mark stay the same.
+The Telegram display name is set by the bot on start-up, in 30 languages. In English it is "Madat — Family Butler";
+the same persona is used where "butler" is a native, warm word (de, fr, es, it, pt, nl, ro, pl, zh, ja, ko, vi).
+The CIS locales (ru, uk, uz, kk, ky, tg, az) say "family assistant", and so do the languages where "butler" translates
+as "servant" (ar, fa, he, hi, ur, bn, id, ms, th, tr). Families may rename the assistant for their own chat (`/name`);
+the brand name and the mark stay the same.
 
 ## Voice
 
