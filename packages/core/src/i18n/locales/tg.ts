@@ -323,4 +323,12 @@ export const tg: LocaleStrings = {
   "dash.money_left": "Пули дар даст",
   "dash.since": "аз {date}",
   "dash.goal_open": "бе ҳадаф",
+  "summary.spent_by": "👥 Кӣ чанд харҷ кард: {list}",
+  "balance.trail": "Ин {start} (санҷиши {date}) + даромад {income} − хароҷот {expense} аст.",
+  "confirm.balance_category": "🎯 {category}: <b>{left}</b> аз лимити {limit} монд\nДар ин моҳ сарф шуд: {spent}",
+  "correction.item_missing": "🤔 Дар ин сабт позитсияи «{item}»-ро наёфтам.",
+  "correction.item_currency": "🤔 Позитсияҳои як сабт бояд дар як асъор бошанд ({currency}). {amount}-ро алоҳида сабт кунед.",
+  "report.spent_by": "Кӣ чанд харҷ кард",
+  "report.col_who": "Кӣ",
+  "dash.spent_by": "Кӣ чанд харҷ кард",
 };

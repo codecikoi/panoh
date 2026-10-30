@@ -11,6 +11,8 @@ import { getRates } from "./rates.js";
 import { EMPTY_OUTLOOK, computeOutlook, listActiveGoals, listBudgets, listGoalTransactions, listOpenPlans, type MonthOutlook } from "./planning.js";
 import { loadCategoryLookup } from "./categories.js";
 import { loadBalance } from "./balance.js";
+import { loadMemberNames } from "./households.js";
+import { splitByAuthor } from "./items.js";
 
 export interface CategoryStat {
   category: string;
@@ -36,6 +38,18 @@ export interface UpcomingPaymentInfo {
   currency: string;
   date: string;
   daysLeft: number;
+}
+
+/** What one member of the family spent and received over the period (base currency). */
+export interface PersonStat {
+  userId: number;
+  name: string;
+  expense: number;
+  income: number;
+  /** Share of the expenses attributed to a known member, 0–100. */
+  share: number;
+  /** Records (or positions of records) by this person. */
+  count: number;
 }
 
 /** The money on hand by the records (see services/balance.ts), for the current month. */
@@ -86,6 +100,8 @@ export interface MonthlySummary {
   customCategories: Record<string, CustomCategoryInfo>;
   /** Money on hand by the records; only for the current month and only once the family told the bot a balance. */
   balance: BalanceSummary | null;
+  /** Who spent and received how much; only members whose name is known, biggest spender first. */
+  byPerson: PersonStat[];
 }
 
 export interface SummaryInput {
@@ -101,6 +117,8 @@ export interface SummaryInput {
   outlook?: MonthOutlook;
   categories?: CategoryLookup;
   balance?: BalanceSummary | null;
+  /** First names by user id, for the per-person split. */
+  members?: ReadonlyMap<number, string>;
 }
 
 function baseAmount(tx: Transaction, currency: string): number | null {
@@ -166,6 +184,30 @@ export function buildCategoryStats(
   return { stats, total: roundMoney(total), prevTotal: roundMoney(prevTotal), unconverted };
 }
 
+/** Per-person totals: a record counts for its author, a record with several positions for the author of each position. */
+export function buildPersonStats(rows: Transaction[], currency: string, names: ReadonlyMap<number, string>): PersonStat[] {
+  const sums = new Map<number, PersonStat>();
+  for (const tx of rows) {
+    if (tx.status !== "confirmed") continue;
+    const base = baseAmount(tx, currency);
+    if (base === null) continue;
+    for (const part of splitByAuthor(tx, base)) {
+      if (part.userId === null) continue;
+      const name = names.get(part.userId);
+      if (!name) continue;
+      const stat = sums.get(part.userId) ?? { userId: part.userId, name, expense: 0, income: 0, share: 0, count: 0 };
+      if (tx.kind === "income") stat.income += part.amount;
+      else stat.expense += part.amount;
+      stat.count += 1;
+      sums.set(part.userId, stat);
+    }
+  }
+  const total = [...sums.values()].reduce((sum, s) => sum + s.expense, 0);
+  return [...sums.values()]
+    .map((s) => ({ ...s, expense: roundMoney(s.expense), income: roundMoney(s.income), share: total > 0 ? Math.round((s.expense / total) * 100) : 0 }))
+    .sort((a, b) => b.expense - a.expense || b.income - a.income);
+}
+
 export function computeSummary(input: SummaryInput): MonthlySummary {
   const { month, currency, now } = input;
   const prevMonth = shiftMonthKey(month, -1);
@@ -229,18 +271,20 @@ export function computeSummary(input: SummaryInput): MonthlySummary {
     outlook: input.outlook ?? EMPTY_OUTLOOK,
     customCategories: Object.fromEntries([...(input.categories ?? new Map()).entries()]),
     balance: input.balance ?? null,
+    byPerson: buildPersonStats(input.transactions, currency, input.members ?? new Map()),
   };
 }
 
 export async function loadMonthlySummary(db: Db, household: Household, month = currentMonthKey(household.timezone)): Promise<MonthlySummary> {
   const prevMonth = shiftMonthKey(month, -1);
-  const [transactions, withPending, prevTransactions, recurring, open, categories] = await Promise.all([
+  const [transactions, withPending, prevTransactions, recurring, open, categories, members] = await Promise.all([
     listTransactionsForMonth(db, household.id, month),
     listTransactionsForMonth(db, household.id, month, { includePending: true }),
     listTransactionsForMonth(db, household.id, prevMonth),
     listRecurring(db, household.id),
     listOpenReminders(db, household.id, 100),
     loadCategoryLookup(db, household.id),
+    loadMemberNames(db, household.id),
   ]);
   const range = monthDateRange(month);
   const from = DateTime.fromISO(range.start, { zone: household.timezone }).toJSDate();
@@ -277,6 +321,7 @@ export async function loadMonthlySummary(db: Db, household: Household, month = c
     balance: balanceInfo
       ? { current: balanceInfo.current, asOf: balanceInfo.checkpoint.asOf, amount: balanceInfo.checkpoint.amount, currency: balanceInfo.checkpoint.currency }
       : null,
+    members,
   });
   summary.outlook = computeOutlook({
     month,

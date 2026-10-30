@@ -323,4 +323,12 @@ export const fa: LocaleStrings = {
   "dash.money_left": "موجودی",
   "dash.since": "از {date}",
   "dash.goal_open": "بدون هدف",
+  "summary.spent_by": "👥 هر کس چقدر خرج کرد: {list}",
+  "balance.trail": "یعنی {start} (اعلام‌شده در {date}) + درآمد {income} − هزینه {expense}.",
+  "confirm.balance_category": "🎯 {category}: <b>{left}</b> از سقف {limit} مانده\nخرج این ماه: {spent}",
+  "correction.item_missing": "🤔 قلمی به نام «{item}» در این ثبت پیدا نکردم.",
+  "correction.item_currency": "🤔 اقلام یک ثبت باید همه به یک ارز باشند ({currency}). {amount} را جدا ثبت کن.",
+  "report.spent_by": "هر کس چقدر خرج کرد",
+  "report.col_who": "شخص",
+  "dash.spent_by": "هر کس چقدر خرج کرد",
 };

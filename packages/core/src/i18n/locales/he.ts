@@ -323,4 +323,12 @@ export const he: LocaleStrings = {
   "dash.money_left": "כסף שנשאר",
   "dash.since": "מ-{date}",
   "dash.goal_open": "בלי יעד",
+  "summary.spent_by": "👥 מי הוציא כמה: {list}",
+  "balance.trail": "כלומר {start} (עדכון מ-{date}) + הכנסות {income} − הוצאות {expense}.",
+  "confirm.balance_category": "🎯 {category}: נשארו <b>{left}</b> מתוך מגבלה של {limit}\nהוצאתם החודש: {spent}",
+  "correction.item_missing": "🤔 לא מצאתי פריט «{item}» ברשומה הזו.",
+  "correction.item_currency": "🤔 כל הפריטים ברשומה אחת הם באותו מטבע ({currency}). רשמו את {amount} בנפרד.",
+  "report.spent_by": "מי הוציא כמה",
+  "report.col_who": "מי",
+  "dash.spent_by": "מי הוציא כמה",
 };

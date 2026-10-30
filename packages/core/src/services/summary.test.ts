@@ -16,6 +16,7 @@ function tx(partial: Partial<Transaction>): Transaction {
     baseCurrency: "UZS",
     category: "other",
     note: "",
+    items: null,
     occurredOn: "2026-10-05",
     status: "confirmed",
     confidence: 1,
@@ -71,6 +72,31 @@ describe("computeSummary", () => {
     expect(summary.openReminders).toBe(2);
     expect(summary.newCategories.map((c) => c.category)).toEqual(["loans"]);
     expect(summary.droppedCategories).toEqual([]);
+  });
+
+  it("attributes spending to the members who recorded it, position by position", () => {
+    const summary = computeSummary({
+      month: "2026-10",
+      currency: "UZS",
+      now,
+      members: new Map([
+        [1, "Zoir"],
+        [2, "Malika"],
+      ]),
+      transactions: [
+        tx({ amount: 333000, category: "groceries", note: "корзинка + виноград", userId: 1, items: [{ amount: 313000, note: "корзинка", userId: 1 }, { amount: 20000, note: "виноград", userId: 2 }] }),
+        tx({ amount: 80000, category: "dining", userId: 2 }),
+        tx({ amount: 10, currency: "USD", amountBase: 128000, category: "transport", userId: 2 }),
+        tx({ amount: 50000, category: "transport", userId: 3 }), // name unknown: not attributed
+        tx({ amount: 5000, category: "other", userId: null }),
+        tx({ kind: "income", amount: 9000000, category: "salary", userId: 1 }),
+      ],
+      prevTransactions: [],
+    });
+    expect(summary.byPerson).toEqual([
+      { userId: 1, name: "Zoir", expense: 313000, income: 9000000, share: 58, count: 2 },
+      { userId: 2, name: "Malika", expense: 228000, income: 0, share: 42, count: 3 },
+    ]);
   });
 
   it("handles empty months", () => {

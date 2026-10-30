@@ -339,6 +339,14 @@ export const en = {
   "dash.money_left": "Money left",
   "dash.since": "since {date}",
   "dash.goal_open": "no target",
+  "summary.spent_by": "👥 Spent by: {list}",
+  "balance.trail": "That is {start} (checkpoint {date}) + income {income} − expenses {expense}.",
+  "confirm.balance_category": "🎯 {category}: <b>{left}</b> left of the {limit} limit\nSpent this month: {spent}",
+  "correction.item_missing": "🤔 I can't find a position «{item}» in this record.",
+  "correction.item_currency": "🤔 Positions of one record share its currency ({currency}). Record {amount} separately.",
+  "report.spent_by": "Who spent what",
+  "report.col_who": "Who",
+  "dash.spent_by": "Who spent what",
 } as const;
 
 export type LocaleStrings = { [K in keyof typeof en]: string };

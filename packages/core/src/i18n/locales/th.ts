@@ -323,4 +323,12 @@ export const th: LocaleStrings = {
   "dash.money_left": "เงินที่มี",
   "dash.since": "ตั้งแต่ {date}",
   "dash.goal_open": "ไม่มีเป้า",
+  "summary.spent_by": "👥 ใครใช้ไปเท่าไหร่: {list}",
+  "balance.trail": "มาจาก {start} (แจ้งไว้เมื่อ {date}) + รายรับ {income} − รายจ่าย {expense}",
+  "confirm.balance_category": "🎯 {category}: เหลือ <b>{left}</b> จากวงเงิน {limit}\nใช้ไปแล้วเดือนนี้: {spent}",
+  "correction.item_missing": "🤔 ไม่พบรายการย่อย «{item}» ในรายการนี้",
+  "correction.item_currency": "🤔 รายการย่อยในรายการเดียวกันต้องใช้สกุลเงินเดียวกัน ({currency}) บันทึก {amount} แยกต่างหากนะ",
+  "report.spent_by": "ใครใช้ไปเท่าไหร่",
+  "report.col_who": "ใคร",
+  "dash.spent_by": "ใครใช้ไปเท่าไหร่",
 };

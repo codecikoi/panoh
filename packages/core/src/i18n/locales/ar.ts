@@ -323,4 +323,12 @@ export const ar: LocaleStrings = {
   "dash.money_left": "المال المتبقي",
   "dash.since": "منذ {date}",
   "dash.goal_open": "بدون هدف",
+  "summary.spent_by": "👥 الإنفاق حسب الشخص: {list}",
+  "balance.trail": "أي {start} (مطابقة {date}) + الدخل {income} − المصروفات {expense}.",
+  "confirm.balance_category": "🎯 {category}: بقي <b>{left}</b> من حد {limit}\nالمصروف هذا الشهر: {spent}",
+  "correction.item_missing": "🤔 لم أجد بندًا باسم «{item}» في هذا السجل.",
+  "correction.item_currency": "🤔 بنود السجل الواحد تكون بعملة واحدة ({currency}). سجّل {amount} على حدة.",
+  "report.spent_by": "الإنفاق حسب الشخص",
+  "report.col_who": "من",
+  "dash.spent_by": "الإنفاق حسب الشخص",
 };

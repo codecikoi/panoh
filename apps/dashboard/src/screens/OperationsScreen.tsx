@@ -16,6 +16,9 @@ export function OperationsScreen({ household, month }: { household: Household; m
 
   const all = res.data.transactions;
   const categories = [...new Set(all.map((tx) => tx.category))];
+  // Names only in a group: in a private chat there is one person.
+  const names = new Map(household.chatType === "private" ? [] : household.members.map((m) => [m.id, m.name]));
+  const who = (userId: number | null) => (userId === null ? "" : (names.get(userId) ?? ""));
   const rows = filter ? all.filter((tx) => tx.category === filter) : all;
   const days = new Map<string, Tx[]>();
   for (const tx of rows) days.set(tx.occurredOn, [...(days.get(tx.occurredOn) ?? []), tx]);
@@ -46,7 +49,7 @@ export function OperationsScreen({ household, month }: { household: Household; m
                   {tx.kind === "income" ? "+" : "−"}
                   {formatMoney(tx.amount, tx.currency, locale)}
                 </div>
-                <div className="meta">{tx.note}</div>
+                <div className="meta">{[tx.note, who(tx.userId)].filter(Boolean).join(" · ")}</div>
                 <div className="meta right num">
                   {tx.status === "pending" ? (
                     <span className="pending">
@@ -56,6 +59,16 @@ export function OperationsScreen({ household, month }: { household: Household; m
                   ) : null}
                   {tx.currency !== household.baseCurrency && tx.amountBase !== null ? `≈ ${formatMoney(tx.amountBase, household.baseCurrency, locale)}` : null}
                 </div>
+                {tx.items && tx.items.length > 1 ? (
+                  <div className="items">
+                    {tx.items.map((i, n) => (
+                      <div key={n}>
+                        <span>{[i.note, who(i.userId)].filter(Boolean).join(" · ")}</span>
+                        <span className="num">{formatMoney(i.amount, tx.currency, locale)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </Row>
             ))}
           </div>

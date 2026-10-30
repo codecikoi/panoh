@@ -341,4 +341,12 @@ export const uz: LocaleStrings = {
   "dash.money_left": "Qoldiq",
   "dash.since": "{date} dan beri",
   "dash.goal_open": "maqsadsiz",
+  "summary.spent_by": "👥 Kim qancha sarfladi: {list}",
+  "balance.trail": "Bu {start} ({date} tekshiruvi) + daromad {income} − xarajat {expense}.",
+  "confirm.balance_category": "🎯 {category}: {limit} limitdan <b>{left}</b> qoldi\nBu oyda sarflandi: {spent}",
+  "correction.item_missing": "🤔 Bu yozuvda «{item}» pozitsiyasini topmadim.",
+  "correction.item_currency": "🤔 Bitta yozuvning pozitsiyalari bir valyutada bo'lishi kerak ({currency}). {amount} ni alohida yozing.",
+  "report.spent_by": "Kim qancha sarfladi",
+  "report.col_who": "Kim",
+  "dash.spent_by": "Kim qancha sarfladi",
 };

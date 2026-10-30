@@ -57,12 +57,21 @@ export const households = pgTable(
   (t) => [uniqueIndex("households_chat_idx").on(t.telegramChatId)],
 );
 
+/** One position of a record with several ("groceries 313k + grapes 20k"), with who added it. */
+export interface TransactionItem {
+  amount: number;
+  note: string;
+  userId: number | null;
+}
+
 export const users = pgTable(
   "users",
   {
     id: serial("id").primaryKey(),
     telegramUserId: tgId("telegram_user_id").notNull(),
     locale: text("locale"),
+    /** Telegram first name, refreshed on every message, so records can say who made them. */
+    firstName: text("first_name"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -265,6 +274,8 @@ export const transactions = pgTable(
     baseCurrency: text("base_currency").notNull(),
     category: text("category").notNull(),
     note: text("note").notNull().default(""),
+    /** Positions when the record was built up by replies ("add 20k grapes"); null for a plain record. amount is their sum. */
+    items: jsonb("items").$type<TransactionItem[]>(),
     occurredOn: date("occurred_on", { mode: "string" }).notNull(),
     status: text("status").$type<"confirmed" | "pending" | "deleted">().notNull().default("confirmed"),
     confidence: real("confidence"),
@@ -329,7 +340,7 @@ export const recordEdits = pgTable(
     householdId: integer("household_id")
       .notNull()
       .references(() => households.id, { onDelete: "cascade" }),
-    recordType: text("record_type").$type<"transaction" | "reminder" | "recurring" | "plan" | "goal">().notNull(),
+    recordType: text("record_type").$type<"transaction" | "reminder" | "recurring" | "plan" | "goal" | "balance">().notNull(),
     recordId: integer("record_id").notNull(),
     before: jsonb("before").$type<Record<string, unknown>>().notNull(),
     after: jsonb("after").$type<Record<string, unknown>>().notNull(),

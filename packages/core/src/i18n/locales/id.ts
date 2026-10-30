@@ -323,4 +323,12 @@ export const id: LocaleStrings = {
   "dash.money_left": "Uang di tangan",
   "dash.since": "sejak {date}",
   "dash.goal_open": "tanpa target",
+  "summary.spent_by": "👥 Pengeluaran per orang: {list}",
+  "balance.trail": "Rinciannya: {start} (patokan {date}) + pemasukan {income} − pengeluaran {expense}.",
+  "confirm.balance_category": "🎯 {category}: sisa <b>{left}</b> dari batas {limit}\nTerpakai bulan ini: {spent}",
+  "correction.item_missing": "🤔 Aku tidak menemukan item «{item}» di catatan ini.",
+  "correction.item_currency": "🤔 Item dalam satu catatan harus memakai mata uang yang sama ({currency}). Catat {amount} secara terpisah.",
+  "report.spent_by": "Pengeluaran per orang",
+  "report.col_who": "Siapa",
+  "dash.spent_by": "Pengeluaran per orang",
 };

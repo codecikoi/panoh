@@ -323,4 +323,12 @@ export const ro: LocaleStrings = {
   "dash.money_left": "Bani rămași",
   "dash.since": "din {date}",
   "dash.goal_open": "fără țintă",
+  "summary.spent_by": "👥 Cheltuit de: {list}",
+  "balance.trail": "Adică {start} (reper din {date}) + venituri {income} − cheltuieli {expense}.",
+  "confirm.balance_category": "🎯 {category}: au rămas <b>{left}</b> din limita de {limit}\nCheltuit luna aceasta: {spent}",
+  "correction.item_missing": "🤔 Nu găsesc poziția „{item}” în această înregistrare.",
+  "correction.item_currency": "🤔 Pozițiile unei înregistrări au aceeași monedă ({currency}). Înregistrează {amount} separat.",
+  "report.spent_by": "Cine cât a cheltuit",
+  "report.col_who": "Cine",
+  "dash.spent_by": "Cine cât a cheltuit",
 };

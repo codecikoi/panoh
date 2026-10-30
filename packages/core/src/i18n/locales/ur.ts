@@ -323,4 +323,12 @@ export const ur: LocaleStrings = {
   "dash.money_left": "ہاتھ میں رقم",
   "dash.since": "{date} سے",
   "dash.goal_open": "بغیر ہدف",
+  "summary.spent_by": "👥 کس نے کتنا خرچ کیا: {list}",
+  "balance.trail": "یعنی {start} ({date} کو بتائی گئی رقم) + آمدنی {income} − اخراجات {expense}۔",
+  "confirm.balance_category": "🎯 {category}: {limit} کی حد میں سے <b>{left}</b> باقی\nاس مہینے خرچ: {spent}",
+  "correction.item_missing": "🤔 اس اندراج میں «{item}» نام کی کوئی آئٹم نہیں ملی۔",
+  "correction.item_currency": "🤔 ایک اندراج کی تمام آئٹمز ایک ہی کرنسی میں ہوتی ہیں ({currency})۔ {amount} الگ سے درج کریں۔",
+  "report.spent_by": "کس نے کتنا خرچ کیا",
+  "report.col_who": "کون",
+  "dash.spent_by": "کس نے کتنا خرچ کیا",
 };

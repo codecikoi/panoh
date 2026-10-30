@@ -3,7 +3,7 @@ import type { CategoryStat } from "@madat/core";
 import { categoryIcon } from "@madat/core/categories";
 import { apiPost } from "../api";
 import { monthChanges } from "../changes";
-import { CategoryName, Icon, LoadError, Loading, Plate, Row, ShareBar } from "../components";
+import { Bar, CategoryName, Icon, LoadError, Loading, Plate, Row, ShareBar } from "../components";
 import { dayLabel, formatMoney, formatMoneyCompact, formatPercent, lastDayOf, monthLabel } from "../format";
 import { useI18n } from "../i18n";
 import { tg } from "../telegram";
@@ -41,6 +41,8 @@ export function MonthScreen({ household, month }: { household: Household; month:
 
   const changes = monthChanges(s);
   const signed = (n: number) => (n > 0 ? "+" : n < 0 ? "−" : "") + money(Math.abs(n));
+  // Who spent what: only in a group and only when at least two members have expenses.
+  const spenders = household.chatType === "private" ? [] : s.byPerson.filter((p) => p.expense > 0);
 
   return (
     <>
@@ -119,6 +121,25 @@ export function MonthScreen({ household, month }: { household: Household; month:
           ))}
         </div>
       </div>
+
+      {spenders.length >= 2 ? (
+        <>
+          <div className="section-title">{t("dash.spent_by")}</div>
+          <div className="card rows">
+            {spenders.map((p) => (
+              <Row key={p.userId} plate={<Plate icon="user" />}>
+                <div className="title">{p.name}</div>
+                <div className="right num strong">{money(p.expense)}</div>
+                <div className="meta">
+                  {p.share}% · {p.count}
+                </div>
+                <div className="meta right num">{p.income > 0 ? `+${money(p.income)}` : ""}</div>
+                <Bar value={p.share} />
+              </Row>
+            ))}
+          </div>
+        </>
+      ) : null}
 
       {insights && (insights.highlights.length > 0 || insights.tips.length > 0) ? (
         <>

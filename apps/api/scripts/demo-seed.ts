@@ -13,16 +13,22 @@ const handle = await createDb();
 await handle.migrate();
 const db = handle.db;
 const { household, created } = await getOrCreateHousehold(db, { chatId: -100777, chatType: "group", title: "Семья" }, { locale: "ru", currency: "USD", timezone: "Asia/Tashkent" });
-const user = await upsertUser(db, { id: 42, languageCode: "ru" });
+const user = await upsertUser(db, { id: 42, languageCode: "ru", firstName: "Зоир" });
 await ensureMember(db, household.id, user.id);
+const partner = await upsertUser(db, { id: 43, languageCode: "ru", firstName: "Малика" });
+await ensureMember(db, household.id, partner.id);
 if (!created) {
   console.log("demo household already exists:", household.id);
   process.exit(0);
 }
 type DateTime = ReturnType<typeof nowIn>;
 const now = nowIn(household.timezone);
+let turn = 0;
+// Records alternate between the two members, so "who spent what" has something to show.
 const add = (kind: "expense" | "income", amount: number, category: string, note: string, d: DateTime, extra = {}) =>
-  createTransaction(db, { householdId: household.id, kind, amount, currency: "USD", amountBase: amount, baseCurrency: "USD", category, note, occurredOn: d.toISODate()!, ...extra });
+  createTransaction(db, {
+    householdId: household.id, userId: turn++ % 3 === 0 ? partner.id : user.id, kind, amount, currency: "USD", amountBase: amount, baseCurrency: "USD", category, note, occurredOn: d.toISODate()!, ...extra,
+  });
 const day = (n: number) => now.set({ day: Math.min(n, now.day) });
 await add("income", 3000, "salary", "зарплата", day(5));
 await add("income", 400, "freelance", "сайт для клиента", day(9));
@@ -33,6 +39,11 @@ const spends: [number, string, string, number][] = [
   [70, "travel", "билеты в Самарканд", 13], [40, "entertainment", "Netflix + Spotify", 3],
 ];
 for (const [a, c, n, d] of spends) await add("expense", a, c, n, day(d));
+// A record built up by replies: positions with their own authors.
+await add("expense", 48, "groceries", "корзинка + виноград", day(5), {
+  userId: user.id,
+  items: [{ amount: 42, note: "корзинка", userId: user.id }, { amount: 6, note: "виноград", userId: partner.id }],
+});
 // A family category, the month budget, an open stash and a balance checkpoint, so every new block has data.
 const car = await createCustomCategory(db, { householdId: household.id, kind: "expense", name: "Машина", emoji: "🚗" });
 await add("expense", 22, customCategoryKey(car.id), "мойка", day(9));

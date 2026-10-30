@@ -3,9 +3,10 @@ import type { Household, Transaction } from "../db/schema.js";
 import type { Insights } from "../ai/insights.js";
 import { periodDays, previousPeriod, type Period } from "../period.js";
 import { roundMoney } from "../money.js";
-import { buildCategoryStats, loadMonthlySummary, pct, type BiggestSpend, type CategoryStat } from "./summary.js";
+import { buildCategoryStats, buildPersonStats, loadMonthlySummary, pct, type BiggestSpend, type CategoryStat, type PersonStat } from "./summary.js";
 import { listTransactionsInRange } from "./transactions.js";
 import { getInsights } from "./insights.js";
+import { loadMemberNames } from "./households.js";
 import type { MonthOutlook } from "./planning.js";
 import type { BalanceSummary } from "./summary.js";
 
@@ -28,6 +29,10 @@ export interface ReportData {
   unconverted: { currency: string; amount: number }[];
   /** Every confirmed record of the period, oldest first. */
   transactions: Transaction[];
+  /** Who spent and received how much over the period (members with a known name). */
+  byPerson: PersonStat[];
+  /** First names by user id, for the author column. */
+  names: Record<number, string>;
   /** Limits, goals, plans, the money on hand and insights: only for a calendar-month report. */
   month: { outlook: MonthOutlook; insights: Insights | null; balance: BalanceSummary | null } | null;
 }
@@ -41,9 +46,10 @@ export function reportFingerprint(rows: Transaction[]): string {
 export async function loadReport(db: Db, household: Household, period: Period, options: { insights?: boolean } = {}): Promise<ReportData> {
   const currency = household.baseCurrency;
   const prevPeriod = previousPeriod(period);
-  const [rows, prevRows] = await Promise.all([
+  const [rows, prevRows, names] = await Promise.all([
     listTransactionsInRange(db, household.id, period.from, period.to),
     listTransactionsInRange(db, household.id, prevPeriod.from, prevPeriod.to),
+    loadMemberNames(db, household.id),
   ]);
   const expenses = buildCategoryStats(rows, prevRows, "expense", currency);
   const incomes = buildCategoryStats(rows, prevRows, "income", currency);
@@ -84,6 +90,8 @@ export async function loadReport(db: Db, household: Household, period: Period, o
     biggest,
     unconverted: [...unconverted.entries()].map(([cur, amount]) => ({ currency: cur, amount: roundMoney(amount) })),
     transactions: rows,
+    byPerson: buildPersonStats(rows, currency, names),
+    names: Object.fromEntries(names),
     month,
   };
 }

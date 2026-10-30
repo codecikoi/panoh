@@ -4,7 +4,7 @@ import { createTestDb, type DbHandle } from "../db/client.js";
 import { getOrCreateHousehold } from "./households.js";
 import { createTransaction, softDeleteTransaction, updateTransaction } from "./transactions.js";
 import { setBudget } from "./planning.js";
-import { BALANCE_SCOPE, deleteBalance, evaluateAlerts, listAlerts, loadBalance, removeAlert, setAlert, setBalance } from "./balance.js";
+import { BALANCE_SCOPE, deleteBalance, evaluateAlerts, explainBalance, listAlerts, loadBalance, previousBalance, removeAlert, setAlert, setBalance } from "./balance.js";
 import { archiveCustomCategory, createCustomCategory, loadCategoryLookup, normalizeCategoryName, normalizeEmoji } from "./categories.js";
 import { customCategoryKey, normalizeCategory } from "../categories.js";
 import { loadMonthlySummary } from "./summary.js";
@@ -53,8 +53,14 @@ describe("balance checkpoints", () => {
     const month = DateTime.now().setZone(household.timezone).toFormat("yyyy-LL");
     expect((await loadMonthlySummary(handle.db, household, month)).balance).toMatchObject({ current: 500000, amount: 500000, asOf: today });
 
+    // How the records got to 700 000: the first checkpoint plus what was recorded between the two (later records do not count).
+    await add("expense", 100000);
+    expect((await previousBalance(handle.db, household.id, second.balance))?.id).toBe(first.balance.id);
+    expect(await explainBalance(handle.db, household, second.balance)).toMatchObject({ start: 800000, income: 50000, expense: 150000, expected: 700000 });
+    expect(await explainBalance(handle.db, household, first.balance)).toBeNull();
+
     expect(await deleteBalance(handle.db, second.balance.id)).toBe(true);
-    expect((await loadBalance(handle.db, household))?.current).toBe(700000);
+    expect((await loadBalance(handle.db, household))?.current).toBe(600000);
   });
 
   it("fires an alert once when the balance drops below the threshold and re-arms above it", async () => {

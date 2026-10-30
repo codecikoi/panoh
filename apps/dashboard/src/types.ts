@@ -12,6 +12,8 @@ export interface Household {
   locale: string;
   /** The family's own categories; their names are merged into the strings as `cat.<key>`. */
   categories: CustomCategoryInfo[];
+  /** Members with a known first name (internal user id → name), for "who recorded it". */
+  members: { id: number; name: string }[];
 }
 
 export interface MeResponse {

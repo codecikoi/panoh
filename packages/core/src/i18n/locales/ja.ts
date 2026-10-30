@@ -323,4 +323,12 @@ export const ja: LocaleStrings = {
   "dash.money_left": "手元のお金",
   "dash.since": "{date}から",
   "dash.goal_open": "目標額なし",
+  "summary.spent_by": "👥 人別の支出：{list}",
+  "balance.trail": "内訳：{start}（{date}時点）+ 収入 {income} − 支出 {expense}",
+  "confirm.balance_category": "🎯 {category}：上限 {limit} のうちあと<b>{left}</b>\n今月の支出：{spent}",
+  "correction.item_missing": "🤔 この記録に「{item}」という項目は見つかりませんでした。",
+  "correction.item_currency": "🤔 1つの記録の項目は同じ通貨（{currency}）にしてください。{amount} は別に記録してください。",
+  "report.spent_by": "誰がいくら使ったか",
+  "report.col_who": "誰",
+  "dash.spent_by": "誰がいくら使ったか",
 };

@@ -20,6 +20,7 @@ import {
   type GoalStat,
   type IconName,
   type LocaleKey,
+  type PersonStat,
   type ReportData,
 } from "@madat/core";
 
@@ -201,25 +202,51 @@ function goalMeters(view: ReportView, tr: Tr, goals: GoalStat[]): string {
     .join("");
 }
 
+/** Who spent what: one meter per member, share of the attributed expenses, income in the small print. */
+function personMeters(view: ReportView, people: PersonStat[]): string {
+  const money = (n: number) => formatMoney(n, view.data.currency, view.locale);
+  return people
+    .map((p) => {
+      const label = `<span class="cat">${icon("user")}${escapeHtml(p.name)}</span>`;
+      const income = p.income > 0 ? ` <span class="muted">· +${money(p.income)}</span>` : "";
+      return meter(label, `${money(p.expense)} · ${p.share}%${income}`, p.share, "var(--accent)", "var(--muted)");
+    })
+    .join("");
+}
+
 function transactionsTable(tr: Tr, catName: CatName, view: ReportView): string {
   const { data, locale } = view;
+  // The author column only for a group with known names: in a private chat there is one person.
+  const who = (userId: number | null) => (userId === null ? "" : (data.names[userId] ?? ""));
+  const withAuthors = view.title !== null && data.transactions.some((tx) => who(tx.userId) !== "");
+  const columns = withAuthors ? 4 : 3;
   let lastDay = "";
   const rows: string[] = [];
   for (const tx of data.transactions) {
     if (tx.occurredOn !== lastDay) {
       lastDay = tx.occurredOn;
       const label = DateTime.fromISO(tx.occurredOn, { zone: "utc" }).setLocale(locale).toLocaleString({ weekday: "short", day: "numeric", month: "long" });
-      rows.push(`<tr class="day"><td colspan="3">${escapeHtml(label)}</td></tr>`);
+      rows.push(`<tr class="day"><td colspan="${columns}">${escapeHtml(label)}</td></tr>`);
     }
     const sign = tx.kind === "income" ? "+" : "−";
     const own = formatMoney(tx.amount, tx.currency, locale);
     const converted =
       tx.currency !== data.currency && tx.amountBase !== null ? `<div class="muted">≈ ${formatMoney(tx.amountBase, data.currency, locale)}</div>` : "";
-    rows.push(
-      `<tr><td>${catLabel(catName, tx.category)}</td><td>${escapeHtml(tx.note)}</td><td class="r num ${tx.kind === "income" ? "in" : ""}">${sign}${own}${converted}</td></tr>`,
-    );
+    // A record built up by replies lists its positions, each with its amount and, in a group, who added it.
+    const note =
+      tx.items && tx.items.length > 1
+        ? tx.items
+            .map((i) => {
+              const by = withAuthors && who(i.userId) ? ` · ${escapeHtml(who(i.userId))}` : "";
+              return `<div>${escapeHtml(i.note)} <span class="muted num">· ${formatMoney(i.amount, tx.currency, locale)}${by}</span></div>`;
+            })
+            .join("")
+        : escapeHtml(tx.note);
+    const author = withAuthors ? `<td class="muted">${escapeHtml(who(tx.userId))}</td>` : "";
+    rows.push(`<tr><td>${catLabel(catName, tx.category)}</td><td>${note}</td>${author}<td class="r num ${tx.kind === "income" ? "in" : ""}">${sign}${own}${converted}</td></tr>`);
   }
-  return `<table><thead><tr><th>${tr("report.col_category")}</th><th>${tr("report.col_note")}</th><th class="r">${tr(
+  const authorHead = withAuthors ? `<th>${tr("report.col_who")}</th>` : "";
+  return `<table><thead><tr><th>${tr("report.col_category")}</th><th>${tr("report.col_note")}</th>${authorHead}<th class="r">${tr(
     "report.col_amount",
   )}</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
 }
@@ -281,6 +308,8 @@ export function renderReportHtml(view: ReportView): string {
   if (data.incomeCategories.length) {
     parts.push(`<h2>${escapeHtml(tr("report.income_by_category"))}</h2>${categoryTable(tr, catName, view, data.incomeCategories, false)}`);
   }
+  const spenders = data.byPerson.filter((p) => p.expense > 0);
+  if (view.title !== null && spenders.length >= 2) parts.push(`<h2>${escapeHtml(tr("report.spent_by"))}</h2>${personMeters(view, spenders)}`);
   if (data.month?.outlook.budgets.length) parts.push(`<h2>${plain(tr("summary.budgets"))}</h2>${budgetMeters(catName, view, data.month.outlook.budgets)}`);
   if (data.month?.outlook.goals.length) parts.push(`<h2>${plain(tr("summary.goals"))}</h2>${goalMeters(view, tr, data.month.outlook.goals)}`);
   if (data.month?.outlook.plans.length) {

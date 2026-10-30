@@ -23,7 +23,9 @@ Write in the language given by "locale". Tone: warm, concise, friendly, like a s
 Plain text only, no markdown, no HTML.`;
 
 export async function generateInsights(summary: MonthlySummary, locale: string): Promise<Insights | null> {
-  const payload = JSON.stringify(summary);
+  // Who spent what stays between the family: the model gets the numbers without the per-person split.
+  const { byPerson: _byPerson, ...shared } = summary;
+  const payload = JSON.stringify(shared);
   try {
     const response = await anthropic().beta.messages.parse({
       model: env().AI_INSIGHTS_MODEL,

@@ -323,4 +323,12 @@ export const zh: LocaleStrings = {
   "dash.money_left": "手头的钱",
   "dash.since": "从 {date} 起",
   "dash.goal_open": "没有目标金额",
+  "summary.spent_by": "👥 谁花了多少：{list}",
+  "balance.trail": "即 {start}（{date} 核对）+ 收入 {income} − 支出 {expense}。",
+  "confirm.balance_category": "🎯 {category}：还剩 <b>{left}</b>，限额 {limit}\n本月已花：{spent}",
+  "correction.item_missing": "🤔 这条记录里没有「{item}」这一项。",
+  "correction.item_currency": "🤔 同一条记录里的各项必须用同一种货币（{currency}）。请把 {amount} 单独记一笔。",
+  "report.spent_by": "谁花了多少",
+  "report.col_who": "谁",
+  "dash.spent_by": "谁花了多少",
 };

@@ -15,7 +15,9 @@ import {
   customCategoryKey,
   extractItems,
   getHouseholdByChatId,
+  latestBalance,
   listCustomCategories,
+  loadMonthlySummary,
   getPlan,
   getPlanReminder,
   getReminder,
@@ -53,6 +55,7 @@ const me = {
 } as UserFromGetMe;
 const chat = { id: -100500, type: "supergroup" as const, title: "Семья" };
 const zoir = { id: 42, is_bot: false, first_name: "Zoir", language_code: "ru" };
+const malika = { id: 43, is_bot: false, first_name: "Malika", language_code: "ru" };
 
 interface Call { method: string; payload: Record<string, unknown> }
 const calls: Call[] = [];
@@ -86,6 +89,8 @@ async function press(bot: Bot<BotContext>, data: string, messageId: number, text
 }
 
 const sent = () => calls.filter((c) => c.method === "sendMessage");
+/** Formatted money uses non-breaking spaces; assertions read easier with plain ones. */
+const flat = (text: unknown) => String(text).replace(/[  ]/g, " ");
 const lastSent = () => sent().at(-1)!;
 const reactions = () => calls.filter((c) => c.method === "setMessageReaction").map((c) => JSON.stringify(c.payload.reaction));
 
@@ -725,6 +730,98 @@ describe("bot flow", () => {
     mockExtraction([item({ amount: 1000, category: "other", note: "" })]);
     await sendText(bot, "+ расход 1к");
     expect(extractItems).toHaveBeenLastCalledWith(expect.objectContaining({ customCategories: [expect.objectContaining({ name: "Аренда" })] }));
+  });
+
+  it("names who recorded what and builds a record up by positions from replies", async () => {
+    const cmd = (text: string) => ({ entities: [{ type: "bot_command", offset: 0, length: text.split(" ")[0]!.length }] });
+    const reply = (message_id: number) => ({ reply_to_message: { message_id, from: me, chat, date: 1, text: "x" } });
+    mockExtraction([item({ amount: 313000, category: "groceries", note: "корзинка продукты" })]);
+    await sendText(bot, "+ корзинка продукты 313к");
+    expect(lastSent().payload.text).toContain("<i>корзинка продукты</i> · Zoir");
+    const tx = (await listRecentTransactions(handle.db, 1, 1))[0]!;
+
+    // The wife adds grapes: the total and the joined note are computed, each position keeps its author.
+    mockExtraction([item({ kind: "correction", changed: { addAmount: 20000, addNote: "виноград" } })]);
+    await sendText(bot, "добавь ещё 20к виноград", { from: malika, ...reply(tx.botMessageId!) });
+    const card = flat(calls.find((c) => c.method === "editMessageText")!.payload.text);
+    expect(card).toContain("333 000");
+    expect(card).toContain("<i>корзинка продукты</i> · 313 000 UZS · Zoir");
+    expect(card).toContain("<i>виноград</i> · 20 000 UZS · Malika");
+    expect(reactions().at(-1)).toContain("👌");
+    const grown = (await listRecentTransactions(handle.db, 1, 1))[0]!;
+    expect(grown).toMatchObject({ id: tx.id, amount: 333000, note: "корзинка продукты + виноград" });
+    expect(grown.items).toHaveLength(2);
+
+    // The model sees the positions; a position in another currency is refused; a missing one is reported.
+    mockExtraction([item({ kind: "clarify", note: "Да, две позиции." })]);
+    await sendText(bot, "там две позиции?", reply(tx.botMessageId!));
+    expect(extractItems).toHaveBeenLastCalledWith(expect.objectContaining({ replyTo: expect.stringContaining('positions: "корзинка продукты" 313000, "виноград" 20000') }));
+    calls.length = 0;
+    mockExtraction([item({ kind: "correction", changed: { addAmount: 5, currency: "USD", addNote: "жвачка" } })]);
+    await sendText(bot, "плюс 5 долларов жвачка", reply(tx.botMessageId!));
+    expect(lastSent().payload.text).toContain("в одной валюте");
+    mockExtraction([item({ kind: "correction", changed: { removeItem: "хлеб" } })]);
+    await sendText(bot, "убери хлеб", reply(tx.botMessageId!));
+    expect(lastSent().payload.text).toContain("Не нашёл позицию «хлеб»");
+    expect((await listRecentTransactions(handle.db, 1, 1))[0]?.amount).toBe(333000);
+
+    // Removing the grapes folds the record back into a plain one.
+    calls.length = 0;
+    mockExtraction([item({ kind: "correction", changed: { removeItem: "Виноград" } })]);
+    await sendText(bot, "убери виноград", reply(tx.botMessageId!));
+    const back = (await listRecentTransactions(handle.db, 1, 1))[0]!;
+    expect(back).toMatchObject({ amount: 313000, note: "корзинка продукты", items: null });
+    expect(String(calls.find((c) => c.method === "editMessageText")!.payload.text)).toContain("<i>корзинка продукты</i> · Zoir");
+
+    // Two spenders this month: the summary says who spent what.
+    mockExtraction([item({ amount: 80000, category: "dining", note: "кафе" })]);
+    await sendText(bot, "+ кафе 80к", { from: malika });
+    expect(lastSent().payload.text).toContain("<i>кафе</i> · Malika");
+    await sendText(bot, "/summary", cmd("/summary"));
+    expect(lastSent().payload.text).toMatch(/👥 Потратили: Zoir .* · Malika .*\(\d+%\)/);
+  });
+
+  it("turns a stated remainder for a category into its limit", async () => {
+    const household = (await getHouseholdByChatId(handle.db, chat.id))!;
+    const summary = await loadMonthlySummary(handle.db, household);
+    const spent = summary.categories.find((c) => c.category === "groceries")?.amount ?? 0;
+    mockExtraction([item({ kind: "balance_set", category: "groceries", amount: 100000 })]);
+    await sendText(bot, "Мадат остаток на продукты 100к");
+    expect(flat(lastSent().payload.text)).toContain("🛒 Продукты: осталось <b>100 000 UZS</b> из лимита");
+    expect(JSON.stringify(lastSent().payload.reply_markup)).toContain("bud:del:groceries");
+    expect((await listBudgets(handle.db, 1)).find((b) => b.category === "groceries")?.amount).toBe(spent + 100000);
+    // The money on hand is untouched by it.
+    expect((await latestBalance(handle.db, 1))?.amount).toBe(500000);
+  });
+
+  it("explains a balance checkpoint when asked about it, takes a corrected amount and undoes it", async () => {
+    const reply = (message_id: number) => ({ reply_to_message: { message_id, from: me, chat, date: 1, text: "x" } });
+    mockExtraction([item({ kind: "balance_set", amount: 100000 })]);
+    await sendText(bot, "Мадат остаток 100к");
+    expect(lastSent().payload.text).toContain("разница");
+    expect(flat(lastSent().payload.text)).toContain("Это 500 000 UZS (сверка");
+    const checkpoint = (await latestBalance(handle.db, 1))!;
+    expect(checkpoint.amount).toBe(100000);
+
+    mockExtraction([item({ kind: "clarify", note: "По записям было больше." })]);
+    await sendText(bot, "по каким записям?", reply(checkpoint.botMessageId!));
+    expect(extractItems).toHaveBeenLastCalledWith(
+      expect.objectContaining({ replyTo: expect.stringMatching(/balance checkpoint: the family said they had 100000 UZS.*stated before, 500000 UZS/s) }),
+    );
+
+    calls.length = 0;
+    mockExtraction([item({ kind: "correction", amount: 1000000, changed: { amount: 1000000 } })]);
+    await sendText(bot, "не 100к, а 1 млн", reply(checkpoint.botMessageId!));
+    expect(flat(calls.find((c) => c.method === "editMessageText")!.payload.text)).toContain("1 000 000 UZS");
+    expect((await latestBalance(handle.db, 1))?.amount).toBe(1000000);
+    expect(extractItems).toHaveBeenLastCalledWith(expect.objectContaining({ replyTo: expect.stringContaining("balance checkpoint") }));
+
+    // "Undo" removes the checkpoint; the one before it is current again.
+    // (the balance alert from the earlier test fires too, as the money on hand drops back under its threshold)
+    mockExtraction([item({ kind: "cancel_last" })]);
+    await sendText(bot, "Мадат отмени");
+    expect(sent().some((c) => flat(c.payload.text).includes("Остаток: <b>1 000 000 UZS</b>"))).toBe(true);
+    expect((await latestBalance(handle.db, 1))?.amount).toBe(500000);
   });
 
   it("keeps an open-ended stash without a target", async () => {

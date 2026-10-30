@@ -323,4 +323,12 @@ export const kk: LocaleStrings = {
   "dash.money_left": "Қолдағы ақша",
   "dash.since": "{date} бастап",
   "dash.goal_open": "мақсатсыз",
+  "summary.spent_by": "👥 Кім қанша жұмсады: {list}",
+  "balance.trail": "Яғни {start} ({date} күнгі салыстыру) + кірістер {income} − шығыстар {expense}.",
+  "confirm.balance_category": "🎯 {category}: {limit} лимитінен <b>{left}</b> қалды\nОсы айда жұмсалды: {spent}",
+  "correction.item_missing": "🤔 Бұл жазбада «{item}» деген тармақ таппадым.",
+  "correction.item_currency": "🤔 Бір жазбаның тармақтары бір валютада болуы керек ({currency}). {amount} сомасын бөлек жаз.",
+  "report.spent_by": "Кім қанша жұмсады",
+  "report.col_who": "Кім",
+  "dash.spent_by": "Кім қанша жұмсады",
 };

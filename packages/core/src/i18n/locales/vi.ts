@@ -323,4 +323,12 @@ export const vi: LocaleStrings = {
   "dash.money_left": "Tiền hiện có",
   "dash.since": "từ {date}",
   "dash.goal_open": "không có mục tiêu",
+  "summary.spent_by": "👥 Ai chi bao nhiêu: {list}",
+  "balance.trail": "Tức là {start} (mốc {date}) + thu {income} − chi {expense}.",
+  "confirm.balance_category": "🎯 {category}: còn <b>{left}</b> trong hạn mức {limit}\nĐã chi tháng này: {spent}",
+  "correction.item_missing": "🤔 Mình không thấy khoản «{item}» trong ghi chép này.",
+  "correction.item_currency": "🤔 Các khoản trong một ghi chép phải cùng loại tiền ({currency}). Hãy ghi {amount} riêng.",
+  "report.spent_by": "Ai chi bao nhiêu",
+  "report.col_who": "Ai",
+  "dash.spent_by": "Ai chi bao nhiêu",
 };

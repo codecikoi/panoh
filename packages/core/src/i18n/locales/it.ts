@@ -323,4 +323,12 @@ export const it: LocaleStrings = {
   "dash.money_left": "Soldi rimasti",
   "dash.since": "dal {date}",
   "dash.goal_open": "senza traguardo",
+  "summary.spent_by": "👥 Speso da: {list}",
+  "balance.trail": "Cioè {start} (verifica del {date}) + entrate {income} − spese {expense}.",
+  "confirm.balance_category": "🎯 {category}: restano <b>{left}</b> del limite di {limit}\nSpeso questo mese: {spent}",
+  "correction.item_missing": "🤔 Non trovo la voce «{item}» in questa registrazione.",
+  "correction.item_currency": "🤔 Le voci di una stessa registrazione hanno la stessa valuta ({currency}). Registra {amount} a parte.",
+  "report.spent_by": "Chi ha speso quanto",
+  "report.col_who": "Chi",
+  "dash.spent_by": "Chi ha speso quanto",
 };

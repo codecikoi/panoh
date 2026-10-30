@@ -323,4 +323,12 @@ export const az: LocaleStrings = {
   "dash.money_left": "Əldə olan pul",
   "dash.since": "{date} tarixindən",
   "dash.goal_open": "hədəfsiz",
+  "summary.spent_by": "👥 Kim nə qədər xərclədi: {list}",
+  "balance.trail": "Yəni {start} ({date} üzləşməsi) + gəlirlər {income} − xərclər {expense}.",
+  "confirm.balance_category": "🎯 {category}: {limit} limitindən <b>{left}</b> qalıb\nBu ay xərclənib: {spent}",
+  "correction.item_missing": "🤔 Bu qeyddə «{item}» adlı bənd tapmadım.",
+  "correction.item_currency": "🤔 Bir qeydin bəndləri eyni valyutada olmalıdır ({currency}). {amount} məbləğini ayrıca qeyd et.",
+  "report.spent_by": "Kim nə qədər xərclədi",
+  "report.col_who": "Kim",
+  "dash.spent_by": "Kim nə qədər xərclədi",
 };

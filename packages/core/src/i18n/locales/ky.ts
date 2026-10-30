@@ -323,4 +323,12 @@ export const ky: LocaleStrings = {
   "dash.money_left": "Колдогу акча",
   "dash.since": "{date} баштап",
   "dash.goal_open": "максатсыз",
+  "summary.spent_by": "👥 Ким канча коротту: {list}",
+  "balance.trail": "Бул {start} ({date} текшерүүсү) + кирешелер {income} − чыгымдар {expense}.",
+  "confirm.balance_category": "🎯 {category}: {limit} лимитинен <b>{left}</b> калды\nБул айда сарпталды: {spent}",
+  "correction.item_missing": "🤔 Бул жазуудан «{item}» позициясын таппадым.",
+  "correction.item_currency": "🤔 Бир жазуунун позициялары бир валютада болушу керек ({currency}). {amount} суммасын өзүнчө жазыңыз.",
+  "report.spent_by": "Ким канча коротту",
+  "report.col_who": "Ким",
+  "dash.spent_by": "Ким канча коротту",
 };

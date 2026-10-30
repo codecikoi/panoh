@@ -92,6 +92,7 @@ always at the start of the line:
 | 🎯 / 💰 | limit, tip / savings, income |
 | 🧮 | money on hand (balance), the month budget |
 | 🏷 | categories, biggest spends |
+| 👥 | who spent what (per member) |
 | 📊 / 📄 | summary, dashboard / PDF report |
 | 💡 / 👋 / 🎉 | insight / greeting / celebration |
 

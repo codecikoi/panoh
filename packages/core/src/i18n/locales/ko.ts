@@ -323,4 +323,12 @@ export const ko: LocaleStrings = {
   "dash.money_left": "남은 돈",
   "dash.since": "{date}부터",
   "dash.goal_open": "목표 금액 없음",
+  "summary.spent_by": "👥 사람별 지출: {list}",
+  "balance.trail": "계산 내역: {start} ({date} 기준) + 수입 {income} − 지출 {expense}",
+  "confirm.balance_category": "🎯 {category}: 한도 {limit} 중 <b>{left}</b> 남음\n이번 달 지출: {spent}",
+  "correction.item_missing": "🤔 이 기록에 «{item}» 항목이 없어요.",
+  "correction.item_currency": "🤔 한 기록의 항목은 같은 통화({currency})여야 해요. {amount}은(는) 따로 기록해 주세요.",
+  "report.spent_by": "누가 얼마나 썼나",
+  "report.col_who": "누가",
+  "dash.spent_by": "누가 얼마나 썼나",
 };

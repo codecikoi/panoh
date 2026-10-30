@@ -9,9 +9,18 @@ import {
   categoryKind,
   createCustomCategory,
   customCategoryId,
+  deleteBalance,
   evaluateAlerts,
+  explainBalance,
+  findBalanceByBotMessage,
   findCustomCategory,
+  findItem,
+  getBalance,
+  itemsOf,
   loadBalance,
+  roundMoney,
+  withItemAdded,
+  withItemRemoved,
   loadCategoryLookup,
   normalizeCategoryName,
   normalizeEmoji,
@@ -60,6 +69,7 @@ import {
   findRecurringByBotMessage,
   findReminderByBotMessage,
   findTransactionByBotMessage,
+  formatDate,
   getRates,
   listRecurring,
   log,
@@ -73,9 +83,12 @@ import {
   updateRecurring,
   updateReminder,
   updateTransaction,
+  type Balance,
+  type BalanceTrail,
   type Db,
   type ExtractedItem,
   type Goal,
+  type ItemsPatch,
   type Period,
   type Plan,
   type RateTable,
@@ -93,7 +106,8 @@ export type ReplyTarget =
   | { type: "reminder"; row: Reminder }
   | { type: "recurring"; row: RecurringPayment }
   | { type: "plan"; row: Plan }
-  | { type: "goal"; row: Goal };
+  | { type: "goal"; row: Goal }
+  | { type: "balance"; row: Balance };
 
 export async function resolveReplyTarget(db: Db, chatId: number, messageId: number): Promise<ReplyTarget | undefined> {
   const tx = await findTransactionByBotMessage(db, chatId, messageId);
@@ -112,15 +126,34 @@ export async function resolveReplyTarget(db: Db, chatId: number, messageId: numb
   if (plan && plan.status === "planned") return { type: "plan", row: plan };
   const goal = await findGoalByBotMessage(db, chatId, messageId);
   if (goal && goal.status === "active") return { type: "goal", row: goal };
+  const balance = await findBalanceByBotMessage(db, chatId, messageId);
+  if (balance) return { type: "balance", row: balance };
   return undefined;
 }
 
-export function describeTarget(target: ReplyTarget, tz = "UTC"): string {
+/** How the records arrived at the figure a balance checkpoint replaced, as facts for the model. */
+function describeTrail(row: Balance, trail: BalanceTrail | null): string {
+  if (!trail) return " It is the family's first checkpoint, so there was nothing to compare it with.";
+  if (trail.expected === null || trail.start === null) return " The records could not be compared with it (no exchange rate for the previous checkpoint).";
+  const diff = row.currency === trail.currency ? row.amount - trail.expected : null;
+  return (
+    ` Just before it the records gave ${trail.expected} ${trail.currency}: the amount the family had stated before, ${trail.start} ${trail.currency} on ${trail.previous.asOf},` +
+    ` + income ${trail.income} − expenses ${trail.expense} recorded between the two statements (the bot counts only records made after a statement and dated on or after its day).` +
+    (diff === null ? "" : ` The family's new figure differs from that by ${diff > 0 ? "+" : ""}${diff}; the bot counts from the new figure now. Explain it in everyday words, not with the word "checkpoint".`)
+  );
+}
+
+export function describeTarget(target: ReplyTarget, tz = "UTC", trail: BalanceTrail | null = null): string {
   switch (target.type) {
     case "transaction": {
       const r = target.row;
       const asked = r.kind === "expense" && r.category === "other" && !r.note ? " (the bot asked what it was spent on; category not stated yet)" : "";
-      return `${r.kind} record: amount ${r.amount} ${r.currency}, category ${r.category}, note "${r.note}", date ${r.occurredOn}${asked}`;
+      const items = r.items && r.items.length > 1 ? `; positions: ${r.items.map((i) => `"${i.note}" ${i.amount}`).join(", ")}` : "";
+      return `${r.kind} record: amount ${r.amount} ${r.currency}, category ${r.category}, note "${r.note}", date ${r.occurredOn}${items}${asked}`;
+    }
+    case "balance": {
+      const r = target.row;
+      return `balance checkpoint: the family said they had ${r.amount} ${r.currency} on ${r.asOf}; the bot counts the money on hand from this figure.${describeTrail(r, trail)}`;
     }
     case "reminder":
       return `reminder: "${target.row.title}" due ${DateTime.fromJSDate(target.row.dueAt).setZone(tz).toFormat("yyyy-LL-dd HH:mm")} (local time)`;
@@ -192,7 +225,7 @@ export async function applyItems(ctx: BotContext, items: ExtractedItem[], meta: 
           if (await handleContribution(ctx, item, meta, rates)) outcome.handled++;
           break;
         case "balance_set":
-          if (await handleBalanceSet(ctx, item, meta)) outcome.handled++;
+          if (await handleBalanceSet(ctx, item, meta, rates)) outcome.handled++;
           break;
         case "balance_request":
           if (await handleBalanceRequest(ctx, item, meta)) {
@@ -310,21 +343,45 @@ function builtinCategoryByName(scope: Scope, name: string): string | undefined {
   return [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].find((k) => k === needle || R.catName(scope, k).toLowerCase() === needle);
 }
 
-async function handleBalanceSet(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta): Promise<boolean> {
+async function handleBalanceSet(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta, rates: RateTable): Promise<boolean> {
   const scope = ctx.scope;
+  const db = ctx.deps.db;
   if (item.amount === null) {
     await ctx.reply(t(scope.locale, "ask.balance_amount"), replyOpts(meta));
     return true;
   }
-  const { balance, previous } = await setBalance(ctx.deps.db, scope.household, {
+  // "100k left for groceries": there is no balance per category, so it becomes the category's limit with exactly that much left.
+  if (item.category !== null) {
+    const left = toBase(item.amount, item.currency, scope.currency, rates);
+    if (left === null) {
+      await ctx.reply(t(scope.locale, "confirm.tx_rate_missing", { currency: item.currency }).trim(), replyOpts(meta));
+      return true;
+    }
+    const month = currentMonthKey(scope.tz);
+    const summary = await loadMonthlySummary(db, scope.household, month);
+    const spent = item.category === TOTAL_BUDGET ? summary.expense : (summary.categories.find((c) => c.category === item.category)?.amount ?? 0);
+    await setBudget(db, scope.household.id, item.category, roundMoney(spent + left), scope.currency);
+    const stat = await loadBudgetStat(db, scope.household, item.category, month, scope.categories);
+    if (!stat) return false;
+    await ctx.reply(
+      R.balanceCategoryText(scope, stat),
+      replyOpts(meta, { reply_markup: new InlineKeyboard().text(t(scope.locale, "btn.delete"), `bud:del:${item.category}`) }),
+    );
+    await notifyAlerts(ctx.api, ctx.deps, scope, meta.chatId);
+    return true;
+  }
+  const { balance, previous } = await setBalance(db, scope.household, {
     amount: item.amount,
     currency: item.currency,
     userId: scope.user?.id ?? null,
     sourceChatId: meta.chatId,
     sourceMessageId: meta.sourceMessageId,
   });
-  const sent = await ctx.reply(R.balanceSetText(scope, item.amount, item.currency, previous), replyOpts(meta, { reply_markup: R.balanceKeyboard(scope, balance.id) }));
-  await updateBalance(ctx.deps.db, balance.id, { botMessageId: sent.message_id });
+  const sent = await ctx.reply(
+    R.balanceSetText(scope, item.amount, item.currency, previous ? R.balanceBefore(previous) : null),
+    replyOpts(meta, { reply_markup: R.balanceKeyboard(scope, balance.id) }),
+  );
+  await updateBalance(db, balance.id, { botMessageId: sent.message_id });
   await notifyAlerts(ctx.api, ctx.deps, scope, meta.chatId);
   return true;
 }
@@ -753,6 +810,10 @@ export async function loadTarget(db: Db, type: string, id: number): Promise<Repl
       const row = await getRecurring(db, id);
       return row && row.active ? { type, row } : undefined;
     }
+    case "balance": {
+      const row = await getBalance(db, id);
+      return row ? { type, row } : undefined;
+    }
     default:
       return undefined;
   }
@@ -781,10 +842,13 @@ export function correctionOf(changed: ExtractedItem["changed"]): ExtractedItem {
   };
 }
 
-/** Target description plus its correction history, for the model. */
-export async function describeWithHistory(db: Db, target: ReplyTarget, tz: string): Promise<string> {
-  const edits = await listEdits(db, target.type, target.row.id);
-  const base = describeTarget(target, tz);
+/** Target description plus its correction history (and, for a balance checkpoint, how the records got there), for the model. */
+export async function describeWithHistory(db: Db, scope: Scope, target: ReplyTarget): Promise<string> {
+  const [edits, trail] = await Promise.all([
+    listEdits(db, target.type, target.row.id),
+    target.type === "balance" ? explainBalance(db, scope.household, target.row) : null,
+  ]);
+  const base = describeTarget(target, scope.tz, trail);
   return edits.length ? `${base}\nEdit history (oldest first):\n${describeEdits(edits)}` : base;
 }
 
@@ -792,6 +856,7 @@ function amountOf(target: ReplyTarget): { amount: number; currency: string } | n
   switch (target.type) {
     case "transaction":
     case "plan":
+    case "balance":
       return { amount: target.row.amount, currency: target.row.currency };
     case "goal":
       return target.row.targetAmount === null ? null : { amount: target.row.targetAmount, currency: target.row.currency };
@@ -845,6 +910,7 @@ export async function applyCorrection(
   }
   const applied = await applyChanges(ctx, target, { ...item, changed: changes }, place, rates);
   if (applied === null) return "missing";
+  if (applied === "asked") return "asked";
   if (held !== undefined && current) {
     const keyboard = new InlineKeyboard()
       .text(t(scope.locale, "btn.yes"), `fix:amt:${target.type}:${target.row.id}:${held}`)
@@ -866,8 +932,8 @@ export async function applyCorrection(
   return "changed";
 }
 
-/** true: changed and logged · false: nothing would change · null: the record is finished or gone. */
-async function applyChanges(ctx: BotContext, target: ReplyTarget, item: ExtractedItem, place: ReplyPlace, rates: RateTable): Promise<boolean | null> {
+/** true: changed and logged · false: nothing would change · null: the record is finished or gone · "asked": the user was told why not. */
+async function applyChanges(ctx: BotContext, target: ReplyTarget, item: ExtractedItem, place: ReplyPlace, rates: RateTable): Promise<boolean | null | "asked"> {
   const scope = ctx.scope;
   const db = ctx.deps.db;
   const hid = scope.household.id;
@@ -876,14 +942,38 @@ async function applyChanges(ctx: BotContext, target: ReplyTarget, item: Extracte
     const row = target.row;
     // A category of the other side (an income category on an expense) is not applied.
     const category = c.category !== undefined && categoryKind(c.category, scope.categories) === row.kind ? c.category : row.category;
+    // Positions: "remove the grapes" drops one, "add 20k grapes" appends one (the total and the joined note follow in code).
+    let positions: ItemsPatch | null = null;
+    if (c.removeItem !== undefined) {
+      const index = findItem(itemsOf(row), c.removeItem);
+      positions = index >= 0 ? withItemRemoved(row, index) : null;
+      if (!positions) {
+        await ctx.api.sendMessage(place.chatId, t(scope.locale, "correction.item_missing", { item: escapeHtml(c.removeItem) }), placeOpts(place));
+        return "asked";
+      }
+    }
+    if (c.addAmount !== undefined) {
+      if (c.currency !== undefined && c.currency !== row.currency) {
+        await ctx.api.sendMessage(
+          place.chatId,
+          t(scope.locale, "correction.item_currency", { currency: row.currency, amount: R.money(scope, c.addAmount, c.currency) }),
+          placeOpts(place),
+        );
+        return "asked";
+      }
+      positions = withItemAdded(positions ? { ...row, ...positions } : row, { amount: c.addAmount, note: c.addNote ?? "", userId: scope.user?.id ?? null });
+    }
+    // A new total stated outright replaces the positions: they would no longer add up.
+    const total = c.addAmount === undefined ? c.amount : undefined;
     const next = {
-      amount: c.amount ?? row.amount,
+      amount: total ?? positions?.amount ?? row.amount,
       currency: c.currency ?? row.currency,
       category,
-      note: c.note ?? row.note,
+      note: c.note ?? positions?.note ?? row.note,
       occurredOn: c.date ?? row.occurredOn,
+      items: total !== undefined ? null : positions ? positions.items : (row.items ?? null),
     };
-    const diff = diffFields(row, next);
+    const diff = diffFields({ ...row, items: row.items ?? null }, next);
     if (!diff) return false;
     const updated = await updateTransaction(db, row.id, {
       ...next,
@@ -932,6 +1022,20 @@ async function applyChanges(ctx: BotContext, target: ReplyTarget, item: Extracte
     await schedulePlanReminder(db, updated, scope.household, time);
     const text = R.planText(scope, updated) + (await planImpact(db, scope, updated));
     await refreshConfirmation(ctx.api, scope, row.botMessageId, text, R.planKeyboard(scope, updated), place);
+    return true;
+  }
+  if (target.type === "balance") {
+    const row = target.row;
+    const next = { amount: c.amount ?? row.amount, currency: c.currency ?? row.currency };
+    const diff = diffFields(row, next);
+    if (!diff) return false;
+    const updated = await updateBalance(db, row.id, next);
+    if (!updated) return null;
+    await logEdit(db, hid, "balance", row.id, diff);
+    const trail = await explainBalance(db, scope.household, updated, rates);
+    const before = trail ? { start: trail.start, asOf: trail.previous.asOf, income: trail.income, expense: trail.expense, expected: trail.expected } : null;
+    await refreshConfirmation(ctx.api, scope, row.botMessageId, R.balanceSetText(scope, updated.amount, updated.currency, before), R.balanceKeyboard(scope, updated.id), place);
+    await notifyAlerts(ctx.api, ctx.deps, scope, place.chatId);
     return true;
   }
   if (target.type === "goal") {
@@ -1042,6 +1146,10 @@ export async function undoLast(ctx: BotContext, meta?: ApplyMeta): Promise<boole
   } else if (last.type === "plan") {
     await cancelPlan(db, last.row.id);
     what = R.planText(scope, last.row);
+  } else if (last.type === "balance") {
+    // The checkpoint before it (if any) is current again.
+    await deleteBalance(db, last.row.id);
+    what = t(scope.locale, "balance.answer", { amount: R.money(scope, last.row.amount, last.row.currency), date: formatDate(last.row.asOf, scope.locale) });
   } else {
     await updateGoal(db, last.row.id, { status: "cancelled" });
     what = R.goalText(scope, last.row);
@@ -1049,6 +1157,6 @@ export async function undoLast(ctx: BotContext, meta?: ApplyMeta): Promise<boole
   const chatId = last.row.sourceChatId ?? scope.household.telegramChatId;
   if (last.row.botMessageId) await safeEdit(ctx.api, chatId, last.row.botMessageId, R.deletedText(scope, what));
   await ctx.reply(t(scope.locale, "undo.done", { what }), opts);
-  if (last.type === "transaction") await notifyAlerts(ctx.api, ctx.deps, scope, chatId);
+  if (last.type === "transaction" || last.type === "balance") await notifyAlerts(ctx.api, ctx.deps, scope, chatId);
   return true;
 }

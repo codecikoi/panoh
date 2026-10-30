@@ -323,4 +323,12 @@ export const bn: LocaleStrings = {
   "dash.money_left": "বাকি টাকা",
   "dash.since": "{date} থেকে",
   "dash.goal_open": "লক্ষ্য ছাড়া",
+  "summary.spent_by": "👥 কে কত খরচ করেছে: {list}",
+  "balance.trail": "অর্থাৎ {start} ({date}-এ জানানো অঙ্ক) + আয় {income} − খরচ {expense}।",
+  "confirm.balance_category": "🎯 {category}: {limit} সীমার মধ্যে <b>{left}</b> বাকি\nএই মাসে খরচ: {spent}",
+  "correction.item_missing": "🤔 এই এন্ট্রিতে «{item}» নামে কোনো আইটেম পাইনি।",
+  "correction.item_currency": "🤔 এক এন্ট্রির সব আইটেম একই মুদ্রায় থাকে ({currency})। {amount} আলাদা করে লিখুন।",
+  "report.spent_by": "কে কত খরচ করেছে",
+  "report.col_who": "কে",
+  "dash.spent_by": "কে কত খরচ করেছে",
 };

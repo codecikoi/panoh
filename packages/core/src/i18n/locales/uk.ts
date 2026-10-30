@@ -323,4 +323,12 @@ export const uk: LocaleStrings = {
   "dash.money_left": "На руках",
   "dash.since": "з {date}",
   "dash.goal_open": "без цілі",
+  "summary.spent_by": "👥 Витратили: {list}",
+  "balance.trail": "Це {start} (звірка {date}) + доходи {income} − витрати {expense}.",
+  "confirm.balance_category": "🎯 {category}: лишилося <b>{left}</b> з ліміту {limit}\nВитрачено цього місяця: {spent}",
+  "correction.item_missing": "🤔 Не знайшов позицію «{item}» у цьому записі.",
+  "correction.item_currency": "🤔 Позиції одного запису мають бути в одній валюті ({currency}). Запишіть {amount} окремо.",
+  "report.spent_by": "Хто скільки витратив",
+  "report.col_who": "Хто",
+  "dash.spent_by": "Хто скільки витратив",
 };

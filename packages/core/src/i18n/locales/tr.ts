@@ -323,4 +323,12 @@ export const tr: LocaleStrings = {
   "dash.money_left": "Kalan para",
   "dash.since": "{date} tarihinden beri",
   "dash.goal_open": "hedef yok",
+  "summary.spent_by": "👥 Harcayanlar: {list}",
+  "balance.trail": "Yani {start} ({date} tarihli sayım) + gelirler {income} − harcamalar {expense}.",
+  "confirm.balance_category": "🎯 {category}: {limit} limitinden <b>{left}</b> kaldı\nBu ay harcanan: {spent}",
+  "correction.item_missing": "🤔 Bu kayıtta «{item}» diye bir kalem bulamadım.",
+  "correction.item_currency": "🤔 Bir kaydın kalemleri aynı para biriminde olmalı ({currency}). {amount} tutarını ayrıca kaydet.",
+  "report.spent_by": "Kim ne kadar harcadı",
+  "report.col_who": "Kim",
+  "dash.spent_by": "Kim ne kadar harcadı",
 };

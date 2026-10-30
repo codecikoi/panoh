@@ -323,4 +323,12 @@ export const hi: LocaleStrings = {
   "dash.money_left": "हाथ में पैसे",
   "dash.since": "{date} से",
   "dash.goal_open": "बिना लक्ष्य",
+  "summary.spent_by": "👥 किसने कितना खर्च किया: {list}",
+  "balance.trail": "यानी {start} ({date} को बताई गई रकम) + आमदनी {income} − खर्च {expense}।",
+  "confirm.balance_category": "🎯 {category}: {limit} की सीमा में से <b>{left}</b> बाकी\nइस महीने खर्च: {spent}",
+  "correction.item_missing": "🤔 इस एंट्री में «{item}» नाम की कोई आइटम नहीं मिली।",
+  "correction.item_currency": "🤔 एक एंट्री की सभी आइटम एक ही मुद्रा में होती हैं ({currency})। {amount} अलग से दर्ज करें।",
+  "report.spent_by": "किसने कितना खर्च किया",
+  "report.col_who": "कौन",
+  "dash.spent_by": "किसने कितना खर्च किया",
 };

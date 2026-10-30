@@ -20,7 +20,7 @@ beforeAll(async () => {
   app = createApp({ db: handle.db, botToken: token });
   const { household } = await getOrCreateHousehold(handle.db, { chatId: -7, chatType: "supergroup", title: "Fam" }, { locale: "en", currency: "USD", timezone: "UTC" });
   householdId = household.id;
-  const user = await upsertUser(handle.db, { id: 42 });
+  const user = await upsertUser(handle.db, { id: 42, firstName: "Zoir" });
   await ensureMember(handle.db, householdId, user.id);
   const today = new Date().toISOString().slice(0, 10);
   await createTransaction(handle.db, { householdId, kind: "expense", amount: 45, currency: "USD", baseCurrency: "USD", category: "groceries", note: "milk", occurredOn: today });
@@ -45,9 +45,10 @@ describe("api", () => {
     await createCustomCategory(handle.db, { householdId, kind: "expense", name: "Car", emoji: "🚗" });
     const me = await app.request("/api/me", { headers: { authorization: tma(42) } });
     expect(me.status).toBe(200);
-    const body = (await me.json()) as { households: { id: number; categories: { key: string; name: string }[] }[] };
+    const body = (await me.json()) as { households: { id: number; categories: { key: string; name: string }[]; members: { id: number; name: string }[] }[] };
     expect(body.households.map((h) => h.id)).toEqual([householdId]);
     expect(body.households[0]?.categories).toEqual([expect.objectContaining({ key: "custom_1", name: "Car", emoji: "🚗", kind: "expense", archived: false })]);
+    expect(body.households[0]?.members).toEqual([{ id: expect.any(Number), name: "Zoir" }]);
 
     const summary = await app.request(`/api/households/${householdId}/summary`, { headers: { authorization: tma(42) } });
     expect(summary.status).toBe(200);

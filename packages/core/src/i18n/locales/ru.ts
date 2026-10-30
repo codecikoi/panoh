@@ -341,4 +341,12 @@ export const ru: LocaleStrings = {
   "dash.money_left": "Остаток",
   "dash.since": "с {date}",
   "dash.goal_open": "без цели",
+  "summary.spent_by": "👥 Потратили: {list}",
+  "balance.trail": "Это {start} (сверка {date}) + доходы {income} − расходы {expense}.",
+  "confirm.balance_category": "🎯 {category}: осталось <b>{left}</b> из лимита {limit}\nПотрачено в этом месяце: {spent}",
+  "correction.item_missing": "🤔 Не нашёл позицию «{item}» в этой записи.",
+  "correction.item_currency": "🤔 Позиции одной записи должны быть в одной валюте ({currency}). Запишите {amount} отдельно.",
+  "report.spent_by": "Кто сколько потратил",
+  "report.col_who": "Кто",
+  "dash.spent_by": "Кто сколько потратил",
 };

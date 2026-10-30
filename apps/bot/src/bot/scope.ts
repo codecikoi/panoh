@@ -23,7 +23,7 @@ export function scopeMiddleware(deps: Deps): Middleware<BotContext> {
     );
     let user;
     if (from && !from.is_bot) {
-      user = await upsertUser(deps.db, { id: from.id, languageCode: from.language_code });
+      user = await upsertUser(deps.db, { id: from.id, languageCode: from.language_code, firstName: from.first_name });
       await ensureMember(deps.db, household.id, user.id);
     }
     ctx.scope = await loadScope(deps.db, household, user);

@@ -323,4 +323,12 @@ export const ms: LocaleStrings = {
   "dash.money_left": "Wang di tangan",
   "dash.since": "sejak {date}",
   "dash.goal_open": "tiada sasaran",
+  "summary.spent_by": "👥 Perbelanjaan mengikut orang: {list}",
+  "balance.trail": "Iaitu {start} (semakan {date}) + pendapatan {income} − perbelanjaan {expense}.",
+  "confirm.balance_category": "🎯 {category}: tinggal <b>{left}</b> daripada had {limit}\nDibelanjakan bulan ini: {spent}",
+  "correction.item_missing": "🤔 Saya tak jumpa item «{item}» dalam rekod ini.",
+  "correction.item_currency": "🤔 Item dalam satu rekod mesti menggunakan mata wang yang sama ({currency}). Rekodkan {amount} secara berasingan.",
+  "report.spent_by": "Perbelanjaan mengikut orang",
+  "report.col_who": "Siapa",
+  "dash.spent_by": "Perbelanjaan mengikut orang",
 };

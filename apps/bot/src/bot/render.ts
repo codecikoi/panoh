@@ -16,6 +16,7 @@ import {
   formatMoney,
   formatMonth,
   formatPercent,
+  itemsOf,
   languageName,
   shiftMonthKey,
   monthPeriod,
@@ -79,6 +80,26 @@ function noteLine(note: string): string {
   return note ? `\n<i>${escapeHtml(note)}</i>` : "";
 }
 
+/** The member's first name for a record line; nothing in a private chat (one person) or when the name is not known. */
+export function authorName(scope: Scope, userId: number | null | undefined): string {
+  if (scope.household.chatType === "private" || userId === null || userId === undefined) return "";
+  return scope.names.get(userId) ?? "";
+}
+
+/** The note and author of a plain record, or one line per position ("корзинка продукты · 313 000 UZS · Зоир"). */
+function itemLines(scope: Scope, tx: Transaction): string {
+  const items = itemsOf(tx);
+  const line = (parts: string[]) => {
+    const text = parts.filter(Boolean).join(" · ");
+    return text ? `\n${text}` : "";
+  };
+  if (items.length === 1) {
+    const who = authorName(scope, items[0]!.userId);
+    return line([tx.note ? `<i>${escapeHtml(tx.note)}</i>` : "", escapeHtml(who)]);
+  }
+  return items.map((i) => line([i.note ? `<i>${escapeHtml(i.note)}</i>` : "", money(scope, i.amount, tx.currency), escapeHtml(authorName(scope, i.userId))])).join("");
+}
+
 export function txText(scope: Scope, tx: Transaction, options: { rateMissing?: boolean } = {}): string {
   const amount = money(scope, tx.amount, tx.currency);
   let converted = "";
@@ -89,7 +110,7 @@ export function txText(scope: Scope, tx: Transaction, options: { rateMissing?: b
   const missing = options.rateMissing || (tx.currency !== scope.currency && tx.amountBase === null)
     ? t(scope.locale, "confirm.tx_rate_missing", { currency: tx.currency })
     : "";
-  return base + noteLine(tx.note) + missing;
+  return base + itemLines(scope, tx) + missing;
 }
 
 export function txPendingText(scope: Scope, tx: Transaction): string {
@@ -446,6 +467,11 @@ export function summaryText(scope: Scope, s: MonthlySummary, insights?: Insights
       );
     }
   }
+  const spenders = s.byPerson.filter((p) => p.expense > 0);
+  if (spenders.length >= 2) {
+    lines.push("");
+    lines.push(t(L, "summary.spent_by", { list: spenders.map((p) => `${escapeHtml(p.name)} ${money(scope, p.expense)} (${p.share}%)`).join(" · ") }));
+  }
   if (s.outlook.budgets.length) {
     lines.push("");
     lines.push(t(L, "summary.budgets"));
@@ -598,16 +624,55 @@ export function languageKeyboard(): InlineKeyboard {
 // ---------- balance, alerts, categories ----------
 
 /** Confirmation of "we have 800k left": the first time an explanation, later the gap against the records. */
-export function balanceSetText(scope: Scope, amount: number, currency: string, previous: BalanceInfo | null): string {
+/** What the records said just before a checkpoint: the checkpoint before it and what came in and went out between the two. */
+export interface BalanceBefore {
+  start: number | null;
+  asOf: string;
+  income: number;
+  expense: number;
+  expected: number | null;
+}
+
+export function balanceBefore(info: BalanceInfo): BalanceBefore {
+  return { start: info.start, asOf: info.checkpoint.asOf, income: info.income, expense: info.expense, expected: info.current };
+}
+
+/** "That is 800 000 (checkpoint 29 Oct) + income 0 − expenses 431 000": how the bot arrived at the figure by the records. */
+function balanceTrailLine(scope: Scope, before: BalanceBefore): string {
+  if (before.start === null || (before.income === 0 && before.expense === 0)) return "";
+  return (
+    "\n" +
+    t(scope.locale, "balance.trail", {
+      start: money(scope, before.start),
+      date: formatDate(before.asOf, scope.locale),
+      income: money(scope, before.income),
+      expense: money(scope, before.expense),
+    })
+  );
+}
+
+export function balanceSetText(scope: Scope, amount: number, currency: string, previous: BalanceBefore | null): string {
   const stated = money(scope, amount, currency);
-  if (!previous || previous.current === null) return t(scope.locale, "confirm.balance", { amount: stated });
+  if (!previous || previous.expected === null) return t(scope.locale, "confirm.balance", { amount: stated });
   const base = currency === scope.currency ? amount : null;
-  const diff = base === null ? null : base - previous.current;
+  const diff = base === null ? null : base - previous.expected;
   if (diff === null || Math.abs(diff) < 1) return t(scope.locale, "confirm.balance_matches", { amount: stated });
-  return t(scope.locale, "confirm.balance_diff", {
-    amount: stated,
-    expected: money(scope, previous.current),
-    diff: (diff > 0 ? "+" : "−") + money(scope, Math.abs(diff)),
+  return (
+    t(scope.locale, "confirm.balance_diff", {
+      amount: stated,
+      expected: money(scope, previous.expected),
+      diff: (diff > 0 ? "+" : "−") + money(scope, Math.abs(diff)),
+    }) + balanceTrailLine(scope, previous)
+  );
+}
+
+/** "Groceries: 100 000 left of the 678 000 limit": a stated remainder for one category, turned into its monthly limit. */
+export function balanceCategoryText(scope: Scope, stat: BudgetStat): string {
+  return t(scope.locale, "confirm.balance_category", {
+    category: catLabel(scope, stat.category),
+    left: money(scope, Math.max(0, stat.remaining)),
+    limit: money(scope, stat.limit),
+    spent: money(scope, stat.spent),
   });
 }
 
@@ -625,7 +690,10 @@ export function balanceAnswerText(
   const onlyCategory = input.category !== null;
   if (!onlyCategory) {
     if (input.balance && input.balance.current !== null) {
-      lines.push(t(L, "balance.answer", { amount: money(scope, input.balance.current), date: formatDate(input.balance.checkpoint.asOf, L) }));
+      lines.push(
+        t(L, "balance.answer", { amount: money(scope, input.balance.current), date: formatDate(input.balance.checkpoint.asOf, L) }) +
+          balanceTrailLine(scope, balanceBefore(input.balance)),
+      );
     } else {
       lines.push(t(L, "balance.unknown"));
     }

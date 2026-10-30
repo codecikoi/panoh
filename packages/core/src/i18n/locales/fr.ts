@@ -323,4 +323,12 @@ export const fr: LocaleStrings = {
   "dash.money_left": "Argent restant",
   "dash.since": "depuis le {date}",
   "dash.goal_open": "sans objectif",
+  "summary.spent_by": "👥 Dépensé par : {list}",
+  "balance.trail": "Soit {start} (pointage du {date}) + revenus {income} − dépenses {expense}.",
+  "confirm.balance_category": "🎯 {category} : reste <b>{left}</b> sur le plafond de {limit}\nDépensé ce mois-ci : {spent}",
+  "correction.item_missing": "🤔 Je ne trouve pas de poste « {item} » dans cette entrée.",
+  "correction.item_currency": "🤔 Les postes d'une même entrée partagent sa devise ({currency}). Enregistrez {amount} séparément.",
+  "report.spent_by": "Qui a dépensé combien",
+  "report.col_who": "Qui",
+  "dash.spent_by": "Qui a dépensé combien",
 };

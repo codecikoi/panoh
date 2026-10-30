@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, gte } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, lt } from "drizzle-orm";
 import { DateTime } from "luxon";
 import type { Db } from "../db/client.js";
 import { alerts, balances, transactions, type Alert, type Balance, type Household, type NewBalance, type Transaction } from "../db/schema.js";
@@ -59,6 +59,38 @@ export async function latestBalance(db: Db, householdId: number): Promise<Balanc
     .orderBy(desc(balances.createdAt), desc(balances.id))
     .limit(1);
   return rows[0];
+}
+
+/** The checkpoint that was current just before `before` was made (checkpoints are made one after another, so by id). */
+export async function previousBalance(db: Db, householdId: number, before: Balance): Promise<Balance | undefined> {
+  const rows = await db
+    .select()
+    .from(balances)
+    .where(and(eq(balances.householdId, householdId), lt(balances.id, before.id)))
+    .orderBy(desc(balances.id))
+    .limit(1);
+  return rows[0];
+}
+
+/** How the records arrived at the figure a checkpoint replaced: the checkpoint before it plus what was recorded between the two. */
+export interface BalanceTrail {
+  previous: Balance;
+  /** The previous checkpoint in the base currency; null without a rate. */
+  start: number | null;
+  income: number;
+  expense: number;
+  /** start + income − expense, by the records as they are now. */
+  expected: number | null;
+  currency: string;
+}
+
+export async function explainBalance(db: Db, household: Household, balance: Balance, rates?: RateTable): Promise<BalanceTrail | null> {
+  const previous = await previousBalance(db, household.id, balance);
+  if (!previous) return null;
+  const [since, table] = await Promise.all([listTransactionsSince(db, household.id, previous), rates ? { rates } : getRates(db)]);
+  const between = since.filter((tx) => tx.createdAt < balance.createdAt);
+  const info = computeBalance(previous, between, household.baseCurrency, table.rates);
+  return { previous, start: info.start, income: info.income, expense: info.expense, expected: info.current, currency: info.currency };
 }
 
 export async function findBalanceByBotMessage(db: Db, chatId: number, botMessageId: number): Promise<Balance | undefined> {

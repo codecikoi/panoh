@@ -9,10 +9,11 @@ export interface ChatInfo {
   title?: string | null;
 }
 
-/** Only the Telegram id and language are stored; names stay in Telegram. */
+/** Telegram id, language and first name (the name is shown on records: who spent what). */
 export interface TgUserInfo {
   id: number;
   languageCode?: string | null;
+  firstName?: string | null;
 }
 
 export interface HouseholdDefaults {
@@ -106,18 +107,32 @@ export async function updateHousehold(db: Db, id: number, patch: Partial<Househo
 }
 
 export async function upsertUser(db: Db, tg: TgUserInfo): Promise<User> {
-  const values = { telegramUserId: tg.id, locale: tg.languageCode ?? null };
+  const firstName = tg.firstName?.trim().slice(0, 64) || null;
+  const values = { telegramUserId: tg.id, locale: tg.languageCode ?? null, firstName };
   const rows = await db
     .insert(users)
     .values(values)
     .onConflictDoUpdate({
       target: users.telegramUserId,
-      set: { locale: values.locale, updatedAt: new Date() },
+      // An update without a name (tests, the API) keeps the one on file.
+      set: { locale: values.locale, ...(firstName ? { firstName } : {}), updatedAt: new Date() },
     })
     .returning();
   const row = rows[0];
   if (!row) throw new Error("Failed to upsert user");
   return row;
+}
+
+/** First names of the household's members by user id; members whose name is not known yet are left out. */
+export async function loadMemberNames(db: Db, householdId: number): Promise<Map<number, string>> {
+  const rows = await db
+    .select({ userId: householdMembers.userId, firstName: users.firstName })
+    .from(householdMembers)
+    .innerJoin(users, eq(users.id, householdMembers.userId))
+    .where(eq(householdMembers.householdId, householdId));
+  const names = new Map<number, string>();
+  for (const r of rows) if (r.firstName) names.set(r.userId, r.firstName);
+  return names;
 }
 
 export async function ensureMember(db: Db, householdId: number, userId: number, role = "member"): Promise<void> {

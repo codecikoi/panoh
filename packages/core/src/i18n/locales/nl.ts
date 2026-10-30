@@ -323,4 +323,12 @@ export const nl: LocaleStrings = {
   "dash.money_left": "Nog over",
   "dash.since": "sinds {date}",
   "dash.goal_open": "geen doel",
+  "summary.spent_by": "👥 Uitgegeven door: {list}",
+  "balance.trail": "Dat is {start} (stand van {date}) + inkomsten {income} − uitgaven {expense}.",
+  "confirm.balance_category": "🎯 {category}: nog <b>{left}</b> over van de limiet van {limit}\nUitgegeven deze maand: {spent}",
+  "correction.item_missing": "🤔 Ik vind geen post „{item}” in dit record.",
+  "correction.item_currency": "🤔 De posten van één record hebben dezelfde valuta ({currency}). Noteer {amount} apart.",
+  "report.spent_by": "Wie heeft wat uitgegeven",
+  "report.col_who": "Wie",
+  "dash.spent_by": "Wie heeft wat uitgegeven",
 };

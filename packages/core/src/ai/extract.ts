@@ -55,6 +55,9 @@ const RawItem = z.object({
   remind_days_before: z.number().int().nullable(),
   target: z.string().nullable(),
   emoji: z.string().nullable(),
+  add_amount: z.number().nullable(),
+  add_note: z.string().nullable(),
+  remove_item: z.string().nullable(),
   time_specified: z.boolean(),
   confidence: z.number(),
 });
@@ -67,7 +70,7 @@ const RawExtraction = z.object({
 export type RawExtractedItem = z.infer<typeof RawItem>;
 
 /** Kinds whose `category` may be the month total ("total") rather than a real category. */
-const TOTAL_ALLOWED: ReadonlySet<ItemKind> = new Set(["budget_limit", "budget_remove", "balance_request", "balance_alert"]);
+const TOTAL_ALLOWED: ReadonlySet<ItemKind> = new Set(["budget_limit", "budget_remove", "balance_set", "balance_request", "balance_alert"]);
 
 export interface ExtractedItem {
   kind: ItemKind;
@@ -94,8 +97,18 @@ export interface ExtractedItem {
   /** For reminders: whether the user stated a time of day (false = household default time was applied). */
   timeSpecified: boolean;
   confidence: number;
-  /** Fields explicitly set by a correction. */
-  changed: Partial<{ amount: number; currency: string; category: string; note: string; date: string; dateApproximate: boolean }>;
+  /** Fields explicitly set by a correction; addAmount/addNote add a position to the record, removeItem drops one by its note. */
+  changed: Partial<{
+    amount: number;
+    currency: string;
+    category: string;
+    note: string;
+    date: string;
+    dateApproximate: boolean;
+    addAmount: number;
+    addNote: string;
+    removeItem: string;
+  }>;
 }
 
 export interface ExtractionContext {
@@ -145,12 +158,12 @@ Return nothing but the structured output.
 - budget_remove: remove the monthly limit of a category ("убери лимит на кафе") or of the month ("убери общий бюджет": category = "total"). Needs category.
 - goal: a savings goal ("копим на отпуск 10 млн к июлю", "save 5000$ for a car"). note = goal name, amount = target, date = deadline (last day of the month with date_approximate=true if only a month is given), null if there is no deadline. An open-ended stash with no target ("заначка", "подушка безопасности", "rainy-day fund", "копим на чёрный день") is a goal with amount = null.
 - goal_contribution: money put aside for a KNOWN savings goal (see the list) ("отложили на отпуск 1 млн", "+500k to the car fund", "в заначку 300к"). target = that goal's name exactly, amount required. If there is exactly one goal and the message just says money went to savings, use it.
-- balance_set: the family states how much money they have right now ("у нас осталось 800к", "на руках 2 млн", "we have 1500$ left", "сейчас есть 500к", "в бюджете осталось 800к"). amount = that money. It is neither an expense nor an income.
+- balance_set: the family states how much money they have right now ("у нас осталось 800к", "на руках 2 млн", "we have 1500$ left", "сейчас есть 500к", "в бюджете осталось 800к"). amount = that money, category = null. It is neither an expense nor an income. When it names one expense category ("остаток на продукты 100к", "на продукты осталось 100к", "баланс на продукты 100к", "we have 200$ left for groceries"), category = that category: the bot turns it into the category's monthly limit so that exactly this much is left. "total" only when it explicitly names the monthly budget limit ("от бюджета на месяц осталось 500к").
 - balance_request: the user asks how much money is left or available ("сколько осталось?", "сколько у нас есть?", "how much do we have?", "сколько осталось на продукты?", "сколько ещё можно потратить?"). category = null (the money on hand, the bot adds every limit itself) unless the question names one category's limit (then that category) or explicitly the monthly budget limit ("сколько осталось от лимита на месяц": "total"). Asking how much was SPENT is summary_request, not this.
 - balance_alert: a request to be warned when the money left drops to an amount ("напомни, когда останется 100к", "предупреди, когда на продукты останется 200к", "warn me when 100$ is left"). amount = the threshold; category = null for the money on hand (the default, also after "в бюджете осталось 800к"), a category when it names one category's limit, "total" only when it explicitly names the monthly budget limit. No due_at: it is not a dated reminder.
 - category_create: the user adds a category of their own ("создай категорию Машина", "новая категория доходов Аренда", "add a category Car 🚗", "yangi toifa Mashina"). note = the category name as written (short, first letter capitalised, no emoji inside), target = "expense" or "income" (expense unless the message says it is for income), emoji = the emoji the user gave, or one fitting emoji you pick.
 - category_remove: remove a category the family created ("удали категорию Машина", "remove the Car category"). note = the name.
-- correction: the message replies to a bot confirmation and changes something ("not 150, 115", "category transport", "it was yesterday", "in dollars"). Fill ONLY the changed fields; leave everything else null (note "" if unchanged).
+- correction: the message replies to a bot confirmation and changes something ("not 150, 115", "category transport", "it was yesterday", "in dollars"). Fill ONLY the changed fields; leave everything else null (note "" if unchanged). Adding to an expense or income record ("добавь ещё 20к виноград", "plus 15k for a taxi", "+5к хлеб", "и ещё молоко 12к") is a correction with add_amount = the amount ADDED (never the new total; amount stays null), add_note = what was added (short, no amount inside) and currency = the currency named for it ("плюс 5 долларов" → "USD"), null when none is named. Removing one position of a record that lists several ("убери виноград", "without the grapes") is a correction with remove_item = that position's note exactly as listed in the context. Changing one position's amount ("виноград не 20, а 25") is remove_item for it plus add_amount/add_note with the new amount.
 - cancel_last: the user wants to remove the last record ("undo", "delete that", "wrong", "отмени", "bekor").
 - summary_request: the user asks for totals / summary / how much was spent (a chat message).
 - report_request: the user asks for a report / PDF / document / file / statement ("отчёт за прошлую неделю", "pdf за сентябрь", "hisobot"). date = first day and date_to = last day of the period (inclusive); a week is Monday–Sunday, "this month" is the whole calendar month. Both null when no period is named.
@@ -169,6 +182,7 @@ Return nothing but the structured output.
 - date_to: only for report_request, otherwise null.
 - date_approximate: true only for planned_expense / goal (or a correction of their date) when no exact day was given; otherwise false.
 - emoji: only for category_create, otherwise null.
+- add_amount, add_note, remove_item: only for a correction, otherwise null.
 - note: short (≤ 40 chars), in the message's language, no amount or currency inside, lowercase unless it is a proper name. For recurring payments the note is the bill name ("кредит", "квартира", "internet"); for plans and goals it is what the money is for ("подарок на свадьбу", "отпуск"); for categories it is the category name.
 - category must be one of the lists below, or the KEY of one of the household's own categories listed in the message (return the key as given, e.g. "custom_12"). When a message clearly belongs to one of the household's own categories, prefer it over a built-in one. Loan or mortgage instalments → loans. Taxi, fuel, bus → transport. Cafe, restaurant, delivery → dining. Supermarket, market, food at home → groceries. Pharmacy, doctor → health. Money sent to parents/relatives → family.
 - confidence: 0.9–1 clear and complete; 0.6–0.8 minor ambiguity (e.g. category guessed); ≤ 0.5 missing data or unclear intent.
@@ -285,6 +299,11 @@ export function normalizeItems(raw: RawExtractedItem[], ctx: ExtractionContext):
         changed.date = date;
         changed.dateApproximate = dateApproximate;
       }
+      if (typeof r.add_amount === "number" && Number.isFinite(r.add_amount) && r.add_amount !== 0) {
+        changed.addAmount = Math.abs(r.add_amount);
+        changed.addNote = (r.add_note ?? "").trim().slice(0, 80);
+      }
+      if (r.remove_item && r.remove_item.trim()) changed.removeItem = r.remove_item.trim().slice(0, 80);
     }
 
     const target = r.target?.trim() || null;
