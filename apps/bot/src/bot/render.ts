@@ -576,15 +576,19 @@ export function settingsText(scope: Scope): string {
     days: h.remindDaysBefore,
     prefix: escapeHtml(prefixOf(scope)),
   });
-  return [
+  const lines = [
     title,
     t(scope.locale, "settings.reminder_time_line", { time: formatHour(h.reminderHour) }),
     t(scope.locale, "settings.name_line", { name: escapeHtml(assistantName(scope)) }),
-  ].join("\n");
+  ];
+  if (h.chatType !== "private") {
+    lines.push(t(scope.locale, "settings.listen_line", { mode: t(scope.locale, h.triggers.explicitOnly ? "settings.listen_explicit" : "settings.listen_all") }));
+  }
+  return lines.join("\n");
 }
 
 export function settingsKeyboard(scope: Scope): InlineKeyboard {
-  return new InlineKeyboard()
+  const kb = new InlineKeyboard()
     .text(t(scope.locale, "settings.btn_currency"), "set:cur")
     .text(t(scope.locale, "settings.btn_timezone"), "set:tz")
     .row()
@@ -592,6 +596,14 @@ export function settingsKeyboard(scope: Scope): InlineKeyboard {
     .text(t(scope.locale, "settings.btn_reminder_time"), "set:hour")
     .row()
     .text(t(scope.locale, "settings.btn_name"), "set:name");
+  if (scope.household.chatType === "private") return kb;
+  return kb.text(t(scope.locale, scope.household.triggers.explicitOnly ? "settings.btn_listen_all" : "settings.btn_listen_explicit"), "set:listen");
+}
+
+/** The built-in keywords this family turned off, with the way back; nothing when there are none. */
+export function mutedKeywordsLine(scope: Scope): string {
+  const muted = scope.household.triggers.mutedKeywords ?? [];
+  return muted.length ? t(scope.locale, "keywords.muted", { words: escapeHtml(muted.join(", ")) }) : "";
 }
 
 export function currencyKeyboard(): InlineKeyboard {

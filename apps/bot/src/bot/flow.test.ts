@@ -858,6 +858,50 @@ describe("bot flow", () => {
     expect(text).not.toContain("Не хватает");
   });
 
+  it("stops listening to chatter on request and turns built-in keywords off", async () => {
+    const cmd = (text: string) => ({ entities: [{ type: "bot_command", offset: 0, length: text.split(" ")[0]!.length }] });
+    const triggers = async () => (await getHouseholdByChatId(handle.db, chat.id))!.triggers;
+
+    await sendText(bot, "/keywords remove заплатил", cmd("/keywords remove заплатил"));
+    expect(lastSent().payload.text).toContain("Отключены: заплатил, заплатила, заплатили");
+    expect((await triggers()).mutedKeywords).toEqual(["заплатил", "заплатила", "заплатили"]);
+    await sendText(bot, "/keywords remove выдумка", cmd("/keywords remove выдумка"));
+    expect(lastSent().payload.text).toContain("Такого слова нет в списке: выдумка");
+
+    vi.mocked(extractItems).mockClear();
+    calls.length = 0;
+    await sendText(bot, "заплатила за садик");
+    expect(extractItems).not.toHaveBeenCalled();
+    expect(sent()).toHaveLength(0);
+
+    await sendText(bot, "/keywords add заплатила", cmd("/keywords add заплатила"));
+    expect((await triggers()).mutedKeywords).toEqual([]);
+    await sendText(bot, "/keywords remove потратил", cmd("/keywords remove потратил"));
+    await sendText(bot, "/keywords reset", cmd("/keywords reset"));
+    expect((await triggers()).mutedKeywords).toEqual([]);
+
+    await press(bot, "set:listen", 556, "settings");
+    expect((await triggers()).explicitOnly).toBe(true);
+    const on = String(calls.filter((c) => c.method === "editMessageText").at(-1)!.payload.text);
+    expect(on).toContain("Теперь отвечаю только по обращению");
+    expect(on).toContain("Когда отвечаю: <b>только по обращению</b>");
+
+    vi.mocked(extractItems).mockClear();
+    calls.length = 0;
+    await sendText(bot, "потратили 150 000 сум на садик");
+    expect(extractItems).not.toHaveBeenCalled();
+    expect(sent()).toHaveLength(0);
+    await sendText(bot, "/keywords", cmd("/keywords"));
+    expect(lastSent().payload.text).toContain("ключевые слова не работают");
+
+    mockExtraction([item({ amount: 1000, category: "other", note: "чай" })]);
+    await sendText(bot, "+ чай 1к");
+    expect(extractItems).toHaveBeenCalled();
+
+    await press(bot, "set:listen", 556, "settings");
+    expect((await triggers()).explicitOnly).toBe(false);
+  });
+
   it("takes any real currency code and refuses made-up ones", async () => {
     const cmd = (text: string) => ({ entities: [{ type: "bot_command", offset: 0, length: text.split(" ")[0]!.length }] });
     const baseCurrency = async () => (await getHouseholdByChatId(handle.db, chat.id))?.baseCurrency;

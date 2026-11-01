@@ -272,6 +272,15 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
           await edit(t(scope.locale, "settings.choose_reminder_time"), R.hourPickerKeyboard("set:hour"));
           return answer();
         }
+        if (action === "listen") {
+          const explicitOnly = !scope.household.triggers.explicitOnly;
+          scope.household = await updateHousehold(db, scope.household.id, { triggers: { ...scope.household.triggers, explicitOnly } });
+          const notice = explicitOnly
+            ? t(scope.locale, "settings.listen_on", { prefix: escapeHtml(R.prefixOf(scope)), name: escapeHtml(R.assistantName(scope)) })
+            : t(scope.locale, "settings.listen_off");
+          await edit(`${notice}\n\n${R.settingsText(scope)}`, R.settingsKeyboard(scope));
+          return answer();
+        }
         let saved = "";
         if (action === "cur" && /^[A-Z]{3}$/.test(value)) {
           scope.household = await updateHousehold(db, scope.household.id, { baseCurrency: value });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUILTIN_KEYWORDS, evaluateTrigger, normalizeAssistantName } from "./triggers.js";
+import { BUILTIN_KEYWORDS, effectiveKeywords, evaluateTrigger, keywordForms, normalizeAssistantName } from "./triggers.js";
 import { SUPPORTED_LOCALES } from "./i18n/index.js";
 
 describe("evaluateTrigger", () => {
@@ -93,12 +93,38 @@ describe("evaluateTrigger", () => {
     expect(evaluateTrigger({ ...base, text: "пиши на zoir@gmail.com, потратил 20к" }).reason).toBe("keyword");
   });
 
+  it("keeps the household's own config apart from built-ins", () => {
+    expect(effectiveKeywords("ru", { keywords: ["Кофе"], mutedKeywords: ["заплатил"] })).toContain("кофе");
+    expect(effectiveKeywords("ru", { keywords: ["Кофе"], mutedKeywords: ["заплатил"] })).not.toContain("заплатил");
+  });
+
   it("respects household config", () => {
     const config = { prefix: "#", keywords: ["кофе"], moneyPattern: false };
     expect(evaluateTrigger({ ...base, text: "+ продукты 150к", config }).reason).toBe("money" === "money" ? "none" : "none");
     expect(evaluateTrigger({ ...base, text: "# продукты 150к", config }).reason).toBe("prefix");
     expect(evaluateTrigger({ ...base, text: "кофе был вкусный", config }).reason).toBe("keyword");
     expect(evaluateTrigger({ ...base, text: "такси 25 000 сум", config }).process).toBe(false);
+  });
+
+  it("answers only when addressed in explicit-only mode", () => {
+    const config = { explicitOnly: true };
+    expect(evaluateTrigger({ ...base, text: "заплатил за садик", config }).process).toBe(false);
+    expect(evaluateTrigger({ ...base, text: "такси 25 000 сум", config }).process).toBe(false);
+    expect(evaluateTrigger({ ...base, text: "+ продукты 150к", config }).reason).toBe("prefix");
+    expect(evaluateTrigger({ ...base, text: "мадат продукты 150к", config }).reason).toBe("name");
+    expect(evaluateTrigger({ ...base, text: "150к", isReplyToBot: true, config }).reason).toBe("reply");
+    expect(evaluateTrigger({ ...base, text: "продукты 150к", isPrivateChat: true, config }).process).toBe(true);
+  });
+
+  it("turns a built-in keyword off with its forms, and only those", () => {
+    expect(keywordForms("заплатил", "ru")).toEqual(["заплатил", "заплатила", "заплатили"]);
+    expect(keywordForms("Потратили", "ru")).toEqual(["потратил", "потратила", "потратили"]);
+    expect(keywordForms("оплатил", "ru")).not.toContain("заплатил");
+    expect(keywordForms("кофе", "ru")).toEqual([]);
+    const config = { mutedKeywords: keywordForms("заплатил", "ru") };
+    expect(evaluateTrigger({ ...base, text: "заплатила за садик", config }).process).toBe(false);
+    expect(evaluateTrigger({ ...base, text: "потратили на садик", config }).reason).toBe("keyword");
+    expect(evaluateTrigger({ ...base, text: "заплатила 150 000 сум", config }).reason).toBe("money");
   });
 });
 

@@ -202,7 +202,23 @@ export function effectiveKeywords(locale: string, config?: TriggerConfig | null)
   const base = BUILTIN_KEYWORDS[locale] ?? [];
   const english = locale === "en" ? [] : BUILTIN_KEYWORDS.en ?? [];
   const extra = config?.keywords ?? [];
-  return [...new Set([...base, ...english, ...extra].map((k) => k.toLowerCase()))];
+  const muted = new Set(config?.mutedKeywords ?? []);
+  const builtin = [...base, ...english].map((k) => k.toLowerCase()).filter((k) => !muted.has(k));
+  return [...new Set([...builtin, ...extra.map((k) => k.toLowerCase())])];
+}
+
+function sharedStart(a: string, b: string): number {
+  let i = 0;
+  while (i < a.length && a[i] === b[i]) i++;
+  return i;
+}
+
+/** Built-in keywords that are forms of `word`: "заплатил" also finds "заплатила" and "заплатили". */
+export function keywordForms(word: string, locale: string): string[] {
+  const lower = word.toLowerCase();
+  return effectiveKeywords(locale).filter(
+    (kw) => kw === lower || sharedStart(kw, lower) >= Math.max(4, Math.min(kw.length, lower.length) - 2),
+  );
 }
 
 function escapeRegExp(value: string): string {
@@ -264,6 +280,7 @@ export function evaluateTrigger(input: TriggerInput): TriggerResult {
   if (input.mentionsOthers || mentionsOtherUser(text, input.botUsername)) {
     return { process: false, reason: "none", explicit: false, cleaned: text };
   }
+  if (config.explicitOnly) return { process: false, reason: "none", explicit: false, cleaned: text };
   if (containsKeyword(text, effectiveKeywords(input.locale, config), input.locale)) {
     return { process: true, reason: "keyword", explicit: false, cleaned: text };
   }

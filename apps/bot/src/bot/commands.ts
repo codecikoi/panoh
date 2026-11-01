@@ -5,6 +5,7 @@ import {
   currentMonthKey,
   getRates,
   isKnownCurrency,
+  keywordForms,
   loadBalance,
   listOpenPlans,
   loadMonthlySummary,
@@ -197,21 +198,41 @@ export function registerCommands(bot: Bot<BotContext>): void {
     const arg = argOf(ctx);
     const triggers = { ...scope.household.triggers };
     const custom = new Set((triggers.keywords ?? []).map((k) => k.toLowerCase()));
-    const match = /^(add|remove)\s+(.+)$/i.exec(arg);
+    const muted = new Set(triggers.mutedKeywords ?? []);
+    const match = /^(?:(add|remove)\s+(.+)|(reset))$/i.exec(arg);
     if (match) {
-      const words = match[2]!.split(/[,\n]/).map((w) => w.trim().toLowerCase()).filter(Boolean);
-      for (const w of words) match[1]!.toLowerCase() === "add" ? custom.add(w) : custom.delete(w);
+      const action = (match[1] ?? match[3])!.toLowerCase();
+      const words = (match[2] ?? "").split(/[,\n]/).map((w) => w.trim().toLowerCase()).filter(Boolean);
+      const unknown: string[] = [];
+      if (action === "reset") muted.clear();
+      for (const w of words) {
+        const forms = keywordForms(w, scope.locale);
+        if (action === "add") {
+          for (const form of forms) muted.delete(form);
+          if (!forms.length) custom.add(w);
+        } else if (custom.delete(w) || forms.length) {
+          for (const form of forms) muted.add(form);
+        } else {
+          unknown.push(w);
+        }
+      }
+      const missing = unknown.length ? t(scope.locale, "keywords.not_found", { words: escapeHtml(unknown.join(", ")) }) : "";
+      if (words.length && unknown.length === words.length) return ctx.reply(missing);
       triggers.keywords = [...custom];
+      triggers.mutedKeywords = [...muted];
       scope.household = await updateHousehold(ctx.deps.db, scope.household.id, { triggers });
-      return ctx.reply(t(scope.locale, "keywords.updated", { custom: custom.size ? escapeHtml([...custom].join(", ")) : t(scope.locale, "keywords.none") }));
+      const updated = t(scope.locale, "keywords.updated", { custom: custom.size ? escapeHtml([...custom].join(", ")) : t(scope.locale, "keywords.none") });
+      return ctx.reply(updated + R.mutedKeywordsLine(scope) + (missing ? `\n\n${missing}` : ""));
     }
-    const builtin = effectiveKeywords(scope.locale, null).slice(0, 25).join(", ");
+    const builtin = effectiveKeywords(scope.locale, { mutedKeywords: [...muted] }).slice(0, 25).join(", ");
     await ctx.reply(
       t(scope.locale, "keywords.current", {
         locale: scope.locale,
         builtin: escapeHtml(builtin) + "…",
         custom: custom.size ? escapeHtml([...custom].join(", ")) : t(scope.locale, "keywords.none"),
-      }),
+      }) +
+        R.mutedKeywordsLine(scope) +
+        (triggers.explicitOnly ? t(scope.locale, "keywords.explicit_note") : ""),
     );
   });
 

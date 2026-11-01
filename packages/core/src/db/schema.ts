@@ -21,6 +21,10 @@ export interface TriggerConfig {
   prefix?: string;
   /** Extra keywords added to the built-in list for the household locale. */
   keywords?: string[];
+  /** Built-in keywords this household turned off. */
+  mutedKeywords?: string[];
+  /** Only messages addressed to the bot count: no keywords, no amounts (default false). */
+  explicitOnly?: boolean;
   /** Whether a "number + currency" pattern triggers processing (default true). */
   moneyPattern?: boolean;
   /** Whether mentioning the bot or replying to it triggers processing (default true). */
