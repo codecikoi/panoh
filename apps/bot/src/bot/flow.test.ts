@@ -13,6 +13,7 @@ process.env.LOG_LEVEL = "warn";
 import {
   createTestDb,
   customCategoryKey,
+  env,
   extractItems,
   getHouseholdByChatId,
   latestBalance,
@@ -900,6 +901,27 @@ describe("bot flow", () => {
 
     await press(bot, "set:listen", 556, "settings");
     expect((await triggers()).explicitOnly).toBe(false);
+  });
+
+  it("shows platform stats only to the owner in a private chat", async () => {
+    const cmd = { entities: [{ type: "bot_command", offset: 0, length: 6 }] };
+    const dm = (from: { id: number }) => ({ from, chat: { id: from.id, type: "private" } });
+    await sendText(bot, "/stats", { ...cmd, ...dm(zoir) });
+    expect(sent().some((c) => String(c.payload.text).includes("Статистика"))).toBe(false);
+
+    env().OWNER_TELEGRAM_ID = zoir.id;
+    try {
+      calls.length = 0;
+      await sendText(bot, "/stats", { ...cmd, ...dm(malika) });
+      await sendText(bot, "/stats", cmd);
+      expect(sent().some((c) => String(c.payload.text).includes("Статистика"))).toBe(false);
+
+      await sendText(bot, "/stats", { ...cmd, ...dm(zoir) });
+      expect(lastSent().payload.text).toMatch(/Пользователи: <b>[1-9]\d*<\/b>/);
+      expect(lastSent().payload.text).toMatch(/Записи: <b>[1-9]\d*<\/b>/);
+    } finally {
+      env().OWNER_TELEGRAM_ID = undefined;
+    }
   });
 
   it("takes any real currency code and refuses made-up ones", async () => {

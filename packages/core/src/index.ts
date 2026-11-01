@@ -49,4 +49,5 @@ export * from "./services/edits.js";
 export * from "./services/categories.js";
 export * from "./services/balance.js";
 export * from "./services/report.js";
+export * from "./services/stats.js";
 export * from "./telegram/initData.js";

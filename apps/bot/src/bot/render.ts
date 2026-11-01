@@ -34,6 +34,7 @@ import {
   type Insights,
   type Plan,
   type MonthlySummary,
+  type PlatformStats,
   type RecurringPayment,
   type Reminder,
   type Transaction,
@@ -598,6 +599,18 @@ export function settingsKeyboard(scope: Scope): InlineKeyboard {
     .text(t(scope.locale, "settings.btn_name"), "set:name");
   if (scope.household.chatType === "private") return kb;
   return kb.text(t(scope.locale, scope.household.triggers.explicitOnly ? "settings.btn_listen_all" : "settings.btn_listen_explicit"), "set:listen");
+}
+
+/** /stats for the owner: the one screen in Russian only, no family ever sees it. */
+export function statsText(s: PlatformStats): string {
+  return [
+    "📈 <b>Статистика бота</b>",
+    "",
+    `👥 Пользователи: <b>${s.users}</b> · новых за 7 дней: ${s.newUsers}`,
+    `🏠 Чаты: <b>${s.chats}</b> (групп ${s.groups}, личек ${s.privateChats}) · новых за 7 дней: ${s.newChats}`,
+    `🔥 Активные чаты: <b>${s.active7d}</b> за 7 дней · ${s.active30d} за 30 дней`,
+    `✍ Записи: <b>${s.records}</b> · за 7 дней: ${s.newRecords}`,
+  ].join("\n");
 }
 
 /** The built-in keywords this family turned off, with the way back; nothing when there are none. */

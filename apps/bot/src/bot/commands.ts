@@ -5,8 +5,10 @@ import {
   currentMonthKey,
   getRates,
   isKnownCurrency,
+  env,
   keywordForms,
   loadBalance,
+  loadPlatformStats,
   listOpenPlans,
   loadMonthlySummary,
   parsePeriod,
@@ -148,6 +150,13 @@ export function registerCommands(bot: Bot<BotContext>): void {
   bot.command("categories", async (ctx) => {
     const kb = R.categoriesKeyboard(ctx.scope);
     await ctx.reply(R.categoriesListText(ctx.scope), kb ? { reply_markup: kb } : {});
+  });
+
+  // Owner only, in a private chat, and not in the command menu: anyone else gets silence.
+  bot.command("stats", async (ctx) => {
+    const owner = env().OWNER_TELEGRAM_ID;
+    if (!owner || ctx.from?.id !== owner || ctx.chat.type !== "private") return;
+    await ctx.reply(R.statsText(await loadPlatformStats(ctx.deps.db)));
   });
 
   bot.command("name", async (ctx) => {

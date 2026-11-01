@@ -20,6 +20,8 @@ const EnvSchema = z.object({
   /** Where the API reaches the bot's internal HTTP endpoints (e.g. http://bot:8080). */
   BOT_INTERNAL_URL: z.string().optional(),
   TELEGRAM_PROXY: z.string().optional(),
+  /** Telegram user id allowed to run /stats; nobody when unset. */
+  OWNER_TELEGRAM_ID: z.coerce.number().optional(),
   PORT: z.coerce.number().default(8080),
 
   DASHBOARD_URL: z.string().optional(),
