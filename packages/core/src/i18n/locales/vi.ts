@@ -35,7 +35,7 @@ export const vi: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "Chi",
   "kind.income": "Thu",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>Chưa có tỷ giá cho {currency}; chưa tính vào tiền tệ chính.</i>",
   "confirm.tx_pending": "🤔 Ghi <b>{kind}</b> {amount} · {category} nhé?",

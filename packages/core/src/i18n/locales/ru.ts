@@ -45,7 +45,7 @@ export const ru: LocaleStrings = {
   "kind.expense": "Расход",
   "kind.income": "Доход",
 
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>Курс для {currency} пока неизвестен — в основной валюте не учитываю.</i>",
   "confirm.tx_pending": "🤔 Записать <b>{kind}</b> {amount} · {category}?",

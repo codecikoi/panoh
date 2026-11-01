@@ -35,7 +35,7 @@ export const nl: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "Uitgave",
   "kind.income": "Inkomst",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>Nog geen wisselkoers voor {currency} — niet meegeteld in de hoofdvaluta.</i>",
   "confirm.tx_pending": "🤔 <b>{kind}</b> {amount} · {category} vastleggen?",

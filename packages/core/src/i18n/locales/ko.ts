@@ -35,7 +35,7 @@ export const ko: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "지출",
   "kind.income": "수입",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>{currency} 환율이 아직 없어서 기본 통화에는 합산하지 않았어요.</i>",
   "confirm.tx_pending": "🤔 <b>{kind}</b> {amount} · {category} 기록할까요?",

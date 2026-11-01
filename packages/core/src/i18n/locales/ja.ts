@@ -35,7 +35,7 @@ export const ja: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "支出",
   "kind.income": "収入",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>{currency} の為替レートがまだないため、基本通貨には含めていません。</i>",
   "confirm.tx_pending": "🤔 <b>{kind}</b> {amount} · {category} を記録しますか？",

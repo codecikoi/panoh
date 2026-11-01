@@ -43,7 +43,7 @@ export const en = {
   "kind.expense": "Expense",
   "kind.income": "Income",
 
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>No exchange rate for {currency} yet — not counted in the base currency.</i>",
   "confirm.tx_pending": "🤔 Record <b>{kind}</b> {amount} · {category}?",

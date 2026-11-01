@@ -35,7 +35,7 @@ export const ar: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "مصروف",
   "kind.income": "دخل",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>لا يوجد سعر صرف لـ {currency} بعد؛ لم يُحتسب بالعملة الأساسية.</i>",
   "confirm.tx_pending": "🤔 أسجّل <b>{kind}</b> {amount} · {category}؟",

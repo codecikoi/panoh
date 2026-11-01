@@ -35,7 +35,7 @@ export const hi: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "खर्च",
   "kind.income": "आमदनी",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>{currency} के लिए अभी विनिमय दर नहीं है; मुख्य मुद्रा में नहीं गिना गया।</i>",
   "confirm.tx_pending": "🤔 <b>{kind}</b> {amount} · {category} दर्ज करूँ?",

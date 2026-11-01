@@ -35,7 +35,7 @@ export const az: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "Xərc",
   "kind.income": "Gəlir",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>{currency} üçün məzənnə hələ yoxdur — əsas valyutada nəzərə alınmadı.</i>",
   "confirm.tx_pending": "🤔 <b>{kind}</b> {amount} · {category} qeyd edim?",

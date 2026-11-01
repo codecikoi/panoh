@@ -45,7 +45,7 @@ export const uz: LocaleStrings = {
   "kind.expense": "Xarajat",
   "kind.income": "Daromad",
 
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>{currency} uchun kurs hali yo'q — asosiy valyutada hisobga olinmadi.</i>",
   "confirm.tx_pending": "🤔 <b>{kind}</b> {amount} · {category} yozib qo'yaymi?",

@@ -35,7 +35,7 @@ export const kk: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "Шығыс",
   "kind.income": "Кіріс",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>{currency} бағамы әзірге белгісіз — негізгі валютада есепке алынбады.</i>",
   "confirm.tx_pending": "🤔 <b>{kind}</b> {amount} · {category} жазайын ба?",

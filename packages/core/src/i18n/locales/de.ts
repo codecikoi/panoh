@@ -35,7 +35,7 @@ export const de: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "Ausgabe",
   "kind.income": "Einnahme",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>Noch kein Wechselkurs für {currency} – wird in der Hauptwährung nicht mitgezählt.</i>",
   "confirm.tx_pending": "🤔 <b>{kind}</b> {amount} · {category} eintragen?",

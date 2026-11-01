@@ -35,7 +35,7 @@ export const ur: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "خرچ",
   "kind.income": "آمدنی",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>{currency} کے لیے ابھی شرحِ تبادلہ نہیں ہے؛ بنیادی کرنسی میں شمار نہیں ہوا۔</i>",
   "confirm.tx_pending": "🤔 <b>{kind}</b> {amount} · {category} درج کر دوں؟",

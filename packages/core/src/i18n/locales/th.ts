@@ -35,7 +35,7 @@ export const th: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "รายจ่าย",
   "kind.income": "รายรับ",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>ยังไม่มีอัตราแลกเปลี่ยนสำหรับ {currency} จึงยังไม่นับรวมในสกุลเงินหลัก</i>",
   "confirm.tx_pending": "🤔 บันทึก <b>{kind}</b> {amount} · {category} ไหม?",

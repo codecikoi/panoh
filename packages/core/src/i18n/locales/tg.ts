@@ -35,7 +35,7 @@ export const tg: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "Хароҷот",
   "kind.income": "Даромад",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>Қурби {currency} ҳоло маълум нест — ба асъори асосӣ ҳисоб нашуд.</i>",
   "confirm.tx_pending": "🤔 <b>{kind}</b> {amount} · {category}-ро сабт кунам?",

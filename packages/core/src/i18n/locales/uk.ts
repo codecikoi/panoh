@@ -35,7 +35,7 @@ export const uk: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "Витрата",
   "kind.income": "Дохід",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>Курсу для {currency} поки немає — в основній валюті не враховую.</i>",
   "confirm.tx_pending": "🤔 Записати <b>{kind}</b> {amount} · {category}?",

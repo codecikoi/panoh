@@ -148,7 +148,7 @@ describe("bot flow", () => {
     expect(extractItems).toHaveBeenCalledWith(expect.objectContaining({ text: "продукты 150к", baseCurrency: "UZS", timezone: "Asia/Tashkent" }));
     const confirmation = lastSent();
     expect(confirmation.payload.text).toContain("Расход");
-    expect(confirmation.payload.text).toContain("Продукты");
+    expect(confirmation.payload.text).toMatch(/· 150\s000\sUZS\n\S+ Продукты\n<i>продукты<\/i>/);
     expect(confirmation.payload.parse_mode).toBe("HTML");
     expect(confirmation.payload.reply_markup).toBeTruthy();
     expect(reactions().at(-1)).toContain("✍");

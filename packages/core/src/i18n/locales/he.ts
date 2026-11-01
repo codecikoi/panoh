@@ -35,7 +35,7 @@ export const he: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "הוצאה",
   "kind.income": "הכנסה",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>עדיין אין שער חליפין ל-{currency}; לא נספר במטבע הראשי.</i>",
   "confirm.tx_pending": "🤔 לרשום <b>{kind}</b> {amount} · {category}?",

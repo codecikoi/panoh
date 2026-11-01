@@ -35,7 +35,7 @@ export const tr: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "Harcama",
   "kind.income": "Gelir",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>{currency} için henüz kur yok; ana para biriminde sayılmadı.</i>",
   "confirm.tx_pending": "🤔 <b>{kind}</b> {amount} · {category} kaydedeyim mi?",

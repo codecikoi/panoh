@@ -35,7 +35,7 @@ export const id: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "Pengeluaran",
   "kind.income": "Pemasukan",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>Belum ada kurs untuk {currency}; tidak dihitung dalam mata uang utama.</i>",
   "confirm.tx_pending": "🤔 Catat <b>{kind}</b> {amount} · {category}?",

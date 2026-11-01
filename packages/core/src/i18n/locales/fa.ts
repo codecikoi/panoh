@@ -35,7 +35,7 @@ export const fa: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "هزینه",
   "kind.income": "درآمد",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>هنوز نرخ تبدیل برای {currency} ندارم؛ در ارز اصلی حساب نشد.</i>",
   "confirm.tx_pending": "🤔 <b>{kind}</b> {amount} · {category} را ثبت کنم؟",

@@ -35,7 +35,7 @@ export const ro: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "Cheltuială",
   "kind.income": "Venit",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": " (≈ {base})",
   "confirm.tx_rate_missing": "\n<i>Nu există încă un curs pentru {currency}; nu este inclus în moneda principală.</i>",
   "confirm.tx_pending": "🤔 Înregistrez <b>{kind}</b> {amount} · {category}?",

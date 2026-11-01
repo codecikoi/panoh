@@ -35,7 +35,7 @@ export const zh: LocaleStrings = {
   "keywords.none": "—",
   "kind.expense": "支出",
   "kind.income": "收入",
-  "confirm.tx": "✍ <b>{kind}</b> · {amount} · {category}",
+  "confirm.tx": "✍ <b>{kind}</b> · {amount}\n{category}",
   "confirm.tx_converted": "（≈ {base}）",
   "confirm.tx_rate_missing": "\n<i>还没有 {currency} 的汇率，暂未计入主货币。</i>",
   "confirm.tx_pending": "🤔 记一笔<b>{kind}</b> {amount} · {category}？",
