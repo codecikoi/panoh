@@ -40,7 +40,7 @@ import {
 } from "@madat/core";
 import type { Scope } from "./context.js";
 
-export const COMMON_CURRENCIES = ["USD", "EUR", "UZS", "RUB", "KZT", "KGS", "TJS", "UAH", "TRY", "GBP", "AED", "INR"];
+export const COMMON_CURRENCIES = ["USD", "EUR", "UZS", "RUB", "KZT", "KGS", "TJS", "UAH", "TRY", "GBP", "AED", "INR", "KRW", "JPY", "CNY", "VND"];
 export const COMMON_TIMEZONES = [
   "Asia/Tashkent", "Europe/Moscow", "Asia/Almaty", "Asia/Bishkek", "Asia/Dushanbe", "Europe/Kyiv",
   "Europe/Istanbul", "Europe/Berlin", "Europe/London", "Asia/Dubai", "America/New_York", "UTC",
@@ -637,18 +637,29 @@ export function balanceBefore(info: BalanceInfo): BalanceBefore {
   return { start: info.start, asOf: info.checkpoint.asOf, income: info.income, expense: info.expense, expected: info.current };
 }
 
-/** "That is 800 000 (checkpoint 29 Oct) + income 0 − expenses 431 000": how the bot arrived at the figure by the records. */
+/** "On 29 October you had 800 000. Since then 431 000 went out": how the bot arrived at the figure by the records. */
 function balanceTrailLine(scope: Scope, before: BalanceBefore): string {
   if (before.start === null || (before.income === 0 && before.expense === 0)) return "";
+  const key = before.income === 0 ? "balance.trail_spent" : before.expense === 0 ? "balance.trail_income" : "balance.trail";
   return (
     "\n" +
-    t(scope.locale, "balance.trail", {
+    t(scope.locale, key, {
       start: money(scope, before.start),
-      date: formatDate(before.asOf, scope.locale),
+      date: longDate(scope, before.asOf),
       income: money(scope, before.income),
       expense: money(scope, before.expense),
     })
   );
+}
+
+/** Money cannot be negative: below zero the records are behind reality, so the bot says so and asks for the real figure. */
+function balanceNegativeText(scope: Scope, info: BalanceInfo, current: number): string {
+  const before = balanceBefore(info);
+  const trail =
+    before.start !== null && before.income === 0
+      ? "\n" + t(scope.locale, "balance.negative_trail", { start: money(scope, before.start), date: longDate(scope, before.asOf), expense: money(scope, before.expense) })
+      : balanceTrailLine(scope, before);
+  return t(scope.locale, "balance.negative", { amount: money(scope, -current) }) + trail + "\n" + t(scope.locale, "balance.negative_hint");
 }
 
 export function balanceSetText(scope: Scope, amount: number, currency: string, previous: BalanceBefore | null): string {
@@ -691,8 +702,9 @@ export function balanceAnswerText(
   if (!onlyCategory) {
     if (input.balance && input.balance.current !== null) {
       lines.push(
-        t(L, "balance.answer", { amount: money(scope, input.balance.current), date: formatDate(input.balance.checkpoint.asOf, L) }) +
-          balanceTrailLine(scope, balanceBefore(input.balance)),
+        input.balance.current < 0
+          ? balanceNegativeText(scope, input.balance, input.balance.current)
+          : t(L, "balance.answer", { amount: money(scope, input.balance.current) }) + balanceTrailLine(scope, balanceBefore(input.balance)),
       );
     } else {
       lines.push(t(L, "balance.unknown"));
@@ -710,8 +722,11 @@ export function balanceAnswerText(
     lines.push(t(L, "balance.no_limit", { category: catLabel(scope, input.category!), spent: money(scope, input.spentInCategory ?? 0) }));
   }
   const f = input.forecast;
-  if (!onlyCategory && f && f.ahead > 0) {
-    lines.push(f.free >= 0 ? t(L, "summary.forecast_free", { amount: money(scope, f.free) }) : t(L, "summary.forecast_short", { amount: money(scope, -f.free) }));
+  if (!onlyCategory && f) {
+    // A shortage counts only income already received, which reads as alarm before payday: name what is coming instead.
+    const upcoming = f.payments + f.plans;
+    if (f.free >= 0 && f.ahead > 0) lines.push(t(L, "summary.forecast_free", { amount: money(scope, f.free) }));
+    else if (f.free < 0 && upcoming > 0) lines.push("", t(L, "balance.ahead", { amount: money(scope, upcoming) }));
   }
   return lines.join("\n");
 }

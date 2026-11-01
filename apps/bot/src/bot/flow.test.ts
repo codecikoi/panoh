@@ -28,6 +28,7 @@ import {
   listOpenReminders,
   listRecurring,
   markReminderDone,
+  schema,
   updateReminder,
   type DbHandle,
   type ExtractedItem,
@@ -799,7 +800,7 @@ describe("bot flow", () => {
     mockExtraction([item({ kind: "balance_set", amount: 100000 })]);
     await sendText(bot, "Мадат остаток 100к");
     expect(lastSent().payload.text).toContain("разница");
-    expect(flat(lastSent().payload.text)).toContain("Это 500 000 UZS (сверка");
+    expect(flat(lastSent().payload.text)).toMatch(/было 500 000 UZS\. С тех пор поступило 400 000 UZS, потрачено 300 000 UZS\./);
     const checkpoint = (await latestBalance(handle.db, 1))!;
     expect(checkpoint.amount).toBe(100000);
 
@@ -839,5 +840,46 @@ describe("bot flow", () => {
     expect(lastSent().payload.text).toContain("заначка");
     await sendText(bot, "/summary", cmd("/summary"));
     expect(lastSent().payload.text).toContain("заначка");
+  });
+
+  it("says the records are behind instead of showing negative money", async () => {
+    const today = DateTime.now().setZone("Asia/Tashkent").toISODate()!;
+    mockExtraction([item({ kind: "balance_set", amount: 100000 })]);
+    await sendText(bot, "Мадат у нас осталось 100к");
+    mockExtraction([item({ amount: 400000, category: "other", note: "ремонт", date: today, hasDate: true })]);
+    await sendText(bot, "+ ремонт 400к");
+    await sendText(bot, "/balance", { entities: [{ type: "bot_command", offset: 0, length: 8 }] });
+    const text = flat(lastSent().payload.text);
+    expect(text).toContain("Расходы превысили остаток на <b>300 000 UZS</b>");
+    expect(text).toMatch(/у вас было 100 000 UZS, с тех пор вы потратили 400 000 UZS\./);
+    expect(text).toContain("Возможно, не записан какой-то доход.");
+    expect(text).toContain("<i>у нас осталось 500к</i>");
+    expect(text).not.toContain("-300");
+    expect(text).not.toContain("Не хватает");
+  });
+
+  it("takes any real currency code and refuses made-up ones", async () => {
+    const cmd = (text: string) => ({ entities: [{ type: "bot_command", offset: 0, length: text.split(" ")[0]!.length }] });
+    const baseCurrency = async () => (await getHouseholdByChatId(handle.db, chat.id))?.baseCurrency;
+    await sendText(bot, "/currency", cmd("/currency"));
+    expect(lastSent().payload.text).toContain("/currency CHF");
+    expect(JSON.stringify(lastSent().payload.reply_markup)).toContain("set:cur:KRW");
+
+    // Rates have not loaded yet: the code cannot be checked, so it is taken.
+    await sendText(bot, "/currency chf", cmd("/currency chf"));
+    expect(await baseCurrency()).toBe("CHF");
+
+    const fetchedAt = new Date();
+    await handle.db.insert(schema.exchangeRates).values([
+      { currency: "KRW", rate: 1335, fetchedAt },
+      { currency: "UZS", rate: 12000, fetchedAt },
+    ]);
+    await sendText(bot, "/currency ABC", cmd("/currency ABC"));
+    expect(lastSent().payload.text).toContain("Не знаю такую валюту");
+    await sendText(bot, "/currency вон", cmd("/currency вон"));
+    expect(lastSent().payload.text).toContain("Не знаю такую валюту");
+    expect(await baseCurrency()).toBe("CHF");
+    await sendText(bot, "/currency krw", cmd("/currency krw"));
+    expect(await baseCurrency()).toBe("KRW");
   });
 });

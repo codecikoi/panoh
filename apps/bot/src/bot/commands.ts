@@ -4,6 +4,7 @@ import {
   availableLocales,
   currentMonthKey,
   getRates,
+  isKnownCurrency,
   loadBalance,
   listOpenPlans,
   loadMonthlySummary,
@@ -163,7 +164,8 @@ export function registerCommands(bot: Bot<BotContext>): void {
     const scope = ctx.scope;
     const code = argOf(ctx).toUpperCase();
     if (!code) return ctx.reply(t(scope.locale, "settings.choose_currency"), { reply_markup: R.currencyKeyboard() });
-    if (!/^[A-Z]{3}$/.test(code)) return ctx.reply(t(scope.locale, "settings.currency_invalid"));
+    const { rates } = await getRates(ctx.deps.db);
+    if (!/^[A-Z]{3}$/.test(code) || !isKnownCurrency(code, rates)) return ctx.reply(t(scope.locale, "settings.currency_invalid"));
     scope.household = await updateHousehold(ctx.deps.db, scope.household.id, { baseCurrency: code });
     scope.currency = code;
     await ctx.reply(t(scope.locale, "settings.saved", { value: code }));

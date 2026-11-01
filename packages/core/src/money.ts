@@ -73,6 +73,11 @@ export function formatPercent(value: number, locale = "en"): string {
 /** Rates are quoted per 1 USD (how many units of `currency` one dollar buys). */
 export type RateTable = Record<string, number>;
 
+/** A real currency code is one we have a rate for; until rates have loaded (only USD is known) any code passes. */
+export function isKnownCurrency(code: string, rates: RateTable): boolean {
+  return Object.keys(rates).length <= 1 || rates[code] !== undefined;
+}
+
 export function convert(amount: number, from: string, to: string, rates: RateTable): number | null {
   if (from === to) return amount;
   const fromRate = from === "USD" ? 1 : rates[from];

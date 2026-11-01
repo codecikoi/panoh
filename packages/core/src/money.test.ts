@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { convert, formatMoney, normalizeCurrency } from "./money.js";
+import { convert, formatMoney, isKnownCurrency, normalizeCurrency } from "./money.js";
 
 describe("money", () => {
+  it("knows a currency by its rate, and lets any code through until rates have loaded", () => {
+    const rates = { USD: 1, KRW: 1335 };
+    expect(isKnownCurrency("KRW", rates)).toBe(true);
+    expect(isKnownCurrency("USD", rates)).toBe(true);
+    expect(isKnownCurrency("ABC", rates)).toBe(false);
+    expect(isKnownCurrency("ABC", { USD: 1 })).toBe(true);
+  });
+
   it("normalizes currency aliases", () => {
     expect(normalizeCurrency("сум", "USD")).toBe("UZS");
     expect(normalizeCurrency("$", "UZS")).toBe("USD");

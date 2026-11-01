@@ -69,7 +69,6 @@ import {
   findRecurringByBotMessage,
   findReminderByBotMessage,
   findTransactionByBotMessage,
-  formatDate,
   getRates,
   listRecurring,
   log,
@@ -1149,7 +1148,7 @@ export async function undoLast(ctx: BotContext, meta?: ApplyMeta): Promise<boole
   } else if (last.type === "balance") {
     // The checkpoint before it (if any) is current again.
     await deleteBalance(db, last.row.id);
-    what = t(scope.locale, "balance.answer", { amount: R.money(scope, last.row.amount, last.row.currency), date: formatDate(last.row.asOf, scope.locale) });
+    what = t(scope.locale, "balance.answer", { amount: R.money(scope, last.row.amount, last.row.currency) });
   } else {
     await updateGoal(db, last.row.id, { status: "cancelled" });
     what = R.goalText(scope, last.row);
