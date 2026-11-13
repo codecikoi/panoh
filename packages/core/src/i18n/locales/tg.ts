@@ -347,4 +347,7 @@ export const tg: LocaleStrings = {
   "report.spent_by": "Кӣ чанд харҷ кард",
   "report.col_who": "Кӣ",
   "dash.spent_by": "Кӣ чанд харҷ кард",
+  "welcome.setup": "⚙️ Асъор: <b>{currency}</b> · Минтақаи вақт: <b>{timezone}</b> · Забон: <b>{language}</b>\nАгар чизе нодуруст бошад, бо тугмаҳои поён иваз кунед. Ҳамаи танзимот: /settings.",
+  "currency.offer": "💱 Бо пешфарз дар {currency} ҳисоб кунам? Ҳоло маблағҳои бе асъорро бо {base} менависам.",
+  "currency.switched": "✅ Акнун дар {currency} ҳисоб мекунам: маблағҳои бе асъор бо он навишта мешаванд. Сабтҳои кӯҳна бо асъори худ мемонанд.",
 };

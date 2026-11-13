@@ -347,4 +347,7 @@ export const ko: LocaleStrings = {
   "report.spent_by": "누가 얼마나 썼나",
   "report.col_who": "누가",
   "dash.spent_by": "누가 얼마나 썼나",
+  "welcome.setup": "⚙️ 통화: <b>{currency}</b> · 시간대: <b>{timezone}</b> · 언어: <b>{language}</b>\n잘못된 부분이 있으면 아래 버튼으로 바꿔 주세요. 전체 설정: /settings",
+  "currency.offer": "💱 기본 통화를 {currency}(으)로 할까요? 지금은 통화가 없는 금액을 {base}(으)로 기록하고 있어요.",
+  "currency.switched": "✅ 이제 {currency}(으)로 계산해요. 통화가 없는 금액은 이 통화로 기록돼요. 이전 기록은 원래 통화 그대로 남아요.",
 };

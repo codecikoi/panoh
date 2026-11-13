@@ -363,6 +363,9 @@ export const en = {
   "report.spent_by": "Who spent what",
   "report.col_who": "Who",
   "dash.spent_by": "Who spent what",
+  "welcome.setup": "⚙️ Currency: <b>{currency}</b> · Timezone: <b>{timezone}</b> · Language: <b>{language}</b>\nIf something is off, change it with the buttons below. All settings: /settings.",
+  "currency.offer": "💱 Count in {currency} by default? Right now amounts without a currency go to {base}.",
+  "currency.switched": "✅ Now I count in {currency}: amounts without a currency go to it. Earlier records keep their own currency.",
 } as const;
 
 export type LocaleStrings = { [K in keyof typeof en]: string };

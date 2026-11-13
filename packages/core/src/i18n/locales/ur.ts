@@ -347,4 +347,7 @@ export const ur: LocaleStrings = {
   "report.spent_by": "کس نے کتنا خرچ کیا",
   "report.col_who": "کون",
   "dash.spent_by": "کس نے کتنا خرچ کیا",
+  "welcome.setup": "⚙️ کرنسی: <b>{currency}</b> · ٹائم زون: <b>{timezone}</b> · زبان: <b>{language}</b>\nاگر کچھ غلط ہے تو نیچے دیے گئے بٹنوں سے بدلیں۔ تمام سیٹنگز: /settings.",
+  "currency.offer": "💱 کیا ڈیفالٹ طور پر {currency} میں حساب کروں؟ ابھی بغیر کرنسی والی رقمیں میں {base} میں لکھتا ہوں۔",
+  "currency.switched": "✅ اب میں {currency} میں حساب کرتا ہوں: بغیر کرنسی والی رقمیں اسی میں لکھی جائیں گی۔ پرانے اندراج اپنی کرنسی میں رہیں گے۔",
 };

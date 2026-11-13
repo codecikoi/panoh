@@ -365,4 +365,7 @@ export const uz: LocaleStrings = {
   "report.spent_by": "Kim qancha sarfladi",
   "report.col_who": "Kim",
   "dash.spent_by": "Kim qancha sarfladi",
+  "welcome.setup": "⚙️ Valyuta: <b>{currency}</b> · Vaqt zonasi: <b>{timezone}</b> · Til: <b>{language}</b>\nAgar biror narsa noto'g'ri bo'lsa, quyidagi tugmalar bilan o'zgartiring. Barcha sozlamalar: /settings.",
+  "currency.offer": "💱 Asosiy valyuta {currency} bo'lsinmi? Hozir valyutasi ko'rsatilmagan summalarni {base} deb yozyapman.",
+  "currency.switched": "✅ Endi asosiy valyuta — {currency}: valyutasi ko'rsatilmagan summalar shunda yoziladi. Eski yozuvlar o'z valyutasida qoladi.",
 };

@@ -250,6 +250,19 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
         return answer(t(scope.locale, "confirm.category_removed", { name: row.name }).replace(/<[^>]+>/g, ""));
       }
 
+      // The offer under a currency correction: count in that currency by default, or leave the household's as it is.
+      if (ns === "cur") {
+        const code = rest[0] ?? "";
+        if (action === "set" && /^[A-Z]{3}$/.test(code)) {
+          scope.household = await updateHousehold(db, scope.household.id, { baseCurrency: code });
+          scope.currency = code;
+          await edit(t(scope.locale, "currency.switched", { currency: `${code} · ${currencyName(code, scope.locale)}` }));
+          return answer(t(scope.locale, "settings.saved", { value: code }));
+        }
+        await ctx.deleteMessage().catch(() => edit(escapeHtml(currentText)));
+        return answer();
+      }
+
       if (ns === "set") {
         const value = rest.join(":");
         if (action === "cur" && !value) {

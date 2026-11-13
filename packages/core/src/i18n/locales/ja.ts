@@ -347,4 +347,7 @@ export const ja: LocaleStrings = {
   "report.spent_by": "誰がいくら使ったか",
   "report.col_who": "誰",
   "dash.spent_by": "誰がいくら使ったか",
+  "welcome.setup": "⚙️ 通貨：<b>{currency}</b> · タイムゾーン：<b>{timezone}</b> · 言語：<b>{language}</b>\n違っていたら、下のボタンで変更してください。すべての設定：/settings",
+  "currency.offer": "💱 基本の通貨を {currency} にしますか？今は通貨の指定がない金額を {base} で記録しています。",
+  "currency.switched": "✅ これからは {currency} で計算します。通貨の指定がない金額はこの通貨で記録します。これまでの記録はそれぞれの通貨のままです。",
 };

@@ -347,4 +347,7 @@ export const az: LocaleStrings = {
   "report.spent_by": "Kim nə qədər xərclədi",
   "report.col_who": "Kim",
   "dash.spent_by": "Kim nə qədər xərclədi",
+  "welcome.setup": "⚙️ Valyuta: <b>{currency}</b> · Saat qurşağı: <b>{timezone}</b> · Dil: <b>{language}</b>\nNəsə düz deyilsə, aşağıdakı düymələrlə dəyiş. Bütün ayarlar: /settings.",
+  "currency.offer": "💱 Defolt olaraq {currency} ilə hesablayım? İndi valyutası göstərilməyən məbləğləri {base} ilə yazıram.",
+  "currency.switched": "✅ İndi {currency} ilə hesablayıram: valyutası göstərilməyən məbləğlər ona yazılır. Köhnə qeydlər öz valyutasında qalır.",
 };

@@ -347,4 +347,7 @@ export const ar: LocaleStrings = {
   "report.spent_by": "الإنفاق حسب الشخص",
   "report.col_who": "من",
   "dash.spent_by": "الإنفاق حسب الشخص",
+  "welcome.setup": "⚙️ العملة: <b>{currency}</b> · المنطقة الزمنية: <b>{timezone}</b> · اللغة: <b>{language}</b>\nإذا كان هناك خطأ، غيّره بالأزرار أدناه. كل الإعدادات: /settings.",
+  "currency.offer": "💱 هل أحسب بعملة {currency} افتراضيًا؟ الآن أسجّل المبالغ التي بلا عملة بـ {base}.",
+  "currency.switched": "✅ الآن أحسب بعملة {currency}: المبالغ التي بلا عملة تُسجَّل بها. السجلات السابقة تبقى بعملتها.",
 };

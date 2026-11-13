@@ -13,6 +13,7 @@ import {
   type CustomCategoryInfo,
 } from "../categories.js";
 import { normalizeCurrency } from "../money.js";
+import { mentionsCurrency } from "../triggers.js";
 import { describeNow, endOfMonthISO, isValidISODate, localToInstant, todayISO } from "../dates.js";
 
 export const ITEM_KINDS = [
@@ -75,7 +76,10 @@ const TOTAL_ALLOWED: ReadonlySet<ItemKind> = new Set(["budget_limit", "budget_re
 export interface ExtractedItem {
   kind: ItemKind;
   amount: number | null;
+  /** The currency the message named, or the household's when it named none. */
   currency: string;
+  /** The message itself named the currency (a symbol, word or code); false when `currency` is the household default. */
+  currencyStated: boolean;
   /** Built-in category key, a custom category key ("custom_12") or "total" for the month limit. */
   category: string | null;
   note: string;
@@ -174,7 +178,7 @@ Return nothing but the structured output.
 ## Rules
 - A message can contain several items ("groceries 150k and taxi 30k" → two expenses; "we have 800k left, warn me when 100k is left" → balance_set and balance_alert). Return them in order.
 - Amounts: "150k"/"150к" = 150000; "2 млн"/"2 mln"/"2m" = 2000000; "1.5k" = 1500; "тыс" = thousands. Never invent an amount; if missing, amount = null and confidence ≤ 0.4 (except a goal with no target).
-- Currency: return an ISO 4217 code when stated or implied by a symbol/word ("$" USD, "€" EUR, "₽"/"руб" RUB, "сум"/"so'm"/"sum" UZS, "тенге"/"тг" KZT, "сомони" TJS, "сом" → KGS if the household currency is KGS else TJS). Otherwise null (the household default applies).
+- Currency: return an ISO 4217 code only when the message itself names the currency with a symbol, a code or a word ("$" USD, "€" EUR, "₽"/"руб" RUB, "сум"/"so'm"/"sum" UZS, "вон"/"won"/"₩"/"원" KRW, "тенге"/"тг" KZT, "сомони" TJS, "сом" → KGS if the household currency is KGS else TJS). Otherwise null: the household base currency applies. Never infer a currency from the size of the amount, the language, the time zone, earlier records or the chat context.
 - Dates are resolved relative to NOW (given with timezone). "yesterday" → that date. Expense/income date: the day it happened, default today. Planned expense dates and goal deadlines are in the future: "in December" means the next December. A reminder must be in the future: "on Friday" means the next Friday, "on the 20th" means the next 20th.
 - Reminder time of day: if the user states a time or a clear part of the day ("at 3", "tonight" 20:00, "morning" 09:00, "after lunch" 14:00), use it and set time_specified=true. If only a date or weekday is given, use the household default reminder time from the message and set time_specified=false. For planned_expense set time_specified=true only when a time of day is stated. For every other kind time_specified=false.
 - A correction that only changes the time of a reminder keeps the original reminder date: return the full due_at with the new time and time_specified=true. A correction that moves a reminder to another date without naming a time returns due_at with the new date (keep the original time of day) and time_specified=false; the bot decides the final time.
@@ -279,7 +283,10 @@ export function normalizeItems(raw: RawExtractedItem[], ctx: ExtractionContext):
       }
     }
     const amount = typeof r.amount === "number" && Number.isFinite(r.amount) && r.amount !== 0 ? Math.abs(r.amount) : null;
-    const currency = normalizeCurrency(r.currency, ctx.baseCurrency);
+    // A currency the message does not name is the model's guess (amount size, region, earlier records): the household's applies.
+    const named = normalizeCurrency(r.currency, "");
+    const currencyStated = named !== "" && mentionsCurrency(ctx.text, named);
+    const currency = currencyStated ? named : ctx.baseCurrency;
     const date = hasDate ? (dateApproximate ? endOfMonthISO(r.date!) : r.date!) : today;
     const dueAt = r.due_at ? localToInstant(r.due_at, ctx.timezone) : null;
     const dayOfMonth =
@@ -292,7 +299,7 @@ export function normalizeItems(raw: RawExtractedItem[], ctx: ExtractionContext):
     const changed: ExtractedItem["changed"] = {};
     if (r.kind === "correction") {
       if (amount !== null) changed.amount = amount;
-      if (r.currency) changed.currency = normalizeCurrency(r.currency, ctx.baseCurrency);
+      if (currencyStated) changed.currency = currency;
       if (hasCategory && category) changed.category = category;
       if (r.note && r.note.trim()) changed.note = r.note.trim();
       if (hasDate) {
@@ -311,6 +318,7 @@ export function normalizeItems(raw: RawExtractedItem[], ctx: ExtractionContext):
       kind: r.kind,
       amount,
       currency,
+      currencyStated,
       category:
         r.kind === "expense" || r.kind === "income" || r.kind === "planned_expense"
           ? (category ?? normalizeCategory(kindForCategory, null))

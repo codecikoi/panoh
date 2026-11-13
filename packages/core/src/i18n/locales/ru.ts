@@ -365,4 +365,7 @@ export const ru: LocaleStrings = {
   "report.spent_by": "Кто сколько потратил",
   "report.col_who": "Кто",
   "dash.spent_by": "Кто сколько потратил",
+  "welcome.setup": "⚙️ Валюта: <b>{currency}</b> · Часовой пояс: <b>{timezone}</b> · Язык: <b>{language}</b>\nЕсли что-то не так, поменяй кнопками ниже. Все настройки: /settings.",
+  "currency.offer": "💱 Считать в {currency} по умолчанию? Сейчас суммы без валюты я записываю в {base}.",
+  "currency.switched": "✅ Теперь считаю в {currency}: суммы без валюты записываю в неё. Старые записи остаются в своей валюте.",
 };

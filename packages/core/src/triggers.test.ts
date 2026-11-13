@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUILTIN_KEYWORDS, effectiveKeywords, evaluateTrigger, keywordForms, normalizeAssistantName } from "./triggers.js";
+import { BUILTIN_KEYWORDS, effectiveKeywords, evaluateTrigger, keywordForms, mentionsCurrency, normalizeAssistantName } from "./triggers.js";
 import { SUPPORTED_LOCALES } from "./i18n/index.js";
 
 describe("evaluateTrigger", () => {
@@ -77,6 +77,18 @@ describe("evaluateTrigger", () => {
     expect(evaluateTrigger({ ...base, locale: "de", text: "Benzin 60 Euro" }).reason).toBe("money");
     expect(evaluateTrigger({ ...base, locale: "id", text: "makan siang 50rb" }).process).toBe(false);
     expect(evaluateTrigger({ ...base, locale: "ja", text: "ランチ 1200円" }).reason).toBe("money");
+    expect(evaluateTrigger({ ...base, text: "кофе 5000 вон" }).reason).toBe("money");
+    expect(evaluateTrigger({ ...base, text: "купанг 47 000 вонов" }).reason).toBe("money");
+    expect(evaluateTrigger({ ...base, locale: "uz", text: "taksi 5 dollarga" }).reason).toBe("money");
+  });
+
+  it("tells whether a message names a currency at all", () => {
+    for (const text of ["в вонах", "это было в долларах", "кофе 5$", "5000원", "ランチ 1200円", "in euros", "dollarda", "обед 30 GEL", "сум"]) {
+      expect(mentionsCurrency(text, text.includes("GEL") ? "GEL" : null), text).toBe(true);
+    }
+    for (const text of ["кофе 5000", "продукты 150к", "не 150, а 115", "обед 30 GEL"]) {
+      expect(mentionsCurrency(text, "KRW"), text).toBe(false);
+    }
   });
 
   it("stays quiet when another person is mentioned, unless the bot is addressed explicitly", () => {

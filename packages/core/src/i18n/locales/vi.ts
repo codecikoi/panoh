@@ -347,4 +347,7 @@ export const vi: LocaleStrings = {
   "report.spent_by": "Ai chi bao nhiêu",
   "report.col_who": "Ai",
   "dash.spent_by": "Ai chi bao nhiêu",
+  "welcome.setup": "⚙️ Tiền tệ: <b>{currency}</b> · Múi giờ: <b>{timezone}</b> · Ngôn ngữ: <b>{language}</b>\nNếu có gì chưa đúng, hãy đổi bằng các nút bên dưới. Tất cả cài đặt: /settings.",
+  "currency.offer": "💱 Tính bằng {currency} theo mặc định nhé? Hiện tôi đang ghi các khoản không có tiền tệ bằng {base}.",
+  "currency.switched": "✅ Giờ tôi tính bằng {currency}: các khoản không có tiền tệ sẽ ghi bằng loại này. Các bản ghi cũ giữ nguyên tiền tệ của chúng.",
 };

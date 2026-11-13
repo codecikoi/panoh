@@ -66,7 +66,7 @@ let updateId = 1;
 
 function item(partial: Partial<ExtractedItem>): ExtractedItem {
   return {
-    kind: "expense", amount: null, currency: "UZS", category: null, note: "", date: "2026-10-13", hasDate: false, dateApproximate: false, dateTo: null, dueAt: null,
+    kind: "expense", amount: null, currency: "UZS", currencyStated: false, category: null, note: "", date: "2026-10-13", hasDate: false, dateApproximate: false, dateTo: null, dueAt: null,
     dayOfMonth: null, remindDaysBefore: null, target: null, emoji: null, timeSpecified: true, confidence: 0.95, changed: {}, ...partial,
   };
 }
@@ -947,5 +947,52 @@ describe("bot flow", () => {
     expect(await baseCurrency()).toBe("CHF");
     await sendText(bot, "/currency krw", cmd("/currency krw"));
     expect(await baseCurrency()).toBe("KRW");
+  });
+
+  it("shows the guessed currency and time zone right after the first private welcome, with buttons to change them", async () => {
+    const alexey = { id: 77, is_bot: false, first_name: "Alexey", language_code: "en" };
+    mockExtraction([item({ kind: "balance_set", amount: 500000 })]);
+    await sendText(bot, "у меня 500000", { from: alexey, chat: { id: alexey.id, type: "private" } });
+    const setup = sent().find((c) => String(c.payload.text).includes("Currency: <b>UZS</b>"));
+    expect(String(setup?.payload.text)).toContain("Asia/Tashkent");
+    expect(JSON.stringify(setup?.payload.reply_markup)).toContain('"set:cur"');
+    expect(JSON.stringify(setup?.payload.reply_markup)).toContain('"set:tz"');
+  });
+
+  it("offers to count in the currency a record was corrected to, and a bill paid without a currency keeps its own", async () => {
+    const baseCurrency = async () => (await getHouseholdByChatId(handle.db, chat.id))?.baseCurrency;
+    await sendText(bot, "/currency UZS", { entities: [{ type: "bot_command", offset: 0, length: 9 }] });
+    expect(await baseCurrency()).toBe("UZS");
+    mockExtraction([item({ amount: 47000, category: "groceries", note: "купанг" })]);
+    await sendText(bot, "+ купанг 47000");
+    const tx = (await listRecentTransactions(handle.db, 1))[0]!;
+    expect(tx).toMatchObject({ note: "купанг", currency: "UZS" });
+
+    mockExtraction([item({ kind: "correction", currency: "KRW", currencyStated: true, changed: { currency: "KRW" } })]);
+    await sendText(bot, "это в вонах", { reply_to_message: { message_id: tx.botMessageId, from: me, chat, date: 1, text: "x" } });
+    expect((await listRecentTransactions(handle.db, 1))[0]).toMatchObject({ id: tx.id, currency: "KRW" });
+    const offer = lastSent();
+    expect(offer.payload.text).toContain("Считать в KRW по умолчанию?");
+    expect(offer.payload.text).toContain("UZS");
+    expect(JSON.stringify(offer.payload.reply_markup)).toContain("cur:set:KRW");
+
+    // An amount fix that keeps the currency does not ask again.
+    calls.length = 0;
+    mockExtraction([item({ kind: "correction", amount: 48000, changed: { amount: 48000 } })]);
+    await sendText(bot, "не 47, а 48", { reply_to_message: { message_id: tx.botMessageId, from: me, chat, date: 1, text: "x" } });
+    expect(sent().some((c) => String(c.payload.text).includes("по умолчанию"))).toBe(false);
+
+    await press(bot, "cur:keep", 9001, String(offer.payload.text));
+    expect(calls.some((c) => c.method === "deleteMessage")).toBe(true);
+    expect(await baseCurrency()).toBe("UZS");
+    await press(bot, "cur:set:KRW", 9002, String(offer.payload.text));
+    expect(await baseCurrency()).toBe("KRW");
+    expect(calls.filter((c) => c.method === "editMessageText").at(-1)?.payload.text).toContain("Теперь считаю в KRW");
+
+    mockExtraction([item({ kind: "recurring_payment", note: "аренда", amount: 500, currency: "USD", currencyStated: true, dayOfMonth: 1, category: "loans" })]);
+    await sendText(bot, "+ аренда 500$ каждое 1 число");
+    mockExtraction([item({ kind: "payment_done", target: "аренда", note: "оплатили аренду", amount: 500, currency: "KRW" })]);
+    await sendText(bot, "оплатили аренду 500");
+    expect((await listRecentTransactions(handle.db, 1))[0]).toMatchObject({ note: "аренда", amount: 500, currency: "USD" });
   });
 });

@@ -347,4 +347,7 @@ export const fa: LocaleStrings = {
   "report.spent_by": "هر کس چقدر خرج کرد",
   "report.col_who": "شخص",
   "dash.spent_by": "هر کس چقدر خرج کرد",
+  "welcome.setup": "⚙️ واحد پول: <b>{currency}</b> · منطقهٔ زمانی: <b>{timezone}</b> · زبان: <b>{language}</b>\nاگر چیزی درست نیست، با دکمه‌های زیر تغییرش بده. همهٔ تنظیمات: /settings.",
+  "currency.offer": "💱 به‌طور پیش‌فرض با {currency} حساب کنم؟ الان مبلغ‌های بدون واحد پول را با {base} ثبت می‌کنم.",
+  "currency.switched": "✅ از حالا با {currency} حساب می‌کنم: مبلغ‌های بدون واحد پول با آن ثبت می‌شوند. ثبت‌های قبلی واحد پول خودشان را نگه می‌دارند.",
 };

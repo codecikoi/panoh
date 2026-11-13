@@ -347,4 +347,7 @@ export const zh: LocaleStrings = {
   "report.spent_by": "谁花了多少",
   "report.col_who": "谁",
   "dash.spent_by": "谁花了多少",
+  "welcome.setup": "⚙️ 货币：<b>{currency}</b> · 时区：<b>{timezone}</b> · 语言：<b>{language}</b>\n如有不对，请用下面的按钮修改。全部设置：/settings",
+  "currency.offer": "💱 默认按 {currency} 记账吗？目前没写货币的金额我都记为 {base}。",
+  "currency.switched": "✅ 现在按 {currency} 记账：没写货币的金额都记为该货币。之前的记录保留原来的货币。",
 };

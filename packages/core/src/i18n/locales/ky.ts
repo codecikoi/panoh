@@ -347,4 +347,7 @@ export const ky: LocaleStrings = {
   "report.spent_by": "Ким канча коротту",
   "report.col_who": "Ким",
   "dash.spent_by": "Ким канча коротту",
+  "welcome.setup": "⚙️ Валюта: <b>{currency}</b> · Убакыт алкагы: <b>{timezone}</b> · Тил: <b>{language}</b>\nБир нерсе туура эмес болсо, төмөнкү баскычтар менен өзгөрт. Бардык жөндөөлөр: /settings.",
+  "currency.offer": "💱 Демейки боюнча {currency} менен эсептейинби? Азыр валютасы жок суммаларды {base} деп жазып жатам.",
+  "currency.switched": "✅ Эми {currency} менен эсептейм: валютасы жок суммалар ага жазылат. Эски жазуулар өз валютасында калат.",
 };

@@ -347,4 +347,7 @@ export const id: LocaleStrings = {
   "report.spent_by": "Pengeluaran per orang",
   "report.col_who": "Siapa",
   "dash.spent_by": "Pengeluaran per orang",
+  "welcome.setup": "⚙️ Mata uang: <b>{currency}</b> · Zona waktu: <b>{timezone}</b> · Bahasa: <b>{language}</b>\nKalau ada yang salah, ubah dengan tombol di bawah. Semua pengaturan: /settings.",
+  "currency.offer": "💱 Hitung dalam {currency} secara default? Sekarang jumlah tanpa mata uang saya catat dalam {base}.",
+  "currency.switched": "✅ Sekarang saya menghitung dalam {currency}: jumlah tanpa mata uang dicatat di situ. Catatan lama tetap dalam mata uangnya sendiri.",
 };

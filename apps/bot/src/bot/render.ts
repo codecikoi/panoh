@@ -588,6 +588,14 @@ export function settingsText(scope: Scope): string {
   return lines.join("\n");
 }
 
+/** Under the first private welcome: the guessed currency, time zone and language, each one tap away from its picker. */
+export function setupKeyboard(scope: Scope): InlineKeyboard {
+  return new InlineKeyboard()
+    .text(t(scope.locale, "settings.btn_currency"), "set:cur")
+    .text(t(scope.locale, "settings.btn_timezone"), "set:tz")
+    .text(t(scope.locale, "settings.btn_language"), "set:lang");
+}
+
 export function settingsKeyboard(scope: Scope): InlineKeyboard {
   const kb = new InlineKeyboard()
     .text(t(scope.locale, "settings.btn_currency"), "set:cur")

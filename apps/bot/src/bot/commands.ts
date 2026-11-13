@@ -43,6 +43,11 @@ export async function ensureWelcome(ctx: BotContext, force = false): Promise<voi
   const prefix = R.prefixOf(scope);
   if (isPrivate) {
     await ctx.reply(t(scope.locale, "welcome.private", { app: escapeHtml(R.assistantName(scope)) }));
+    // The currency and time zone were guessed from the Telegram language: show them right away, with a way to change.
+    await ctx.reply(
+      t(scope.locale, "welcome.setup", { currency: scope.currency, timezone: scope.tz, language: languageName(scope.locale, scope.locale) }),
+      { reply_markup: R.setupKeyboard(scope) },
+    );
   } else {
     await ctx.reply(
       t(scope.locale, "welcome.group", {

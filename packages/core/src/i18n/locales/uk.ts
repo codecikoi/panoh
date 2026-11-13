@@ -347,4 +347,7 @@ export const uk: LocaleStrings = {
   "report.spent_by": "Хто скільки витратив",
   "report.col_who": "Хто",
   "dash.spent_by": "Хто скільки витратив",
+  "welcome.setup": "⚙️ Валюта: <b>{currency}</b> · Часовий пояс: <b>{timezone}</b> · Мова: <b>{language}</b>\nЯкщо щось не так, зміни кнопками нижче. Усі налаштування: /settings.",
+  "currency.offer": "💱 Рахувати в {currency} за замовчуванням? Зараз суми без валюти я записую в {base}.",
+  "currency.switched": "✅ Тепер рахую в {currency}: суми без валюти записую в неї. Старі записи лишаються у своїй валюті.",
 };

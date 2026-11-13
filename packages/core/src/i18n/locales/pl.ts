@@ -347,4 +347,7 @@ export const pl: LocaleStrings = {
   "report.spent_by": "Kto ile wydał",
   "report.col_who": "Kto",
   "dash.spent_by": "Kto ile wydał",
+  "welcome.setup": "⚙️ Waluta: <b>{currency}</b> · Strefa czasowa: <b>{timezone}</b> · Język: <b>{language}</b>\nJeśli coś się nie zgadza, zmień to przyciskami poniżej. Wszystkie ustawienia: /settings.",
+  "currency.offer": "💱 Liczyć domyślnie w {currency}? Teraz kwoty bez waluty zapisuję w {base}.",
+  "currency.switched": "✅ Teraz liczę w {currency}: kwoty bez waluty trafiają do niej. Wcześniejsze wpisy zostają w swojej walucie.",
 };

@@ -347,4 +347,7 @@ export const ro: LocaleStrings = {
   "report.spent_by": "Cine cât a cheltuit",
   "report.col_who": "Cine",
   "dash.spent_by": "Cine cât a cheltuit",
+  "welcome.setup": "⚙️ Monedă: <b>{currency}</b> · Fus orar: <b>{timezone}</b> · Limbă: <b>{language}</b>\nDacă ceva nu e în regulă, schimbă cu butoanele de mai jos. Toate setările: /settings.",
+  "currency.offer": "💱 Să număr implicit în {currency}? Acum înregistrez sumele fără monedă în {base}.",
+  "currency.switched": "✅ Acum număr în {currency}: sumele fără monedă merg acolo. Înregistrările vechi își păstrează moneda.",
 };

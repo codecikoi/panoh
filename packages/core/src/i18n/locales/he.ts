@@ -347,4 +347,7 @@ export const he: LocaleStrings = {
   "report.spent_by": "מי הוציא כמה",
   "report.col_who": "מי",
   "dash.spent_by": "מי הוציא כמה",
+  "welcome.setup": "⚙️ מטבע: <b>{currency}</b> · אזור זמן: <b>{timezone}</b> · שפה: <b>{language}</b>\nאם משהו לא נכון, אפשר לשנות בכפתורים למטה. כל ההגדרות: /settings.",
+  "currency.offer": "💱 לחשב ב-{currency} כברירת מחדל? כרגע סכומים בלי מטבע נרשמים אצלי ב-{base}.",
+  "currency.switched": "✅ מעכשיו אני מחשב ב-{currency}: סכומים בלי מטבע נרשמים בו. רשומות קודמות נשארות במטבע שלהן.",
 };

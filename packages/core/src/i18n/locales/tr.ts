@@ -347,4 +347,7 @@ export const tr: LocaleStrings = {
   "report.spent_by": "Kim ne kadar harcadı",
   "report.col_who": "Kim",
   "dash.spent_by": "Kim ne kadar harcadı",
+  "welcome.setup": "⚙️ Para birimi: <b>{currency}</b> · Saat dilimi: <b>{timezone}</b> · Dil: <b>{language}</b>\nYanlış bir şey varsa aşağıdaki düğmelerle değiştir. Tüm ayarlar: /settings.",
+  "currency.offer": "💱 Varsayılan olarak {currency} ile hesaplayayım mı? Şu an para birimi belirtilmeyen tutarları {base} olarak kaydediyorum.",
+  "currency.switched": "✅ Artık {currency} ile hesaplıyorum: para birimi belirtilmeyen tutarlar buna yazılıyor. Eski kayıtlar kendi para biriminde kalıyor.",
 };

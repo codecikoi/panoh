@@ -347,4 +347,7 @@ export const nl: LocaleStrings = {
   "report.spent_by": "Wie heeft wat uitgegeven",
   "report.col_who": "Wie",
   "dash.spent_by": "Wie heeft wat uitgegeven",
+  "welcome.setup": "⚙️ Valuta: <b>{currency}</b> · Tijdzone: <b>{timezone}</b> · Taal: <b>{language}</b>\nKlopt er iets niet? Wijzig het met de knoppen hieronder. Alle instellingen: /settings.",
+  "currency.offer": "💱 Standaard in {currency} rekenen? Nu noteer ik bedragen zonder valuta in {base}.",
+  "currency.switched": "✅ Vanaf nu reken ik in {currency}: bedragen zonder valuta komen daarin. Eerdere boekingen houden hun eigen valuta.",
 };

@@ -347,4 +347,7 @@ export const hi: LocaleStrings = {
   "report.spent_by": "किसने कितना खर्च किया",
   "report.col_who": "कौन",
   "dash.spent_by": "किसने कितना खर्च किया",
+  "welcome.setup": "⚙️ मुद्रा: <b>{currency}</b> · टाइमज़ोन: <b>{timezone}</b> · भाषा: <b>{language}</b>\nअगर कुछ गलत है, तो नीचे दिए बटनों से बदलें। सभी सेटिंग्स: /settings.",
+  "currency.offer": "💱 क्या डिफ़ॉल्ट रूप से {currency} में गिनूँ? अभी बिना मुद्रा वाली रकम मैं {base} में लिखता हूँ।",
+  "currency.switched": "✅ अब मैं {currency} में गिनता हूँ: बिना मुद्रा वाली रकम इसी में लिखी जाएगी। पुरानी एंट्रियाँ अपनी मुद्रा में रहेंगी।",
 };

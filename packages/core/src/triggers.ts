@@ -171,10 +171,23 @@ export function normalizeAssistantName(raw: string): string | null | "invalid" {
 
 const MULTIPLIER = "(?:k|к|тыс\\.?|тысяч|млн\\.?|миллион[а-я]*|mln|ming|million|mil|rb|ribu|jt|juta|万|千|천|만|ล้าน|พัน)?";
 const CURRENCY_WORDS =
-  "сум[а-я]*|sum|so'm|so‘m|soʻm|сўм|uzs|руб[а-я]*|р\\.|₽|rub|\\$|usd|доллар[а-я]*|dollars?|bucks|€|eur|euros?|евро|£|gbp|pounds?|₸|тенге|теңге|тг|kzt|сом[а-я]*|somoni|tjs|kgs|грн|₴|uah|₺|try|lira|lirası|лир[а-я]*|¥|jpy|yen|円|cny|yuan|元|块|₹|inr|rupees?|rupias?|रुपये|रुपए|₨|rs|टका|টাকা|taka|bdt|روپے|pkr|₩|krw|won|원|aed|дирхам[а-я]*|درهم|دينار|دولار|يورو|ريال|تومان|₪|ש\"ח|שקל|שקלים|ils|zł|złotych|zloty|pln|lei|leu|ron|₫|dong|đồng|vnd|฿|baht|บาท|thb|ringgit|rm|myr|rupiah|rp|idr|pesos?|mxn|ars|cop|reais|real|r\\$|brl|chf|franken|francs?|kr|sek|nok|dkk|azn|manat|cad|aud|nzd";
+  "сум[а-я]*|sum|so'm|so‘m|soʻm|сўм|uzs|руб[а-я]*|р\\.|₽|rub|\\$|usd|доллар[а-я]*|долл\\.?|бакс[а-я]*|dollar[a-z]*|bucks|€|eur|euros?|евро|£|gbp|pounds?|₸|тенге|теңге|тг|kzt|сом[а-я]*|somoni|tjs|kgs|грн|₴|uah|₺|try|lira|lirası|лир[а-я]*|¥|jpy|yen|円|cny|yuan|元|块|₹|inr|rupees?|rupias?|रुपये|रुपए|₨|rs|टका|টাকা|taka|bdt|روپے|pkr|₩|krw|won|원|вон(?:а|ы|ов|ах|ами)?|aed|дирхам[а-я]*|درهم|دينار|دولار|يورو|ريال|تومان|₪|ש\"ח|שקל|שקלים|ils|zł|złotych|zloty|pln|lei|leu|ron|₫|dong|đồng|vnd|฿|baht|บาท|thb|ringgit|rm|myr|rupiah|rp|idr|pesos?|mxn|ars|cop|reais|real|r\\$|brl|chf|franken|francs?|kr|sek|nok|dkk|azn|manat|cad|aud|nzd";
 const MONEY_AFTER = `\\d[\\d\\s.,'’]*\\s?${MULTIPLIER}\\s?(?:${CURRENCY_WORDS})(?![\\p{L}])`;
 const MONEY_BEFORE = "(?:\\$|€|£|₽|₹|₺|₴|₸|₩|¥|₫|฿|₪|r\\$|rp|rs)\\s?\\d[\\d\\s.,]*";
 const MONEY_PATTERN = new RegExp(`${MONEY_AFTER}|(?:^|[^\\p{L}])${MONEY_BEFORE}`, "iu");
+/** Symbols and words of scripts that write a currency inside a word or with no space ("5000원", "בשקלים", "بالدولار"). */
+const CURRENCY_INSIDE = /[$€£₽₹₺₴₸₩¥₫฿₪₨円元块원]|บาท|টাকা|टका|रुपये|रुपए|روپے|درهم|دينار|دولار|يورو|ريال|تومان|שקל|ש"ח/u;
+const CURRENCY_WORD = new RegExp(`(?:^|[^\\p{L}])(?:${CURRENCY_WORDS})(?![\\p{L}])`, "iu");
+
+/**
+ * Whether the text itself names a currency: a symbol, a word ("в долларах", "вон", "so'm") or the given ISO code.
+ * A currency the model returns for a message that names none is a guess and is not taken.
+ */
+export function mentionsCurrency(text: string, code?: string | null): boolean {
+  if (CURRENCY_INSIDE.test(text) || CURRENCY_WORD.test(text) || MONEY_PATTERN.test(text)) return true;
+  const iso = code?.trim().toUpperCase();
+  return !!iso && /^[A-Z]{3}$/.test(iso) && new RegExp(`(?:^|[^\\p{L}])${iso}(?![\\p{L}])`, "iu").test(text);
+}
 
 export interface TriggerInput {
   text: string;

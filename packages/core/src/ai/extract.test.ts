@@ -34,6 +34,26 @@ describe("normalizeItems", () => {
     expect(item?.timeSpecified).toBe(false);
   });
 
+  it("takes a currency only when the message names it; a guess falls back to the household's", () => {
+    const krw = { ...ctx, baseCurrency: "KRW" };
+    const raw = (currency: string | null, kind: "expense" | "correction" = "expense") => ({
+      kind, amount: kind === "expense" ? 5000 : null, currency, category: null, note: "", date: null, date_approximate: false, date_to: null, due_at: null,
+      day_of_month: null, remind_days_before: null, target: null, emoji: null, add_amount: null, add_note: null, remove_item: null, time_specified: false, confidence: 0.9,
+    });
+    // "кофе 5000" in a KRW family: the model's UZS (amount size, Tashkent, earlier records) is a guess.
+    expect(normalizeItems([raw("UZS")], { ...krw, text: "кофе 5000" })[0]).toMatchObject({ currency: "KRW", currencyStated: false });
+    expect(normalizeItems([raw("KRW")], { ...krw, baseCurrency: "UZS", text: "кофе 5000 вон" })[0]).toMatchObject({ currency: "KRW", currencyStated: true });
+    expect(normalizeItems([raw("вона")], { ...krw, baseCurrency: "UZS", text: "кофе 5000 вона" })[0]).toMatchObject({ currency: "KRW", currencyStated: true });
+    expect(normalizeItems([raw("USD")], { ...krw, text: "кофе 5$" })[0]).toMatchObject({ currency: "USD", currencyStated: true });
+    expect(normalizeItems([raw("CHF")], { ...krw, text: "lunch 30 chf" })[0]).toMatchObject({ currency: "CHF", currencyStated: true });
+    expect(normalizeItems([raw("GEL")], { ...krw, text: "обед 30 GEL" })[0]).toMatchObject({ currency: "GEL", currencyStated: true });
+    expect(normalizeItems([raw(null)], { ...krw, text: "кофе 5000" })[0]).toMatchObject({ currency: "KRW", currencyStated: false });
+    // A correction changes the currency only when the reply names one.
+    expect(normalizeItems([raw("KRW", "correction")], { ...ctx, text: "это было в вонах" })[0]?.changed).toEqual({ currency: "KRW" });
+    expect(normalizeItems([raw("USD", "correction")], { ...ctx, text: "dollarda edi" })[0]?.changed).toEqual({ currency: "USD" });
+    expect(normalizeItems([{ ...raw("UZS", "correction"), amount: 6000 }], { ...krw, text: "не 5000, а 6000" })[0]?.changed).toEqual({ amount: 6000 });
+  });
+
   it("keeps additions and removals of positions apart from a new total", () => {
     const base = { kind: "correction" as const, amount: null, currency: null, category: null, note: "", date: null, date_approximate: false, date_to: null, due_at: null, day_of_month: null, remind_days_before: null, target: null, emoji: null, add_amount: null, add_note: null, remove_item: null, time_specified: false, confidence: 0.9 };
     const [add, remove, both] = normalizeItems(

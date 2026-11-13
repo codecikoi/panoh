@@ -731,7 +731,7 @@ async function handlePaymentDone(ctx: BotContext, item: ExtractedItem, meta: App
     if (plan) {
       const tx = await payPlan(ctx.deps.db, scope, plan, {
         amount: item.amount,
-        currency: item.currency,
+        currency: item.currencyStated ? item.currency : undefined,
         sourceMessageId: meta.sourceMessageId,
         chatId: meta.chatId,
         rates,
@@ -747,7 +747,7 @@ async function handlePaymentDone(ctx: BotContext, item: ExtractedItem, meta: App
   const due = nextDue(match, scope.tz);
   const tx = await recordPayment(ctx.deps.db, scope, match, due.period, {
     amount: item.amount,
-    currency: item.currency,
+    currency: item.currencyStated ? item.currency : undefined,
     sourceMessageId: meta.sourceMessageId,
     chatId: meta.chatId,
     rates,
@@ -824,6 +824,7 @@ export function correctionOf(changed: ExtractedItem["changed"]): ExtractedItem {
     kind: "correction",
     amount: changed.amount ?? null,
     currency: changed.currency ?? "",
+    currencyStated: changed.currency !== undefined,
     category: null,
     note: "",
     date: "",
@@ -902,6 +903,7 @@ export async function applyCorrection(
   const scope = ctx.scope;
   const changes = { ...item.changed };
   const current = amountOf(target);
+  const currencyBefore = "currency" in target.row ? target.row.currency : undefined;
   let held: number | undefined;
   if (!options.trustAmount && implausibleAmount(current?.amount, changes.amount, changes.currency !== undefined)) {
     held = changes.amount;
@@ -928,7 +930,24 @@ export async function applyCorrection(
     await ctx.api.sendMessage(place.chatId, t(scope.locale, "correction.nothing"), placeOpts(place));
     return "nothing";
   }
+  if (changes.currency && currencyBefore !== undefined && changes.currency !== currencyBefore && changes.currency !== scope.currency) {
+    await offerBaseCurrency(ctx, changes.currency, place);
+  }
   return "changed";
+}
+
+/**
+ * A record moved to another currency than the household's ("в вонах"): offer to count in it by default.
+ * Without that, every next amount without a currency would land in the old one again.
+ */
+async function offerBaseCurrency(ctx: BotContext, code: string, place: ReplyPlace): Promise<void> {
+  const scope = ctx.scope;
+  const keyboard = new InlineKeyboard().text(t(scope.locale, "btn.yes"), `cur:set:${code}`).text(t(scope.locale, "btn.no"), "cur:keep");
+  await ctx.api.sendMessage(
+    place.chatId,
+    t(scope.locale, "currency.offer", { currency: code, base: scope.currency }),
+    placeOpts(place, { reply_markup: keyboard }),
+  );
 }
 
 /** true: changed and logged · false: nothing would change · null: the record is finished or gone · "asked": the user was told why not. */
