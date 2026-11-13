@@ -6,7 +6,7 @@ export const az: LocaleStrings = {
   "bot.name": "Madat — Ailə assistenti",
   "bot.short_description": "Xərcləri adi qaydada yazın — Madat ailə büdcəsini, planları, limitləri və yığımları izləyir, ödənişləri xatırladır.",
   "bot.description":
-    "👋 Salam, mən ailənizin assistentiyəm\nBüdcəni aparıram, və təkcə onu yox.\n\nSadəcə nə lazım olduğunu deyin:\n• ərzaq 45$ → qeyd edərəm, limit qalığı ilə\n• kredit 300$ hər ayın 15-i → xatırladaram\n• iyula qədər tətilə 2000$ yığırıq → aylıq məbləğ\n• 100$ qalanda xəbərdar et → xəbərdar edərəm\n• həftə və ya ay hesabatı → PDF\n\nHər ayın 1-də — məsləhətli xülasə və kim nə qədər xərclədi. Telegram-da dashboard. Düzəliş — qeydə cavab.\n\nŞəxsi çatda və ya ailə qrupunda.\nVar-dövlət xərcləri saymaqdan başlayır.",
+    "👋 Salam, mən ailənizin assistentiyəm\n\nSadəcə nə lazım olduğunu deyin:\n• ərzaq 45$ → qeyd edərəm, limit qalığı ilə\n• kredit 300$ hər ayın 15-i → xatırladaram\n• iyula qədər tətilə 2000$ yığırıq → aylıq məbləğ\n• 100$ qalanda xəbərdar et → xəbərdar edərəm\n• həftə və ya ay hesabatı → PDF\n\nHər ayın 1-də — məsləhətli xülasə və kim nə qədər xərclədi. Telegram-da dashboard. Düzəliş — qeydə cavab. Valyuta istənilən, qalanı /help-də\n\nŞəxsi çatda və ya ailə qrupunda\nVar-dövlət xərcləri saymaqdan başlayır 💰",
   "cmd.start": "Başla / quraşdırma",
   "cmd.help": "Necə istifadə etməli",
   "cmd.summary": "Ayın xülasəsi",

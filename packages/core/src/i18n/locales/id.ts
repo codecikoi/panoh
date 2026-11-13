@@ -6,7 +6,7 @@ export const id: LocaleStrings = {
   "bot.name": "Madat — Asisten Keluarga",
   "bot.short_description": "Tulis pengeluaran seperti biasa — Madat urus anggaran keluarga, rencana, limit, tabungan & ingatkan tagihan.",
   "bot.description":
-    "👋 Hai, aku asisten keluarga kamu\nMengatur anggaran, dan lebih dari itu.\n\nBilang saja perlu apa:\n• belanja dapur 45$ → kucatat, plus sisa limit\n• cicilan 300$ tiap tanggal 15 → kuingatkan\n• nabung liburan 2000$ sampai Juli → setoran bulanan\n• ingatkan kalau sisa 100$ → kuingatkan\n• laporan minggu atau bulan → PDF\n\nTiap tanggal 1: ringkasan dengan saran dan siapa belanja berapa. Dasbor di Telegram. Mau koreksi? Balas catatannya.\n\nChat pribadi atau grup keluarga.\nKekayaan dimulai dari mencatat pengeluaran.",
+    "👋 Hai, aku asisten keluarga kamu\n\nBilang saja perlu apa:\n• belanja dapur 45$ → kucatat, plus sisa limit\n• cicilan 300$ tiap tanggal 15 → kuingatkan\n• nabung liburan 2000$ sampai Juli → setoran bulanan\n• ingatkan kalau sisa 100$ → kuingatkan\n• laporan minggu atau bulan → PDF\n\nTiap tanggal 1: ringkasan dengan saran dan siapa belanja berapa. Dasbor di Telegram. Mau koreksi? Balas catatannya. Mata uang bebas, sisanya di /help\n\nChat pribadi atau grup keluarga\nKekayaan dimulai dari mencatat pengeluaran 💰",
   "cmd.start": "Mulai / pengaturan",
   "cmd.help": "Cara pakai",
   "cmd.summary": "Ringkasan bulanan",

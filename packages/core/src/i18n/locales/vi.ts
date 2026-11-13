@@ -6,7 +6,7 @@ export const vi: LocaleStrings = {
   "bot.name": "Madat — Quản gia của gia đình",
   "bot.short_description": "Ghi chi tiêu như bình thường — Madat lo ngân sách gia đình, kế hoạch, hạn mức, tiết kiệm và nhắc hóa đơn.",
   "bot.description":
-    "👋 Chào, mình là quản gia của gia đình bạn\nGiữ ngân sách cả nhà, và hơn thế nữa.\n\nChỉ cần nói cần giúp gì:\n• đi chợ 45$ → ghi lại, kèm hạn mức còn lại\n• trả nợ 300$ ngày 15 hàng tháng → mình nhắc\n• tiết kiệm 2000$ đi du lịch trước tháng 7 → tính tiền mỗi tháng\n• báo khi còn 100$ → sẽ báo\n• báo cáo tuần hoặc tháng → PDF\n\nNgày 1: tổng kết kèm lời khuyên và ai tiêu bao nhiêu. Dashboard trong Telegram. Sửa thì trả lời vào bản ghi.\n\nChat riêng hoặc nhóm gia đình.\nGiàu có bắt đầu từ việc ghi chép chi tiêu.",
+    "👋 Chào, mình là quản gia của gia đình bạn\n\nChỉ cần nói cần giúp gì:\n• đi chợ 45$ → ghi lại, kèm hạn mức còn lại\n• trả nợ 300$ ngày 15 hàng tháng → mình nhắc\n• tiết kiệm 2000$ đi du lịch trước tháng 7 → tính tiền mỗi tháng\n• báo khi còn 100$ → sẽ báo\n• báo cáo tuần hoặc tháng → PDF\n\nNgày 1: tổng kết kèm lời khuyên và ai tiêu bao nhiêu. Dashboard trong Telegram. Sửa thì trả lời vào bản ghi. Tiền tệ tùy chọn, còn lại xem /help\n\nChat riêng hoặc nhóm gia đình\nGiàu có bắt đầu từ việc ghi chép chi tiêu 💰",
   "cmd.start": "Bắt đầu / thiết lập",
   "cmd.help": "Cách dùng",
   "cmd.summary": "Tổng kết tháng",

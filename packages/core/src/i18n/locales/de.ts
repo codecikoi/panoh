@@ -6,7 +6,7 @@ export const de: LocaleStrings = {
   "bot.name": "Madat — Familien-Butler",
   "bot.short_description": "Schreib Ausgaben einfach auf – Madat führt Budget, Pläne, Limits und Sparziele und erinnert an Rechnungen.",
   "bot.description":
-    "👋 Hallo, ich bin dein Familien-Butler.\nIch führe dein Budget, und mehr.\n\nSag mir, was du brauchst:\n• Einkauf 45$ → notiert, plus Rest des Limits\n• Kredit 300$ jeden 15. → Erinnerung\n• Sparen für Urlaub 2000$ bis Juli → Monatsrate\n• warne mich bei 100$ Rest → mache ich\n• Bericht für Woche oder Monat → PDF\n\nAm 1.: Überblick mit Tipps und wer wie viel ausgab. Dashboard in Telegram. Korrektur: auf den Eintrag antworten.\n\nPrivat oder in der Familiengruppe.\nWohlstand beginnt beim Blick auf die Ausgaben.",
+    "👋 Hallo, ich bin dein Familien-Butler\n\nSag mir, was du brauchst:\n• Einkauf 45$ → notiert, plus Rest des Limits\n• Kredit 300$ jeden 15. → Erinnerung\n• Sparen für Urlaub 2000$ bis Juli → Monatsrate\n• warne mich bei 100$ Rest → mache ich\n• Bericht für Woche oder Monat → PDF\n\nAm 1.: Überblick mit Tipps und wer wie viel ausgab. Dashboard in Telegram. Korrektur: auf den Eintrag antworten. Jede Währung, der Rest steht in /help\n\nPrivat oder in der Familiengruppe\nWohlstand beginnt beim Blick auf die Ausgaben 💰",
   "cmd.start": "Start / Einrichtung",
   "cmd.help": "So funktioniert's",
   "cmd.summary": "Monatsübersicht",

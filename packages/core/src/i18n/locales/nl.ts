@@ -6,7 +6,7 @@ export const nl: LocaleStrings = {
   "bot.name": "Madat — Gezinsbutler",
   "bot.short_description": "Typ je uitgaven — Madat regelt gezinsbudget, plannen, limieten en sparen, en herinnert je aan rekeningen.",
   "bot.description":
-    "👋 Hoi, ik ben je gezinsbutler.\nIk beheer je budget, en meer.\n\nZeg gewoon wat je nodig hebt:\n• boodschappen 45$ → genoteerd, plus rest van het limiet\n• lening 300$ elke 15e → ik herinner je\n• sparen voor vakantie 2000$ voor juli → maandbedrag\n• waarschuw me bij 100$ over → doe ik\n• overzicht van week of maand → PDF\n\nOp de 1e: samenvatting met tips en wie hoeveel uitgaf. Dashboard in Telegram. Corrigeren? Reageer op de notitie.\n\nPrivé of in de gezinsgroep.\nRijkdom begint bij zicht op je uitgaven.",
+    "👋 Hoi, ik ben je gezinsbutler\n\nZeg gewoon wat je nodig hebt:\n• boodschappen 45$ → genoteerd, plus rest van het limiet\n• lening 300$ elke 15e → ik herinner je\n• sparen voor vakantie 2000$ voor juli → maandbedrag\n• waarschuw me bij 100$ over → doe ik\n• overzicht van week of maand → PDF\n\nOp de 1e: samenvatting met tips en wie hoeveel uitgaf. Dashboard in Telegram. Corrigeren? Reageer op de notitie. Elke valuta, de rest in /help\n\nPrivé of in de gezinsgroep\nRijkdom begint bij zicht op je uitgaven 💰",
   "cmd.start": "Start / instellen",
   "cmd.help": "Hoe werkt het",
   "cmd.summary": "Maandoverzicht",

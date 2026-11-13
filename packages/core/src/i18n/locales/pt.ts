@@ -6,7 +6,7 @@ export const pt: LocaleStrings = {
   "bot.name": "Madat — Mordomo da Família",
   "bot.short_description": "Anote gastos como sempre — o Madat cuida do orçamento, planos, limites e poupança e lembra das contas.",
   "bot.description":
-    "👋 Olá, sou o mordomo da família.\nCuido do orçamento, e mais.\n\nÉ só dizer no que ajudar:\n• mercado 45$ → anoto, com o que sobra do limite\n• empréstimo 300$ todo dia 15 → eu lembro\n• guardar 2000$ para as férias até julho → calculo a parcela\n• avise quando sobrar 100$ → eu aviso\n• relatório da semana ou do mês → PDF\n\nNo dia 1: resumo com dicas e quem gastou quanto. Painel no Telegram. Para corrigir, responda ao registro.\n\nNo privado ou no grupo da família.\nA riqueza começa pelo controle dos gastos.",
+    "👋 Olá, sou o mordomo da família\n\nÉ só dizer no que ajudar:\n• mercado 45$ → anoto, com o que sobra do limite\n• empréstimo 300$ todo dia 15 → eu lembro\n• guardar 2000$ para as férias até julho → calculo a parcela\n• avise quando sobrar 100$ → eu aviso\n• relatório da semana ou do mês → PDF\n\nNo dia 1: resumo com dicas e quem gastou quanto. Painel no Telegram. Para corrigir, responda ao registro. Qualquer moeda, o resto em /help\n\nNo privado ou no grupo da família\nA riqueza começa pelo controle dos gastos 💰",
   "cmd.start": "Início / configuração",
   "cmd.help": "Como usar",
   "cmd.summary": "Resumo do mês",

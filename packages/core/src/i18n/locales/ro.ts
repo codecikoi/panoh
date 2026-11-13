@@ -6,7 +6,7 @@ export const ro: LocaleStrings = {
   "bot.name": "Madat — Majordomul familiei",
   "bot.short_description": "Scrie cheltuielile simplu — Madat ține bugetul familiei, planuri, limite, economii și amintește de facturi.",
   "bot.description":
-    "👋 Salut, sunt majordomul familiei.\nȚin bugetul, și nu numai.\n\nSpune-mi ce-ți trebuie:\n• cumpărături 45$ → notez, cu restul limitei\n• credit 300$ pe 15 ale lunii → îți amintesc\n• strângem 2000$ pentru vacanță până în iulie → rata lunară\n• anunță-mă când rămân 100$ → te anunț\n• raport pe săptămână sau lună → PDF\n\nPe 1 ale lunii: rezumat cu sfaturi și cine cât a cheltuit. Dashboard în Telegram. Corecturi — răspunde la înregistrare.\n\nÎn privat sau în grupul familiei.\nBogăția începe cu evidența cheltuielilor.",
+    "👋 Salut, sunt majordomul familiei\n\nSpune-mi ce-ți trebuie:\n• cumpărături 45$ → notez, cu restul limitei\n• credit 300$ pe 15 ale lunii → îți amintesc\n• strângem 2000$ pentru vacanță până în iulie → rata lunară\n• anunță-mă când rămân 100$ → te anunț\n• raport pe săptămână sau lună → PDF\n\nPe 1 ale lunii: rezumat cu sfaturi și cine cât a cheltuit. Dashboard în Telegram. Corecturi — răspunde la înregistrare. Orice valută, restul în /help\n\nÎn privat sau în grupul familiei\nBogăția începe cu evidența cheltuielilor 💰",
   "cmd.start": "Start / configurare",
   "cmd.help": "Cum funcționează",
   "cmd.summary": "Rezumatul lunii",
