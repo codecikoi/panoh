@@ -5,7 +5,8 @@ export const tr: LocaleStrings = {
   "app.name": "Madat",
   "bot.name": "Madat — Aile Yardımcısı",
   "bot.short_description": "Harcamaları yaz — Madat aile bütçesini, planları, limitleri, birikimleri tutar ve faturaları hatırlatır.",
-  "bot.description": "👋 Ben Madat, ailenin yardımcısıyım.\n\nBana bir insana yazar gibi yaz:\n• market 45$\n• maaş 3000$ alındı\n• Aralık'ta düğün hediyesi 300$\n• Temmuz'a kadar tatil için 2000$ biriktiriyorum\n\nGider ve gelirleri kaydederim, faturaları hatırlatırım, yaklaşan harcamaları planlarım, kategori limitlerini ve birikim hedeflerini takip ederim, bu ay boşta ne kadar para kaldığını gösteririm.\n\nBenimle özelden yazış ya da beni eşinle birlikte bir gruba ekle.",
+  "bot.description":
+    "👋 Selam, ben ailenizin asistanıyım\nBütçeyi tutarım, ve dahasını.\n\nSadece ne gerektiğini söyleyin:\n• market 45$ → kaydederim, limitin kalanıyla\n• kredi 300$ her ayın 15'i → hatırlatırım\n• Temmuz'a kadar tatile 2000$ biriktiriyoruz → aylık payı hesaplarım\n• 100$ kalınca uyar → uyarırım\n• haftalık veya aylık rapor → PDF\n\nHer ayın 1'inde — tavsiyeli özet ve kim ne kadar harcadı. Telegram'da panel. Düzeltme — kayda yanıt.\n\nÖzel sohbette veya aile grubunda.\nZenginlik harcamaları saymakla başlar.",
   "cmd.start": "Başlat / kurulum",
   "cmd.help": "Nasıl kullanılır",
   "cmd.summary": "Aylık özet",

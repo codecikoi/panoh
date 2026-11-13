@@ -5,7 +5,8 @@ export const es: LocaleStrings = {
   "app.name": "Madat",
   "bot.name": "Madat — Mayordomo familiar",
   "bot.short_description": "Anota gastos como siempre: Madat gestiona presupuesto familiar, planes, límites y ahorros y avisa de pagos.",
-  "bot.description": "👋 Soy Madat, tu mayordomo familiar.\n\nEscríbeme como le escribirías a una persona:\n• compras del súper 45$\n• cobré el sueldo 3000$\n• regalo de boda 300$ en diciembre\n• ahorro para vacaciones 2000$ para julio\n\nRegistro gastos e ingresos, te recuerdo los pagos, planifico los próximos gastos, vigilo los límites por categoría y las metas de ahorro, y te muestro cuánto dinero libre te queda este mes.\n\nÚsame en un chat privado o añádeme a un grupo con tu pareja.",
+  "bot.description":
+    "👋 Hola, soy tu mayordomo familiar.\nLlevo tu presupuesto, y más.\n\nSolo dime en qué ayudar:\n• súper 45$ → anotado, con el resto del límite\n• préstamo 300$ cada día 15 → te lo recuerdo\n• ahorro 2000$ para vacaciones en julio → cuota mensual\n• avísame cuando queden 100$ → te aviso\n• informe de la semana o del mes → PDF\n\nEl día 1: resumen con consejos y quién gastó cuánto. Panel en Telegram. Para corregir, responde al registro.\n\nEn privado o en el grupo familiar.\nLa riqueza empieza por controlar los gastos.",
   "cmd.start": "Inicio / configuración",
   "cmd.help": "Cómo usarlo",
   "cmd.summary": "Resumen del mes",

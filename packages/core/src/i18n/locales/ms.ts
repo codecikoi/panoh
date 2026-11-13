@@ -5,7 +5,8 @@ export const ms: LocaleStrings = {
   "app.name": "Madat",
   "bot.name": "Madat — Penolong Keluarga",
   "bot.short_description": "Tulis perbelanjaan seperti biasa — Madat urus bajet keluarga, rancangan, had, simpanan dan ingatkan bil.",
-  "bot.description": "👋 Saya Madat, penolong keluarga anda.\n\nTulis sahaja seperti biasa:\n• barang dapur 45$\n• gaji 3000$ diterima\n• hadiah perkahwinan 300$ pada Disember\n• simpan untuk percutian 2000$ menjelang Julai\n\nSaya rekod belanja dan pendapatan, ingatkan bil, rancang perbelanjaan, pantau had kategori dan matlamat simpanan, serta tunjuk baki wang bebas bulan ini.\n\nGuna saya dalam sembang peribadi atau tambah ke kumpulan bersama pasangan.",
+  "bot.description":
+    "👋 Hai, saya penolong keluarga\nMengurus bajet, dan lebih lagi.\n\nCuma kata apa yang perlu:\n• barang dapur 45$ → saya catat, dengan baki had\n• pinjaman 300$ setiap 15 hb → saya ingatkan\n• simpan 2000$ untuk cuti sebelum Julai → simpanan bulanan\n• beritahu bila tinggal 100$ → saya beritahu\n• laporan minggu atau bulan → PDF\n\n1 hb: ringkasan dan tip, siapa belanja berapa. Dashboard di Telegram. Nak betulkan? Balas catatan.\n\nSembang peribadi atau kumpulan keluarga.\nKekayaan bermula dengan mencatat belanja.",
   "cmd.start": "Mula / persediaan",
   "cmd.help": "Cara guna",
   "cmd.summary": "Ringkasan bulanan",

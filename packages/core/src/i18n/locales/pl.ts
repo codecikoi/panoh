@@ -5,7 +5,8 @@ export const pl: LocaleStrings = {
   "app.name": "Madat",
   "bot.name": "Madat — Rodzinny Kamerdyner",
   "bot.short_description": "Zapisuj wydatki jak zwykle — Madat prowadzi rodzinny budżet, plany, limity i oszczędności oraz przypomina o rachunkach.",
-  "bot.description": "👋 Jestem Madat, wasz rodzinny kamerdyner.\n\nPo prostu pisz tak, jak do człowieka:\n• zakupy 45$\n• wypłata 3000$ otrzymana\n• prezent na wesele 300$ w grudniu\n• odkładam na wakacje 2000$ do lipca\n\nZapisuję wydatki i przychody, przypominam o rachunkach, planuję nadchodzące wydatki, pilnuję limitów w kategoriach i celów oszczędnościowych oraz pokazuję, ile wolnych pieniędzy zostało w tym miesiącu.\n\nKorzystaj ze mnie w prywatnym czacie albo dodaj mnie do grupy z partnerem lub partnerką.",
+  "bot.description":
+    "👋 Cześć, jestem waszym kamerdynerem.\nProwadzę budżet, i nie tylko.\n\nPowiedzcie, w czym pomóc:\n• zakupy 45$ → zapiszę, pokażę resztę limitu\n• kredyt 300$ każdego 15. → przypomnę\n• odkładamy 2000$ na wakacje do lipca → policzę ratę\n• ostrzeż, gdy zostanie 100$ → ostrzegę\n• raport za tydzień lub miesiąc → PDF\n\n1. dnia — podsumowanie z poradami i kto ile wydał. Panel w Telegramie. Poprawki — odpowiedzią na wpis.\n\nW prywatnym czacie lub rodzinnej grupie.\nBogactwo zaczyna się od liczenia wydatków.",
   "cmd.start": "Start / konfiguracja",
   "cmd.help": "Jak korzystać",
   "cmd.summary": "Podsumowanie miesiąca",

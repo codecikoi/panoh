@@ -3,7 +3,7 @@ export const en = {
   "bot.name": "Madat — Family Butler",
   "bot.short_description": "Write expenses as usual — Madat keeps the family budget, plans, limits and savings, and reminds you about bills.",
   "bot.description":
-    "👋 I'm Madat, your family butler.\n\nJust write like you would to a person:\n• groceries 45$\n• salary 3000$ received\n• gift for the wedding 300$ in December\n• saving for a vacation 2000$ by July\n\nI record expenses and income, remind you about bills, plan upcoming spending, watch category limits and savings goals, and show how much free money is left this month.\n\nUse me in a private chat or add me to a group with your partner.",
+    "👋 Hi, I'm your family butler.\nI keep your budget, and more.\n\nJust tell me what you need:\n• groceries 45$ → noted, plus the limit left\n• loan 300$ every 15th → I'll remind you\n• saving 2000$ for a trip by July → monthly amount\n• warn me at 100$ left → I will\n• report for week or month → PDF\n\nOn the 1st: summary with tips and who spent what. Dashboard in Telegram. Fix a record by replying to it.\n\nPrivate chat or family group.\nWealth starts with tracking what you spend.",
 
   "cmd.start": "Start / setup",
   "cmd.help": "How to use",

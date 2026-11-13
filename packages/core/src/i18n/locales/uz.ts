@@ -5,7 +5,7 @@ export const uz: LocaleStrings = {
   "bot.name": "Madat — oilaviy assistent",
   "bot.short_description": "Xarajatlarni oddiy yozing — Madat oila byudjeti, rejalar, limitlar va jamg'armalarni yuritadi, to'lovlarni eslatadi.",
   "bot.description":
-    "👋 Men Madat, oilaviy assistentman.\n\nMenga odamga yozgandek yozing:\n• oziq-ovqat 150 ming\n• 9 mln oylik oldim\n• dekabrda to'yga sovg'a 3 mln\n• iyulgacha ta'tilga 10 mln yig'amiz\n\nXarajat va daromadlarni yozib boraman, to'lovlarni eslataman, xarajatlarni rejalashtiraman, limit va jamg'armalarni kuzataman hamda oyda qancha bo'sh pul qolganini ko'rsataman.\n\nShaxsiy chatda yoki oilaviy guruhda ishlayman.",
+    "👋 Salom, oilaviy assistentingizman\nByudjetni yuritaman, va nafaqat.\n\nNima kerakligini ayting:\n• oziq-ovqat 150 ming → yozaman, limit qoldig'i bilan\n• kredit 200 ming har oyning 15-i → eslataman\n• iyulgacha ta'tilga 10 mln yig'amiz → oylik badal\n• 100 ming qolganda ogohlantir → ogohlantiraman\n• hafta yoki oy hisoboti → PDF\n\nHar oyning 1-i — maslahatli xulosa va kim qancha sarfladi. Telegramda dashboard. Tuzatish — yozuvga javob.\n\nShaxsiy chatda yoki oilaviy guruhda.\nBoylik xarajat hisobidan boshlanadi.",
 
   "cmd.start": "Boshlash / sozlash",
   "cmd.help": "Qanday ishlataman",

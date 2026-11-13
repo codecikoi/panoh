@@ -5,7 +5,8 @@ export const fr: LocaleStrings = {
   "app.name": "Madat",
   "bot.name": "Madat — Majordome familial",
   "bot.short_description": "Notez vos dépenses — Madat gère le budget familial, les limites, l'épargne et vous rappelle les factures.",
-  "bot.description": "👋 Je suis Madat, votre majordome familial.\n\nÉcrivez-moi comme à une personne :\n• courses 45$\n• salaire 3000$ reçu\n• cadeau de mariage 300$ en décembre\n• épargne vacances 2000$ d'ici juillet\n\nJ'enregistre dépenses et revenus, rappelle les factures, planifie les dépenses à venir, surveille les limites et objectifs d'épargne, et montre l'argent libre restant ce mois-ci.\n\nUtilisez-moi en privé ou dans un groupe avec votre partenaire.",
+  "bot.description":
+    "👋 Bonjour, je suis votre majordome.\nJe tiens le budget, et plus.\n\nDites-moi ce qu'il vous faut :\n• courses 45$ → noté, avec le reste du plafond\n• crédit 300$ chaque 15 du mois → rappel\n• épargne vacances 2000$ d'ici juillet → mensualité\n• préviens-moi à 100$ restants → promis\n• rapport semaine ou mois → PDF\n\nLe 1er : bilan avec conseils et qui a dépensé combien. Dashboard dans Telegram. Pour corriger, répondez à l'entrée.\n\nEn privé ou en groupe familial.\nLa richesse commence par le suivi des dépenses.",
   "cmd.start": "Démarrer / configurer",
   "cmd.help": "Mode d'emploi",
   "cmd.summary": "Bilan du mois",
