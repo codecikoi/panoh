@@ -17,6 +17,8 @@ export type {
   RecurringPayment,
   NewTransaction,
   NewReminder,
+  ReminderSeries,
+  NewReminderSeries,
   NewRecurringPayment,
   Plan,
   NewPlan,
@@ -38,6 +40,7 @@ export * from "./services/households.js";
 export * from "./services/transactions.js";
 export * from "./services/items.js";
 export * from "./services/reminders.js";
+export * from "./services/series.js";
 export * from "./services/recurring.js";
 export * from "./services/rates.js";
 export * from "./services/summary.js";

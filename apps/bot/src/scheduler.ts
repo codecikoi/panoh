@@ -4,7 +4,11 @@ import {
   cleanupProcessed,
   cleanupStalePending,
   dueReminders,
+  ensureNextOccurrence,
   ensureRemindersFor,
+  getSeries,
+  listAllActiveSeries,
+  stopSeries,
   evaluateAlerts,
   getHouseholdById,
   listHouseholdsWithAlerts,
@@ -65,6 +69,11 @@ export function createScheduler(api: Api, deps: Deps): Scheduler {
         await updateReminder(deps.db, reminder.id, { status: "cancelled" });
         continue;
       }
+      const series = reminder.seriesId ? await getSeries(deps.db, reminder.seriesId) : undefined;
+      if (reminder.seriesId && (!series || !series.active)) {
+        await updateReminder(deps.db, reminder.id, { status: "cancelled" });
+        continue;
+      }
       try {
         const sent = await api.sendMessage(h.telegramChatId, alertText(scope, reminder, rp, plan), { reply_markup: alertKeyboard(scope, reminder) });
         await markReminderSent(deps.db, reminder.id, sent.message_id);
@@ -77,8 +86,18 @@ export function createScheduler(api: Api, deps: Deps): Scheduler {
       } catch (err) {
         if (isChatGone(err)) {
           await updateReminder(deps.db, reminder.id, { status: "cancelled" });
-        } else {
-          log.error("reminder send failed", { err, reminderId: reminder.id });
+          if (series) await stopSeries(deps.db, series.id);
+          continue;
+        }
+        log.error("reminder send failed", { err, reminderId: reminder.id });
+        continue;
+      }
+      // The next occurrence of a repeating reminder is scheduled as soon as this one is out.
+      if (series) {
+        try {
+          await ensureNextOccurrence(deps.db, series, h);
+        } catch (err) {
+          log.error("series scheduling failed", { err, seriesId: series.id });
         }
       }
     }
@@ -93,6 +112,19 @@ export function createScheduler(api: Api, deps: Deps): Scheduler {
         await ensureRemindersFor(deps.db, rp, h);
       } catch (err) {
         log.error("recurring scheduling failed", { err, id: rp.id });
+      }
+    }
+  }
+
+  /** Safety net: every active repeating reminder has its next occurrence (normally made right after the previous alert). */
+  async function scheduleSeries(): Promise<void> {
+    for (const series of await listAllActiveSeries(deps.db)) {
+      const h = await household(series.householdId);
+      if (!h) continue;
+      try {
+        await ensureNextOccurrence(deps.db, series, h);
+      } catch (err) {
+        log.error("series scheduling failed", { err, seriesId: series.id });
       }
     }
   }
@@ -144,6 +176,7 @@ export function createScheduler(api: Api, deps: Deps): Scheduler {
     await cleanupStalePending(deps.db, new Date(Date.now() - 48 * 3600 * 1000));
     await cleanupProcessed(deps.db, new Date(Date.now() - 7 * 24 * 3600 * 1000));
     await scheduleRecurring();
+    await scheduleSeries();
   }
 
   async function tick(): Promise<void> {

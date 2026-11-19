@@ -300,6 +300,37 @@ export const transactions = pgTable(
   ],
 );
 
+/** A reminder that repeats (every day, on some weekdays or on a day of the month); each occurrence is a `reminders` row. */
+export const reminderSeries = pgTable(
+  "reminder_series",
+  {
+    id: serial("id").primaryKey(),
+    householdId: integer("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+    title: text("title").notNull(),
+    /** daily: every day · weekly: on `weekdays` · monthly: on `dayOfMonth` (the last day in shorter months). */
+    freq: text("freq").$type<"daily" | "weekly" | "monthly">().notNull(),
+    /** ISO weekdays, 1 = Monday … 7 = Sunday (weekly only). */
+    weekdays: integer("weekdays").array(),
+    dayOfMonth: integer("day_of_month"),
+    /** Local hour; null = the household default reminder hour. */
+    hour: integer("hour"),
+    minute: integer("minute").notNull().default(0),
+    active: boolean("active").notNull().default(true),
+    sourceChatId: tgId("source_chat_id"),
+    sourceMessageId: tgId("source_message_id"),
+    botMessageId: tgId("bot_message_id"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("reminder_series_household_idx").on(t.householdId, t.active),
+    index("reminder_series_bot_msg_idx").on(t.sourceChatId, t.botMessageId),
+  ],
+);
+
 export const reminders = pgTable(
   "reminders",
   {
@@ -315,6 +346,8 @@ export const reminders = pgTable(
     recurringPaymentId: integer("recurring_payment_id").references(() => recurringPayments.id, { onDelete: "cascade" }),
     period: text("period"),
     planId: integer("plan_id").references(() => plans.id, { onDelete: "cascade" }),
+    /** Occurrence of a repeating reminder; `period` is then its local date (YYYY-MM-DD). */
+    seriesId: integer("series_id").references(() => reminderSeries.id, { onDelete: "cascade" }),
     snoozeCount: integer("snooze_count").notNull().default(0),
     /** True while the time of day is the household default (no explicit time given by the user). */
     defaultTime: boolean("default_time").notNull().default(false),
@@ -333,6 +366,7 @@ export const reminders = pgTable(
     uniqueIndex("reminders_recurring_period_idx")
       .on(t.recurringPaymentId, t.period, t.kind)
       .where(sql`${t.recurringPaymentId} is not null`),
+    uniqueIndex("reminders_series_period_idx").on(t.seriesId, t.period).where(sql`${t.seriesId} is not null`),
   ],
 );
 
@@ -344,7 +378,7 @@ export const recordEdits = pgTable(
     householdId: integer("household_id")
       .notNull()
       .references(() => households.id, { onDelete: "cascade" }),
-    recordType: text("record_type").$type<"transaction" | "reminder" | "recurring" | "plan" | "goal" | "balance">().notNull(),
+    recordType: text("record_type").$type<"transaction" | "reminder" | "series" | "recurring" | "plan" | "goal" | "balance">().notNull(),
     recordId: integer("record_id").notNull(),
     before: jsonb("before").$type<Record<string, unknown>>().notNull(),
     after: jsonb("after").$type<Record<string, unknown>>().notNull(),
@@ -390,6 +424,8 @@ export type Reminder = typeof reminders.$inferSelect;
 export type RecurringPayment = typeof recurringPayments.$inferSelect;
 export type NewTransaction = typeof transactions.$inferInsert;
 export type NewReminder = typeof reminders.$inferInsert;
+export type ReminderSeries = typeof reminderSeries.$inferSelect;
+export type NewReminderSeries = typeof reminderSeries.$inferInsert;
 export type NewRecurringPayment = typeof recurringPayments.$inferInsert;
 export type Plan = typeof plans.$inferSelect;
 export type NewPlan = typeof plans.$inferInsert;

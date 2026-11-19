@@ -22,6 +22,7 @@ import {
   getPlan,
   getPlanReminder,
   getReminder,
+  getSeries,
   listActiveGoals,
   listBudgets,
   listOpenPlans,
@@ -67,7 +68,7 @@ let updateId = 1;
 function item(partial: Partial<ExtractedItem>): ExtractedItem {
   return {
     kind: "expense", amount: null, currency: "UZS", currencyStated: false, category: null, note: "", date: "2026-10-13", hasDate: false, dateApproximate: false, dateTo: null, dueAt: null,
-    dayOfMonth: null, remindDaysBefore: null, target: null, emoji: null, timeSpecified: true, confidence: 0.95, changed: {}, ...partial,
+    dayOfMonth: null, repeat: null, weekdays: null, remindDaysBefore: null, target: null, emoji: null, timeSpecified: true, confidence: 0.95, changed: {}, ...partial,
   };
 }
 
@@ -779,7 +780,8 @@ describe("bot flow", () => {
     mockExtraction([item({ amount: 80000, category: "dining", note: "кафе" })]);
     await sendText(bot, "+ кафе 80к", { from: malika });
     expect(lastSent().payload.text).toContain("<i>кафе</i> · Malika");
-    await sendText(bot, "/summary", cmd("/summary"));
+    // The records above carry the fixture date (October 2026), so the summary is asked for that month.
+    await sendText(bot, "/summary 2026-10", cmd("/summary 2026-10"));
     expect(lastSent().payload.text).toMatch(/👥 Потратили: Zoir .* · Malika .*\(\d+%\)/);
   });
 
@@ -994,5 +996,114 @@ describe("bot flow", () => {
     mockExtraction([item({ kind: "payment_done", target: "аренда", note: "оплатили аренду", amount: 500, currency: "KRW" })]);
     await sendText(bot, "оплатили аренду 500");
     expect((await listRecentTransactions(handle.db, 1))[0]).toMatchObject({ note: "аренда", amount: 500, currency: "USD" });
+  });
+  it("shows lists when asked in words, warns about a duplicate and removes reminders from the list", async () => {
+    const tz = "Asia/Tashkent";
+    const day = DateTime.now().setZone(tz).plus({ days: 3 }).set({ hour: 9, minute: 0, second: 0, millisecond: 0 });
+    mockExtraction([item({ kind: "reminder", note: "митап течстар", dueAt: day.toJSDate(), timeSpecified: true })]);
+    await sendText(bot, "+ напомни про митап течстар");
+    expect(lastSent().payload.text).not.toContain("Похожее");
+    // The same day again, with a typo: created, but the family is told.
+    mockExtraction([item({ kind: "reminder", note: "завтра митап техстар", dueAt: day.set({ hour: 13 }).toJSDate(), timeSpecified: true })]);
+    await sendText(bot, "+ напомни завтра митап техстар");
+    expect(lastSent().payload.text).toContain("Похожее напоминание уже есть");
+    expect(lastSent().payload.text).toContain("митап течстар");
+
+    // "What is there this month?": everything ahead in one message, no question back.
+    const today = DateTime.now().setZone(tz).toISODate()!;
+    mockExtraction([item({ kind: "list_request", target: "overview", date: today, hasDate: true, dateTo: day.toISODate()! })]);
+    await sendText(bot, "Мадат в этом месяце какие есть");
+    expect(lastSent().payload.text).toMatch(/^📋 <b>/);
+    expect(lastSent().payload.text).toContain("Открытые напоминания");
+    expect(lastSent().payload.text).toContain("митап течстар");
+
+    // A bare "напоминания" in reply to the bot: the numbered list with a delete button per line.
+    mockExtraction([item({ kind: "list_request", target: "reminders" })]);
+    await sendText(bot, "напоминания", { reply_to_message: { message_id: 1, from: me, chat, date: 1, text: "Что показать?" } });
+    const list = lastSent();
+    expect(list.payload.text).toMatch(/\d+\. .*завтра митап техстар/);
+    const dup = (await listOpenReminders(handle.db, 1, 100, { kind: "reminder" })).find((r) => r.title === "завтра митап техстар")!;
+    expect(JSON.stringify(list.payload.reply_markup)).toContain(`rem:rm:${dup.id}`);
+    await press(bot, `rem:rm:${dup.id}`, 5555, String(list.payload.text));
+    expect((await getReminder(handle.db, dup.id))?.status).toBe("cancelled");
+    const redrawn = String(calls.filter((c) => c.method === "editMessageText").at(-1)!.payload.text);
+    expect(redrawn).toContain("митап течстар");
+    expect(redrawn).not.toContain("завтра митап техстар");
+  });
+
+  it("repeats a reminder, schedules the next one after each alert, takes a new time and stops", async () => {
+    const tz = "Asia/Tashkent";
+    const cmd = (text: string) => ({ entities: [{ type: "bot_command", offset: 0, length: text.split(" ")[0]!.length }] });
+    const soon = DateTime.now().setZone(tz).plus({ hours: 2 }).set({ second: 0, millisecond: 0 });
+    mockExtraction([item({ kind: "reminder", note: "записать расходы", dueAt: soon.toJSDate(), timeSpecified: true, repeat: "daily" })]);
+    await sendText(bot, "+ каждый день напоминай записать расходы");
+    const confirm = lastSent();
+    expect(confirm.payload.text).toContain(`Буду напоминать <b>каждый день в ${soon.toFormat("HH:mm")}</b>`);
+    expect(JSON.stringify(confirm.payload.reply_markup)).toContain("rser:del:");
+    const occurrences = async () => (await listOpenReminders(handle.db, 1, 100, { kind: "reminder" })).filter((r) => r.title === "записать расходы");
+    const [first] = await occurrences();
+    expect(first?.dueAt.getTime()).toBe(soon.toMillis());
+    const seriesId = first!.seriesId!;
+
+    // The alert goes out with a "stop" button, and the next day's occurrence is scheduled; the sent one stays open.
+    await updateReminder(handle.db, first!.id, { dueAt: new Date(Date.now() - 1000) });
+    const before = sent().length;
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+    try {
+      await createScheduler(bot.api, { db: handle.db }).tick();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    const alert = sent().slice(before).find((c) => String(c.payload.text).includes("записать расходы"))!;
+    expect(JSON.stringify(alert.payload.reply_markup)).toContain(`rser:stop:${seriesId}:${first!.id}`);
+    expect((await occurrences()).map((r) => r.status).sort()).toEqual(["scheduled", "sent"]);
+
+    // A new time in reply to the confirmation moves the series and its waiting occurrence.
+    const series = (await getSeries(handle.db, seriesId))!;
+    mockExtraction([item({ kind: "correction", dueAt: soon.set({ hour: 20, minute: 30 }).toJSDate(), timeSpecified: true })]);
+    await sendText(bot, "в 20:30", { reply_to_message: { message_id: series.botMessageId, from: me, chat, date: 1, text: "x" } });
+    expect(await getSeries(handle.db, seriesId)).toMatchObject({ hour: 20, minute: 30 });
+    expect(calls.filter((c) => c.method === "editMessageText").at(-1)!.payload.text).toContain("каждый день в 20:30");
+    const upcoming = (await occurrences()).find((r) => r.status === "scheduled")!;
+    expect(DateTime.fromJSDate(upcoming.dueAt).setZone(tz).toFormat("HH:mm")).toBe("20:30");
+
+    await sendText(bot, "/reminders", cmd("/reminders"));
+    expect(lastSent().payload.text).toContain("записать расходы 🔁");
+
+    // 🔕 under the alert: no more occurrences, the alert itself is done.
+    await press(bot, `rser:stop:${seriesId}:${first!.id}`, 4242, String(alert.payload.text));
+    expect((await getSeries(handle.db, seriesId))?.active).toBe(false);
+    expect((await getReminder(handle.db, first!.id))?.status).toBe("done");
+    expect(await occurrences()).toHaveLength(0);
+    expect(calls.filter((c) => c.method === "editMessageText").at(-1)!.payload.text).toContain("Больше не напоминаю");
+
+    // Weekly without a time: the household default, with a button to pick the hour.
+    const monday = DateTime.now().setZone(tz).plus({ weeks: 1 }).set({ weekday: 1, hour: 9, minute: 0, second: 0, millisecond: 0 });
+    mockExtraction([item({ kind: "reminder", note: "вынести мусор", dueAt: monday.toJSDate(), timeSpecified: false, repeat: "weekly", weekdays: [1] })]);
+    await sendText(bot, "+ каждый понедельник вынести мусор");
+    expect(lastSent().payload.text).toContain("время по умолчанию");
+    expect(lastSent().payload.text).toMatch(/каждую неделю \(пн\) в \d\d:00/);
+    const trash = (await listOpenReminders(handle.db, 1, 100, { kind: "reminder" })).find((r) => r.title === "вынести мусор");
+    expect(trash?.defaultTime).toBe(true);
+    await press(bot, `rser:time:${trash!.seriesId}:8`, 4343, "x");
+    expect(await getSeries(handle.db, trash!.seriesId!)).toMatchObject({ hour: 8, minute: 0 });
+    expect(calls.filter((c) => c.method === "editMessageText").at(-1)!.payload.text).toContain("каждую неделю (пн) в 08:00");
+
+    // "И так каждый день" in reply to a one-off reminder: it becomes a repeating one from its own day and time.
+    const later = DateTime.now().setZone(tz).plus({ days: 2 }).set({ hour: 7, minute: 45, second: 0, millisecond: 0 });
+    mockExtraction([item({ kind: "reminder", note: "выпить таблетку", dueAt: later.toJSDate(), timeSpecified: true })]);
+    await sendText(bot, "+ напомни послезавтра в 7:45 выпить таблетку");
+    const pill = (await listOpenReminders(handle.db, 1, 100, { kind: "reminder" })).find((r) => r.title === "выпить таблетку")!;
+    mockExtraction([item({ kind: "correction", repeat: "daily" })]);
+    await sendText(bot, "и так каждый день", { reply_to_message: { message_id: pill.botMessageId, from: me, chat, date: 1, text: "x" } });
+    expect((await getReminder(handle.db, pill.id))?.status).toBe("cancelled");
+    const pills = (await listOpenReminders(handle.db, 1, 100, { kind: "reminder" })).filter((r) => r.title === "выпить таблетку");
+    expect(pills).toHaveLength(1);
+    expect(pills[0]!.dueAt.getTime()).toBe(later.toMillis());
+    expect(calls.filter((c) => c.method === "editMessageText").at(-1)!.payload.text).toContain("каждый день в 07:45");
+    // A reply to the same confirmation now reaches the repeating reminder.
+    mockExtraction([item({ kind: "correction", note: "выпить витамины", changed: { note: "выпить витамины" } })]);
+    await sendText(bot, "не таблетку, а витамины", { reply_to_message: { message_id: pill.botMessageId, from: me, chat, date: 1, text: "x" } });
+    expect(await getSeries(handle.db, pills[0]!.seriesId!)).toMatchObject({ title: "выпить витамины" });
   });
 });

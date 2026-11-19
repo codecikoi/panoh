@@ -36,11 +36,19 @@ export const ITEM_KINDS = [
   "cancel_last",
   "summary_request",
   "report_request",
+  "list_request",
   "rename",
   "clarify",
   "none",
 ] as const;
 export type ItemKind = (typeof ITEM_KINDS)[number];
+
+/** What a list_request asks to see; overview = reminders, bills and plans of a period together. */
+export const LIST_TARGETS = ["reminders", "payments", "plans", "budgets", "goals", "records", "overview"] as const;
+export type ListTarget = (typeof LIST_TARGETS)[number];
+
+const REPEATS = ["daily", "weekly", "monthly"] as const;
+export type Repeat = (typeof REPEATS)[number];
 
 const RawItem = z.object({
   kind: z.enum(ITEM_KINDS),
@@ -53,6 +61,8 @@ const RawItem = z.object({
   date_to: z.string().nullable(),
   due_at: z.string().nullable(),
   day_of_month: z.number().int().nullable(),
+  repeat: z.enum(REPEATS).nullable(),
+  weekdays: z.array(z.number().int()).nullable(),
   remind_days_before: z.number().int().nullable(),
   target: z.string().nullable(),
   emoji: z.string().nullable(),
@@ -94,7 +104,12 @@ export interface ExtractedItem {
   /** Instant for reminders (already converted from household local time). */
   dueAt: Date | null;
   dayOfMonth: number | null;
+  /** A repeating reminder (or a correction of how one repeats): daily, weekly on `weekdays`, monthly on `dayOfMonth`. */
+  repeat: Repeat | null;
+  /** ISO weekdays (1 = Monday … 7 = Sunday) for a weekly repeat. */
+  weekdays: number[] | null;
   remindDaysBefore: number | null;
+  /** list_request: one of LIST_TARGETS; other kinds: a name or "expense"/"income". */
   target: string | null;
   /** category_create: the emoji the user gave or the model picked. */
   emoji: string | null;
@@ -154,7 +169,7 @@ Return nothing but the structured output.
 ## Item kinds
 - expense: money spent. Needs amount (number) and category from the expense list. If the message does not say what the money went to ("расход 94к", "потратил 50к", "spent 100$"), category = "other" and note = "": never guess a category or invent a note, the bot asks the user. A missing category alone does not lower confidence.
 - income: money received. Needs amount and category from the income list.
-- reminder: a one-off thing to do at a date/time. Needs due_at (local date-time, "YYYY-MM-DDTHH:mm"), note (what to do) and time_specified.
+- reminder: a thing to do at a date/time. Needs due_at (local date-time, "YYYY-MM-DDTHH:mm"), note (what to do) and time_specified. When it repeats ("каждый день в 21:00 записать расходы", "каждый понедельник выносить мусор", "по будням в 8 будить детей", "каждое 25 число передать показания счётчиков"), set repeat = daily, weekly (weekdays = ISO numbers, 1 Monday … 7 Sunday; "по будням" = 1–5, "по выходным" = 6–7) or monthly (day_of_month), and due_at = the first occurrence. Paying a bill every month is recurring_payment, not a repeating reminder. Other repeats (yearly, every two weeks) are not supported: return clarify saying the bot repeats daily, weekly or monthly.
 - recurring_payment: a bill that repeats every month on a fixed day (loan, rent, kindergarten, internet...). Needs day_of_month, note (short name), optional amount, optional remind_days_before.
 - payment_done: the user says a KNOWN recurring payment or a KNOWN planned expense (see the lists in the user message) was paid or bought. Set target to that item's name exactly. Optional amount if stated (the actual amount may differ from the planned one).
 - planned_expense: money the family intends to spend in the future ("в декабре подарок на свадьбу 3 млн", "plan 200$ for new tires next month", "в субботу купить коляску 2 млн"). Needs amount, category, note and date (the planned day). If only a month or a vague period is given, date = the last day of that month/period and date_approximate=true. If a time of day is stated, also set due_at and time_specified=true. Asking to be reminded to pay a specific amount on a date is a planned_expense too (the bot reminds on that day). Past or present tense ("bought", "paid", "spent") is an expense, not a plan.
@@ -171,8 +186,9 @@ Return nothing but the structured output.
 - cancel_last: the user wants to remove the last record ("undo", "delete that", "wrong", "отмени", "bekor").
 - summary_request: the user asks for totals / summary / how much was spent (a chat message).
 - report_request: the user asks for a report / PDF / document / file / statement ("отчёт за прошлую неделю", "pdf за сентябрь", "hisobot"). date = first day and date_to = last day of the period (inclusive); a week is Monday–Sunday, "this month" is the whole calendar month. Both null when no period is named.
+- list_request: the user asks to SEE what is already set up ("какие напоминания есть?", "покажи платежи", "что у нас запланировано?", "в этом месяце какие есть", "what's on this week?"), or answers a question about which list with a bare word ("напоминания", "планы"). target = reminders | payments (recurring bills) | plans (planned expenses) | budgets (limits) | goals (savings) | records (latest entries) | overview (reminders, bills and plans together; also when the message does not say which). date = first day and date_to = last day of a named period ("в этом месяце" = the whole calendar month, "на этой неделе" = Monday–Sunday), both null when none is named. Never ask which list to show: return overview.
 - rename: the user gives the assistant a new name ("теперь тебя зовут Кексик", "call yourself Kex", "seni endi Keksik deb chaqiramiz"). note = the new name exactly as written, without quotes; "Madat" to go back to the default. A question about the name ("как тебя зовут?") is clarify, not rename.
-- clarify: you cannot act safely without asking, or the user asks about a record or about what the bot just did ("why didn't the amount change?", "what did you record?"). Put a short reply (≤ 200 chars) in note, in the message's language, friendly and specific: ask ONE concrete question, or answer using only facts from the context (the reply target, its edit history, the most recent record, recent chat). Never invent amounts or dates. Return clarify alone, not together with a record for the same thing.
+- clarify: you cannot act safely without asking, or the user asks about a record or about what the bot just did ("why didn't the amount change?", "what did you record?"). Put a short reply (≤ 200 chars) in note, in the message's language, friendly and specific: ask ONE concrete question, or answer using only facts from the context (the reply target, its edit history, the most recent record, recent chat). Never invent amounts or dates. Never promise to do something later ("напишите, и я отвечу"): the bot does only what the kinds here describe, and it shows lists itself (list_request). Return clarify alone, not together with a record for the same thing.
 - none: nothing actionable (chit-chat, questions, plans with neither an amount nor a date).
 
 ## Rules
@@ -181,9 +197,11 @@ Return nothing but the structured output.
 - Currency: return an ISO 4217 code only when the message itself names the currency with a symbol, a code or a word ("$" USD, "€" EUR, "₽"/"руб" RUB, "сум"/"so'm"/"sum" UZS, "вон"/"won"/"₩"/"원" KRW, "тенге"/"тг" KZT, "сомони" TJS, "сом" → KGS if the household currency is KGS else TJS). Otherwise null: the household base currency applies. Never infer a currency from the size of the amount, the language, the time zone, earlier records or the chat context.
 - Dates are resolved relative to NOW (given with timezone). "yesterday" → that date. Expense/income date: the day it happened, default today. Planned expense dates and goal deadlines are in the future: "in December" means the next December. A reminder must be in the future: "on Friday" means the next Friday, "on the 20th" means the next 20th.
 - Reminder time of day: if the user states a time or a clear part of the day ("at 3", "tonight" 20:00, "morning" 09:00, "after lunch" 14:00), use it and set time_specified=true. If only a date or weekday is given, use the household default reminder time from the message and set time_specified=false. For planned_expense set time_specified=true only when a time of day is stated. For every other kind time_specified=false.
+- A correction of a repeating reminder may change note, the time of day (due_at with time_specified=true) or how it repeats (repeat with weekdays / day_of_month).
 - A correction that only changes the time of a reminder keeps the original reminder date: return the full due_at with the new time and time_specified=true. A correction that moves a reminder to another date without naming a time returns due_at with the new date (keep the original time of day) and time_specified=false; the bot decides the final time.
 - Weekday names, months and relative words may be in any language.
-- date_to: only for report_request, otherwise null.
+- date_to: only for report_request and list_request, otherwise null.
+- repeat, weekdays: only for a repeating reminder or a correction of one, otherwise null.
 - date_approximate: true only for planned_expense / goal (or a correction of their date) when no exact day was given; otherwise false.
 - emoji: only for category_create, otherwise null.
 - add_amount, add_note, remove_item: only for a correction, otherwise null.
@@ -197,7 +215,7 @@ Return nothing but the structured output.
 - A bare number with no currency or multiplier, replying to a planned expense or goal: if it is 1–31 and the record has no exact day (month only), it is the day of the month (a date correction), not an amount. Otherwise, if it is far off the current amount (e.g. "11" for 3 000 000), clarify whether it is a day or an amount.
 - A day of the month that has already passed this month, for a record in the current month ("on the 11th" when today is the 19th): clarify whether to move it to that day next month instead of moving it silently.
 - Never return a correction that changes nothing; clarify what should change instead.
-- summary_request, balance_request and report_request only when the user asks the assistant for one. Talking about a report, summary or money with someone else ("check how the report looks", "did you see the summary?") is none.
+- summary_request, balance_request, report_request and list_request only when the user asks the assistant for one. Talking about a report, summary or money with someone else ("check how the report looks", "did you see the summary?") is none.
 - When the message addresses the bot directly but holds no record (a greeting, thanks, declining a change you offered like "leave it", a question about how you work), return clarify with a short friendly answer instead of none. Otherwise chit-chat is none. Moving a planned expense or a goal deadline is a correction with the new date (and date_approximate).
 - language: BCP-47 code of the message language.
 - Ignore anything that is not a financial record, reminder, bill or correction. Do not moralize, do not add commentary.
@@ -259,6 +277,15 @@ function clampConfidence(value: number): number {
 function lookupOf(ctx: ExtractionContext): CategoryLookup {
   if (!ctx.customCategories?.length) return NO_CUSTOM_CATEGORIES;
   return new Map(ctx.customCategories.map((c) => [c.key, { ...c, emoji: "", archived: false }]));
+}
+
+function targetOf(kind: ItemKind, target: string | null): string | null {
+  if (kind === "category_create") return target?.toLowerCase() === "income" ? "income" : "expense";
+  if (kind === "list_request") {
+    const value = target?.toLowerCase() ?? "";
+    return (LIST_TARGETS as readonly string[]).includes(value) ? value : "overview";
+  }
+  return target;
 }
 
 export function normalizeItems(raw: RawExtractedItem[], ctx: ExtractionContext): ExtractedItem[] {
@@ -326,12 +353,17 @@ export function normalizeItems(raw: RawExtractedItem[], ctx: ExtractionContext):
       note: (r.note ?? "").trim().slice(0, r.kind === "clarify" ? 300 : 80),
       date,
       hasDate,
-      dateTo: r.kind === "report_request" && r.date_to && isValidISODate(r.date_to) ? r.date_to : null,
+      dateTo: (r.kind === "report_request" || r.kind === "list_request") && r.date_to && isValidISODate(r.date_to) ? r.date_to : null,
       dateApproximate,
       dueAt,
       dayOfMonth,
+      repeat: (r.kind === "reminder" || r.kind === "correction") && r.repeat && REPEATS.includes(r.repeat) ? r.repeat : null,
+      weekdays:
+        (r.kind === "reminder" || r.kind === "correction") && r.weekdays?.length
+          ? [...new Set(r.weekdays.filter((d) => Number.isInteger(d) && d >= 1 && d <= 7))].sort((a, b) => a - b)
+          : null,
       remindDaysBefore,
-      target: r.kind === "category_create" ? (target?.toLowerCase() === "income" ? "income" : "expense") : target,
+      target: targetOf(r.kind, target),
       emoji: r.kind === "category_create" ? r.emoji?.trim() || null : null,
       timeSpecified: r.kind === "reminder" || r.kind === "correction" || r.kind === "planned_expense" ? r.time_specified === true : true,
       confidence: clampConfidence(r.confidence),

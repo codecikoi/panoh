@@ -22,7 +22,7 @@ export const en = {
   "welcome.privacy_warning":
     "⚠️ I can't see regular messages in this group yet, so keywords and the {prefix} prefix won't work. Open @BotFather → /setprivacy → <b>Disable</b> for me, then remove and re-add me to the group. Mentions and replies work right away.",
   "help":
-    "📖 <b>How I work</b>\n\n<b>Expenses & income</b>\n<i>{prefix} taxi 12$</i>, <i>spent 150k on groceries</i>, <i>salary 3000$ received</i>\n\n<b>Reminders</b>\n<i>remind me tomorrow at 10 to call the doctor</i>, <i>remind on the 20th to pay the internet</i>\n\n<b>Recurring payments</b>\n<i>loan 300$ every month on the 15th</i>, <i>rent 500$ on the 1st</i>\nI'll remind you {days} days before and on the day. Say <i>paid the loan</i> to mark it done.\n\n<b>Corrections</b>\nReply to my confirmation: <i>not 150, 115</i>, <i>category transport</i>, or tap ✏️.\n<i>undo</i> or /undo removes the last record.\n\n<b>Overview</b>\n/summary — this month by category, compared with last month, with tips.\n/last — recent records · /reminders · /payments\n\n<b>Settings</b>\n/settings — currency, timezone, language · /keywords — trigger words",
+    "📖 <b>How I work</b>\n\n<b>Expenses & income</b>\n<i>{prefix} taxi 12$</i>, <i>spent 150k on groceries</i>, <i>salary 3000$ received</i>\n\n<b>Reminders</b>\n<i>remind me tomorrow at 10 to call the doctor</i>, <i>remind on the 20th to pay the internet</i>\n🔁 <i>remind me every Monday at 9 to take out the trash</i>\n\n<b>Recurring payments</b>\n<i>loan 300$ every month on the 15th</i>, <i>rent 500$ on the 1st</i>\nI'll remind you {days} days before and on the day. Say <i>paid the loan</i> to mark it done.\n\n<b>Corrections</b>\nReply to my confirmation: <i>not 150, 115</i>, <i>category transport</i>, or tap ✏️.\n<i>undo</i> or /undo removes the last record.\n\n<b>Overview</b>\n/summary — this month by category, compared with last month, with tips.\n/last — recent records · /reminders · /payments\n\n<b>Settings</b>\n/settings — currency, timezone, language · /keywords — trigger words",
 
   "settings.title": "⚙️ <b>Settings</b>\n\nCurrency: <b>{currency}</b>\nTimezone: <b>{timezone}</b>\nLanguage: <b>{language}</b>\nPayment reminders: <b>{days} days before</b>\nTrigger prefix: <b>{prefix}</b>",
   "settings.btn_currency": "💱 Currency",
@@ -366,6 +366,17 @@ export const en = {
   "welcome.setup": "⚙️ Currency: <b>{currency}</b> · Timezone: <b>{timezone}</b> · Language: <b>{language}</b>\nIf something is off, change it with the buttons below. All settings: /settings.",
   "currency.offer": "💱 Count in {currency} by default? Right now amounts without a currency go to {base}.",
   "currency.switched": "✅ Now I count in {currency}: amounts without a currency go to it. Earlier records keep their own currency.",
+  "confirm.series": "🔁 I'll remind you <b>{rule}</b>\n{title}\nNext: {when}",
+  "confirm.series_default_time": "🔁 I'll remind you <b>{rule}</b> · default time\n{title}\nNext: {when}\n\n🕒 Need a different time? Reply to this message, e.g. «at 21:00», or tap the button.",
+  "repeat.daily": "every day at {time}",
+  "repeat.workdays": "on weekdays at {time}",
+  "repeat.weekends": "on weekends at {time}",
+  "repeat.weekly": "every week ({days}) at {time}",
+  "repeat.monthly": "every month on day {day} at {time}",
+  "btn.stop_series": "🔕 Stop repeating",
+  "series.stopped": "🔕 No more reminders: <b>{title}</b>",
+  "overview.empty": "📋 <b>{period}</b>: no reminders, bills or plans.",
+  "reminder.similar": "⚠️ A similar reminder is already set:\n{list}\nIf this one is a duplicate, cancel it with 🗑.",
 } as const;
 
 export type LocaleStrings = { [K in keyof typeof en]: string };

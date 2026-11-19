@@ -22,6 +22,7 @@ import {
   getRates,
   getRecurring,
   getReminder,
+  getSeries,
   getTransaction,
   hasLocale,
   isValidMonthKey,
@@ -31,7 +32,10 @@ import {
   log,
   markReminderDone,
   rescheduleDefaultHour,
+  rescheduleSeries,
   snoozeReminder,
+  stopSeries,
+  updateSeries,
   softDeleteTransaction,
   t,
   toBase,
@@ -43,6 +47,7 @@ import type { BotContext } from "./context.js";
 import * as R from "./render.js";
 import { applyCorrection, budgetLineFor, correctionOf, loadTarget, notifyAlerts, payPlan, recordPayment } from "./actions.js";
 import { sendSummary } from "./summary.js";
+import { remindersMessage } from "./lists.js";
 import { sendReport } from "../report/send.js";
 import { safeEdit } from "./telegram.js";
 
@@ -100,6 +105,20 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
           await edit(R.deletedText(scope, currentText));
           return answer();
         }
+        if (action === "rm") {
+          // 🗑 N in /reminders: the upcoming occurrence of a repeating reminder stops the whole series
+          // (otherwise the next one would take its place); anything else is just that reminder.
+          let toast = "";
+          if (reminder.seriesId && reminder.status === "scheduled" && reminder.snoozeCount === 0) {
+            const series = await stopSeries(db, reminder.seriesId);
+            if (series) toast = t(scope.locale, "series.stopped", { title: series.title }).replace(/<[^>]+>/g, "");
+          } else if (reminder.status === "scheduled" || reminder.status === "sent") {
+            await cancelReminder(db, id);
+          }
+          const list = await remindersMessage(db, scope);
+          await edit(list.text, list.keyboard);
+          return answer(toast || undefined);
+        }
         if (action === "time") {
           if (reminder.status === "done" || reminder.status === "cancelled") return answer(t(scope.locale, "hint.not_found"));
           if (rest[1] === undefined) {
@@ -125,6 +144,40 @@ export function registerCallbacks(bot: Bot<BotContext>): void {
           await snoozeReminder(db, id, until);
           await edit(`${escapeHtml(currentText)}\n${t(scope.locale, "alert.snoozed", { when: formatDateTime(until, scope.tz, scope.locale) })}`);
           return answer();
+        }
+        return answer();
+      }
+
+      if (ns === "rser") {
+        const series = await getSeries(db, Number(rest[0]));
+        if (!series || series.householdId !== scope.household.id || !series.active) return answer(t(scope.locale, "hint.not_found"));
+        if (action === "del") {
+          await stopSeries(db, series.id);
+          await edit(R.deletedText(scope, currentText));
+          return answer();
+        }
+        if (action === "stop") {
+          // 🔕 under an alert: no more occurrences, and this one is done.
+          await stopSeries(db, series.id);
+          const occurrence = Number(rest[1]);
+          if (Number.isInteger(occurrence)) {
+            const row = await getReminder(db, occurrence);
+            if (row && row.seriesId === series.id) await markReminderDone(db, occurrence);
+          }
+          await edit(t(scope.locale, "series.stopped", { title: escapeHtml(series.title) }));
+          return answer();
+        }
+        if (action === "time") {
+          if (rest[1] === undefined) {
+            await edit(t(scope.locale, "hint.pick_time", { title: escapeHtml(series.title) }), R.hourPickerKeyboard(`rser:time:${series.id}`));
+            return answer();
+          }
+          if (!/^\d{1,2}$/.test(rest[1]) || Number(rest[1]) > 23) return answer();
+          const updated = await updateSeries(db, series.id, { hour: Number(rest[1]), minute: 0 });
+          if (!updated) return answer(t(scope.locale, "hint.not_found"));
+          const next = await rescheduleSeries(db, updated, scope.household);
+          await edit(R.seriesText(scope, updated, next), R.seriesKeyboard(scope, updated));
+          return answer(t(scope.locale, "confirm.done"));
         }
         return answer();
       }

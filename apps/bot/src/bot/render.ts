@@ -1,5 +1,5 @@
 import { InlineKeyboard } from "grammy";
-import { DateTime } from "luxon";
+import { DateTime, Info } from "luxon";
 import {
   BALANCE_SCOPE,
   EXPENSE_CATEGORIES,
@@ -16,7 +16,9 @@ import {
   formatMoney,
   formatMonth,
   formatPercent,
+  formatPeriod,
   itemsOf,
+  ruleOf,
   languageName,
   shiftMonthKey,
   monthPeriod,
@@ -32,8 +34,11 @@ import {
   type Goal,
   type GoalStat,
   type Insights,
+  type Period,
   type Plan,
   type MonthlySummary,
+  type ReminderSeries,
+  type RepeatRule,
   type PlatformStats,
   type RecurringPayment,
   type Reminder,
@@ -147,6 +152,58 @@ export function reminderKeyboard(scope: Scope, reminder: Reminder, options: { of
   const kb = new InlineKeyboard();
   if (options.offerTime) kb.text(t(scope.locale, "btn.change_time"), `rem:time:${reminder.id}`);
   return kb.text(t(scope.locale, "btn.cancel"), `rem:del:${reminder.id}`);
+}
+
+function hhmm(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+/** "каждый день в 21:00", "по будням в 08:00", "каждую неделю (пн, ср) в 09:00", "каждый месяц, 25 числа, в 09:00". */
+export function repeatText(scope: Scope, rule: RepeatRule, time: string): string {
+  const L = scope.locale;
+  if (rule.freq === "daily") return t(L, "repeat.daily", { time });
+  if (rule.freq === "monthly") return t(L, "repeat.monthly", { day: rule.dayOfMonth ?? 1, time });
+  const days = rule.weekdays ?? [];
+  if (days.join() === "1,2,3,4,5") return t(L, "repeat.workdays", { time });
+  if (days.join() === "6,7") return t(L, "repeat.weekends", { time });
+  const names = Info.weekdays("short", { locale: L });
+  return t(L, "repeat.weekly", { days: days.map((d) => names[d - 1] ?? String(d)).join(", "), time });
+}
+
+/** How a series repeats, with its time of day (the household default when it has none of its own). */
+export function seriesRepeatText(scope: Scope, series: ReminderSeries): string {
+  const time = series.hour === null ? formatHour(scope.household.reminderHour) : hhmm(series.hour, series.minute);
+  return repeatText(scope, ruleOf(series), time);
+}
+
+export function seriesText(scope: Scope, series: ReminderSeries, next?: Reminder): string {
+  return t(scope.locale, series.hour === null ? "confirm.series_default_time" : "confirm.series", {
+    rule: seriesRepeatText(scope, series),
+    title: escapeHtml(series.title),
+    when: next ? formatDateTime(next.dueAt, scope.tz, scope.locale) : "—",
+  });
+}
+
+export function seriesKeyboard(scope: Scope, series: ReminderSeries, options: { offerTime?: boolean } = {}): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  if (options.offerTime) kb.text(t(scope.locale, "btn.change_time"), `rser:time:${series.id}`);
+  return kb.text(t(scope.locale, "btn.cancel"), `rser:del:${series.id}`);
+}
+
+/** "🔁 каждый день в 21:00 · записать расходы" */
+export function seriesLine(scope: Scope, series: ReminderSeries): string {
+  return `🔁 ${seriesRepeatText(scope, series)} · ${escapeHtml(series.title)}`;
+}
+
+/** "23 нояб., 11:00 · митап течстар", with 🔁 for an occurrence of a repeating reminder. */
+export function reminderLine(scope: Scope, reminder: Reminder): string {
+  return `${formatDateTime(reminder.dueAt, scope.tz, scope.locale)} · ${escapeHtml(reminder.title)}${reminder.seriesId ? " 🔁" : ""}`;
+}
+
+/** Warning under a new reminder that looks like one the family already has. */
+export function similarLine(scope: Scope, lines: string[]): string {
+  if (!lines.length) return "";
+  return `\n\n${t(scope.locale, "reminder.similar", { list: lines.slice(0, 3).join("\n") })}`;
 }
 
 export const PICKER_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
@@ -335,15 +392,22 @@ export function goalsListText(scope: Scope, stats: GoalStat[]): string {
   return `${t(scope.locale, "goals.title")}\n\n${goalsLines(scope, stats).join("\n")}`;
 }
 
-export function plansListText(scope: Scope, rows: Plan[], total: number | null): string {
+function planLine(scope: Scope, p: Plan, today: string): string {
+  const overdue = p.plannedOn < today ? ` · ⏳ ${t(scope.locale, "plans.overdue")}` : "";
+  return `${planWhen(scope, p)} · ${escapeHtml(p.title)} · ${money(scope, p.amount, p.currency)}${overdue}`;
+}
+
+/** A period under a list title: " · Ноябрь 2026". */
+function periodSuffix(scope: Scope, period: Period | null | undefined): string {
+  return period ? ` · ${formatPeriod(period, scope.locale)}` : "";
+}
+
+export function plansListText(scope: Scope, rows: Plan[], total: number | null, period?: Period | null): string {
   if (!rows.length) return t(scope.locale, "plans.empty");
   const today = DateTime.now().setZone(scope.tz).toISODate()!;
-  const lines = rows.map((p) => {
-    const overdue = p.plannedOn < today ? ` · ⏳ ${t(scope.locale, "plans.overdue")}` : "";
-    return `${planWhen(scope, p)} · ${escapeHtml(p.title)} · ${money(scope, p.amount, p.currency)}${overdue}`;
-  });
+  const lines = rows.map((p) => planLine(scope, p, today));
   const footer = total !== null ? `\n\n${t(scope.locale, "plans.total", { amount: money(scope, total) })}` : "";
-  return `${t(scope.locale, "plans.title")}\n\n${lines.join("\n")}${footer}`;
+  return `${t(scope.locale, "plans.title")}${periodSuffix(scope, period)}\n\n${lines.join("\n")}${footer}`;
 }
 
 export function alertText(scope: Scope, reminder: Reminder, rp?: RecurringPayment, plan?: Plan): string {
@@ -378,6 +442,7 @@ export function alertKeyboard(scope: Scope, reminder: Reminder): InlineKeyboard 
     kb.text(t(scope.locale, "btn.done"), `rem:done:${reminder.id}`);
     kb.text(t(scope.locale, "btn.snooze_1h"), `rem:snz:${reminder.id}:60`);
     kb.text(t(scope.locale, "btn.snooze_1d"), `rem:snz:${reminder.id}:1440`);
+    if (reminder.seriesId) kb.row().text(t(scope.locale, "btn.stop_series"), `rser:stop:${reminder.seriesId}:${reminder.id}`);
   }
   return kb;
 }
@@ -392,11 +457,50 @@ export function lastRecordsText(scope: Scope, rows: Transaction[]): string {
   return `${t(scope.locale, "last.title")}\n\n${lines.join("\n")}`;
 }
 
-export function remindersListText(scope: Scope, rows: Reminder[]): string {
+/** Numbered open reminders; the numbers match the delete buttons of `remindersKeyboard`. */
+export function remindersListText(scope: Scope, rows: Reminder[], period?: Period | null): string {
   const own = rows.filter((r) => r.kind === "reminder");
   if (!own.length) return t(scope.locale, "reminders.empty");
-  const lines = own.map((r) => `${formatDateTime(r.dueAt, scope.tz, scope.locale)} · ${escapeHtml(r.title)}`);
-  return `${t(scope.locale, "reminders.title")}\n\n${lines.join("\n")}`;
+  const lines = own.map((r, i) => `${i + 1}. ${reminderLine(scope, r)}`);
+  return `${t(scope.locale, "reminders.title")}${periodSuffix(scope, period)}\n\n${lines.join("\n")}`;
+}
+
+/** "🗑 1" … "🗑 N", five per row: removes that reminder (or stops a repeating one) and redraws the list. */
+export function remindersKeyboard(scope: Scope, rows: Reminder[]): InlineKeyboard | undefined {
+  const own = rows.filter((r) => r.kind === "reminder");
+  if (!own.length) return undefined;
+  const kb = new InlineKeyboard();
+  own.forEach((r, i) => {
+    kb.text(`🗑 ${i + 1}`, `rem:rm:${r.id}`);
+    if (i % 5 === 4) kb.row();
+  });
+  return kb;
+}
+
+export interface OverviewData {
+  reminders: Reminder[];
+  payments: { payment: RecurringPayment; date: string; paid: boolean }[];
+  plans: Plan[];
+}
+
+/** Everything ahead in a period: reminders, bills and planned expenses, each under its usual title. */
+export function overviewText(scope: Scope, period: Period, data: OverviewData): string {
+  const L = scope.locale;
+  const label = formatPeriod(period, L);
+  const today = DateTime.now().setZone(scope.tz).toISODate()!;
+  const sections: string[] = [];
+  const own = data.reminders.filter((r) => r.kind === "reminder");
+  if (own.length) sections.push(`${t(L, "reminders.title")}\n${own.map((r) => reminderLine(scope, r)).join("\n")}`);
+  if (data.payments.length) {
+    const lines = data.payments.map(({ payment, date, paid }) => {
+      const amount = payment.amount !== null ? ` · ${money(scope, payment.amount, payment.currency)}` : "";
+      return `${formatDate(date, L)} · ${escapeHtml(payment.name)}${amount}${paid ? ` · ✅ ${t(L, "payments.paid_period")}` : ""}`;
+    });
+    sections.push(`${t(L, "payments.title")}\n${lines.join("\n")}`);
+  }
+  if (data.plans.length) sections.push(`${t(L, "plans.title")}\n${data.plans.map((p) => planLine(scope, p, today)).join("\n")}`);
+  if (!sections.length) return t(L, "overview.empty", { period: label });
+  return `📋 <b>${label}</b>\n\n${sections.join("\n\n")}`;
 }
 
 export function paymentsListText(scope: Scope, rows: { payment: RecurringPayment; date: string; period: string }[]): string {

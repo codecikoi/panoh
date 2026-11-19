@@ -57,7 +57,18 @@ import {
   updatePlan,
   createRecurring,
   createReminder,
+  createSeries,
   createTransaction,
+  ensureNextOccurrence,
+  findSeriesByBotMessage,
+  findSimilarReminders,
+  listActiveSeries,
+  normalizeRule,
+  rescheduleSeries,
+  ruleOf,
+  similarTitles,
+  stopSeries,
+  updateSeries,
   deactivateRecurring,
   describeEdits,
   diffFields,
@@ -92,17 +103,21 @@ import {
   type Plan,
   type RateTable,
   type RecurringPayment,
+  type ListTarget,
   type Reminder,
+  type ReminderSeries,
   type Transaction,
 } from "@madat/core";
 import { InlineKeyboard, type Api } from "grammy";
 import type { BotContext, Deps, Scope } from "./context.js";
 import * as R from "./render.js";
 import { safeEdit } from "./telegram.js";
+import { listMessage } from "./lists.js";
 
 export type ReplyTarget =
   | { type: "transaction"; row: Transaction }
   | { type: "reminder"; row: Reminder }
+  | { type: "series"; row: ReminderSeries }
   | { type: "recurring"; row: RecurringPayment }
   | { type: "plan"; row: Plan }
   | { type: "goal"; row: Goal }
@@ -119,6 +134,8 @@ export async function resolveReplyTarget(db: Db, chatId: number, messageId: numb
   } else if (reminder && reminder.status !== "cancelled") {
     return { type: "reminder", row: reminder };
   }
+  const series = await findSeriesByBotMessage(db, chatId, messageId);
+  if (series && series.active) return { type: "series", row: series };
   const recurring = await findRecurringByBotMessage(db, chatId, messageId);
   if (recurring && recurring.active) return { type: "recurring", row: recurring };
   const plan = await findPlanByBotMessage(db, chatId, messageId);
@@ -156,6 +173,12 @@ export function describeTarget(target: ReplyTarget, tz = "UTC", trail: BalanceTr
     }
     case "reminder":
       return `reminder: "${target.row.title}" due ${DateTime.fromJSDate(target.row.dueAt).setZone(tz).toFormat("yyyy-LL-dd HH:mm")} (local time)`;
+    case "series": {
+      const r = target.row;
+      const days = r.freq === "weekly" ? ` on ISO weekdays ${(r.weekdays ?? []).join(",")}` : r.freq === "monthly" ? ` on day ${r.dayOfMonth}` : "";
+      const time = r.hour === null ? "the household default time" : `${String(r.hour).padStart(2, "0")}:${String(r.minute).padStart(2, "0")} (local time)`;
+      return `repeating reminder: "${r.title}" ${r.freq}${days} at ${time}`;
+    }
     case "recurring":
       return `recurring payment: "${target.row.name}" ${target.row.amount ?? "?"} ${target.row.currency} on day ${target.row.dayOfMonth}`;
     case "plan": {
@@ -269,6 +292,15 @@ export async function applyItems(ctx: BotContext, items: ExtractedItem[], meta: 
           outcome.report = (item.hasDate && item.dateTo ? makePeriod(item.date, item.dateTo) : null) ?? "ask";
           outcome.handled++;
           break;
+        case "list_request": {
+          // An answer, like "how much is left": counted with the clarifications for the reaction.
+          const period = item.hasDate ? makePeriod(item.date, item.dateTo ?? item.date) : null;
+          const msg = await listMessage(ctx.deps.db, ctx.scope, (item.target ?? "overview") as ListTarget, period);
+          await ctx.reply(msg.text, replyOpts(meta, msg.keyboard ? { reply_markup: msg.keyboard } : {}));
+          outcome.handled++;
+          outcome.clarified++;
+          break;
+        }
         case "none":
           break;
       }
@@ -642,10 +674,13 @@ export async function payPlan(
 async function handleReminder(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta): Promise<boolean> {
   const scope = ctx.scope;
   const title = item.note || item.target || "…";
+  if (item.repeat) return handleSeries(ctx, item, meta, title);
   if (!item.dueAt) {
     await ctx.reply(t(scope.locale, "ask.when", { title: escapeHtml(title) }), replyOpts(meta));
     return true;
   }
+  // The same thing on the same day again (a second message, a typo in the name): created, but the family is told.
+  const similar = await findSimilarReminders(ctx.deps.db, scope.household.id, scope.tz, title, item.dueAt);
   const defaultTime = !item.timeSpecified;
   const reminder = await createReminder(ctx.deps.db, {
     householdId: scope.household.id,
@@ -658,10 +693,43 @@ async function handleReminder(ctx: BotContext, item: ExtractedItem, meta: ApplyM
     sourceMessageId: meta.sourceMessageId,
   });
   const sent = await ctx.reply(
-    R.reminderText(scope, reminder, { defaultTime }),
+    R.reminderText(scope, reminder, { defaultTime }) + R.similarLine(scope, similar.map((r) => R.reminderLine(scope, r))),
     replyOpts(meta, { reply_markup: R.reminderKeyboard(scope, reminder, { offerTime: defaultTime }) }),
   );
   await updateReminder(ctx.deps.db, reminder.id, { botMessageId: sent.message_id });
+  return true;
+}
+
+/** A repeating reminder: the series keeps the rule, the scheduler creates one occurrence after another. */
+async function handleSeries(ctx: BotContext, item: ExtractedItem, meta: ApplyMeta, title: string): Promise<boolean> {
+  const scope = ctx.scope;
+  const db = ctx.deps.db;
+  const first = item.dueAt ? DateTime.fromJSDate(item.dueAt).setZone(scope.tz) : null;
+  const rule = normalizeRule(item.repeat!, item.weekdays, item.dayOfMonth, first);
+  if (!rule) {
+    await ctx.reply(t(scope.locale, "ask.when", { title: escapeHtml(title) }), replyOpts(meta));
+    return true;
+  }
+  const explicit = first !== null && item.timeSpecified;
+  const similar = (await listActiveSeries(db, scope.household.id)).filter((s) => similarTitles(s.title, title));
+  const series = await createSeries(db, {
+    householdId: scope.household.id,
+    userId: scope.user?.id ?? null,
+    title,
+    freq: rule.freq,
+    weekdays: rule.weekdays,
+    dayOfMonth: rule.dayOfMonth,
+    hour: explicit ? first.hour : null,
+    minute: explicit ? first.minute : 0,
+    sourceChatId: meta.chatId,
+    sourceMessageId: meta.sourceMessageId,
+  });
+  const next = await ensureNextOccurrence(db, series, scope.household);
+  const sent = await ctx.reply(
+    R.seriesText(scope, series, next) + R.similarLine(scope, similar.map((s) => R.seriesLine(scope, s))),
+    replyOpts(meta, { reply_markup: R.seriesKeyboard(scope, series, { offerTime: series.hour === null }) }),
+  );
+  await updateSeries(db, series.id, { botMessageId: sent.message_id });
   return true;
 }
 
@@ -833,6 +901,8 @@ export function correctionOf(changed: ExtractedItem["changed"]): ExtractedItem {
     dateApproximate: false,
     dueAt: null,
     dayOfMonth: null,
+    repeat: null,
+    weekdays: null,
     remindDaysBefore: null,
     target: null,
     emoji: null,
@@ -863,6 +933,7 @@ function amountOf(target: ReplyTarget): { amount: number; currency: string } | n
     case "recurring":
       return target.row.amount === null ? null : { amount: target.row.amount, currency: target.row.currency };
     case "reminder":
+    case "series":
       return null;
   }
 }
@@ -1073,12 +1144,39 @@ async function applyChanges(ctx: BotContext, target: ReplyTarget, item: Extracte
     await refreshConfirmation(ctx.api, scope, row.botMessageId, text, R.goalKeyboard(scope, updated), place);
     return true;
   }
+  if (target.type === "series") {
+    const row = target.row;
+    if (!row.active) {
+      await ctx.api.sendMessage(place.chatId, t(scope.locale, "hint.not_found"), placeOpts(place));
+      return null;
+    }
+    const first = item.dueAt ? DateTime.fromJSDate(item.dueAt).setZone(scope.tz) : null;
+    const time = first && item.timeSpecified ? { hour: first.hour as number | null, minute: first.minute } : { hour: row.hour, minute: row.minute };
+    const rule = (item.repeat ? normalizeRule(item.repeat, item.weekdays, item.dayOfMonth, first) : null) ?? ruleOf(row);
+    const next = { title: c.note ?? row.title, freq: rule.freq, weekdays: rule.weekdays, dayOfMonth: rule.dayOfMonth, ...time };
+    const diff = diffFields(row, next);
+    if (!diff) return false;
+    const updated = await updateSeries(db, row.id, next);
+    if (!updated) return null;
+    await logEdit(db, hid, "series", row.id, diff);
+    const upcoming = await rescheduleSeries(db, updated, scope.household);
+    await refreshConfirmation(
+      ctx.api,
+      scope,
+      row.botMessageId,
+      R.seriesText(scope, updated, upcoming),
+      R.seriesKeyboard(scope, updated, { offerTime: updated.hour === null }),
+      place,
+    );
+    return true;
+  }
   if (target.type === "reminder") {
     const row = target.row;
     if (row.status === "done" || row.status === "cancelled") {
       await ctx.api.sendMessage(place.chatId, t(scope.locale, "hint.not_found"), placeOpts(place));
       return null;
     }
+    if (item.repeat && !row.seriesId) return repeatReminder(ctx, row, item, place);
     const orig = DateTime.fromJSDate(row.dueAt).setZone(scope.tz);
     let dueAt = row.dueAt;
     let defaultTime = row.defaultTime;
@@ -1127,6 +1225,34 @@ async function applyChanges(ctx: BotContext, target: ReplyTarget, item: Extracte
   return true;
 }
 
+/** "И так каждый день" in reply to a one-off reminder: it becomes a repeating one that starts on its own day. */
+async function repeatReminder(ctx: BotContext, row: Reminder, item: ExtractedItem, place: ReplyPlace): Promise<boolean> {
+  const scope = ctx.scope;
+  const db = ctx.deps.db;
+  const own = DateTime.fromJSDate(row.dueAt).setZone(scope.tz);
+  const stated = item.dueAt && item.timeSpecified ? DateTime.fromJSDate(item.dueAt).setZone(scope.tz) : null;
+  const rule = normalizeRule(item.repeat!, item.weekdays, item.dayOfMonth, stated ?? own);
+  if (!rule) return false;
+  const time = stated ?? (row.defaultTime ? null : own);
+  const series = await createSeries(db, {
+    householdId: scope.household.id,
+    userId: row.userId,
+    title: item.changed.note ?? row.title,
+    freq: rule.freq,
+    weekdays: rule.weekdays,
+    dayOfMonth: rule.dayOfMonth,
+    hour: time?.hour ?? null,
+    minute: time?.minute ?? 0,
+    sourceChatId: row.sourceChatId ?? place.chatId,
+    sourceMessageId: row.sourceMessageId,
+    botMessageId: row.botMessageId,
+  });
+  await cancelReminder(db, row.id);
+  const next = await ensureNextOccurrence(db, series, scope.household, new Date(), row.status === "scheduled" ? own.toISODate()! : undefined);
+  await refreshConfirmation(ctx.api, scope, row.botMessageId, R.seriesText(scope, series, next), R.seriesKeyboard(scope, series, { offerTime: series.hour === null }), place);
+  return true;
+}
+
 async function refreshConfirmation(
   api: Api,
   scope: Scope,
@@ -1158,6 +1284,9 @@ export async function undoLast(ctx: BotContext, meta?: ApplyMeta): Promise<boole
   } else if (last.type === "reminder") {
     await cancelReminder(db, last.row.id);
     what = R.reminderText(scope, last.row);
+  } else if (last.type === "series") {
+    await stopSeries(db, last.row.id);
+    what = R.seriesLine(scope, last.row);
   } else if (last.type === "recurring") {
     await deactivateRecurring(db, last.row.id);
     what = R.recurringText(scope, last.row);

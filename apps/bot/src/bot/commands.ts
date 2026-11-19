@@ -9,21 +9,15 @@ import {
   keywordForms,
   loadBalance,
   loadPlatformStats,
-  listOpenPlans,
   loadMonthlySummary,
   parsePeriod,
   todayISO,
-  plannedTotalForMonth,
   effectiveKeywords,
   escapeHtml,
   hasLocale,
   isValidMonthKey,
   isValidTimezone,
   languageName,
-  listOpenReminders,
-  listRecentTransactions,
-  listRecurring,
-  nextDue,
   rescheduleDefaultHour,
   shiftMonthKey,
   t,
@@ -34,6 +28,7 @@ import type { BotContext } from "./context.js";
 import * as R from "./render.js";
 import { renameAssistant, undoLast } from "./actions.js";
 import { sendSummary } from "./summary.js";
+import { budgetsMessage, goalsMessage, paymentsMessage, plansMessage, recordsMessage, remindersMessage, type ListMessage } from "./lists.js";
 import { reportPickerKeyboard, sendReport } from "../report/send.js";
 
 export async function ensureWelcome(ctx: BotContext, force = false): Promise<void> {
@@ -95,25 +90,19 @@ export function registerCommands(bot: Bot<BotContext>): void {
     await sendSummary(ctx.api, ctx.deps, scope, ctx.chat.id, month);
   });
 
-  bot.command("last", async (ctx) => {
-    const rows = await listRecentTransactions(ctx.deps.db, ctx.scope.household.id, 10);
-    await ctx.reply(R.lastRecordsText(ctx.scope, rows));
-  });
+  const sendList = async (ctx: BotContext, msg: ListMessage) => {
+    await ctx.reply(msg.text, msg.keyboard ? { reply_markup: msg.keyboard } : {});
+  };
+
+  bot.command("last", async (ctx) => sendList(ctx, await recordsMessage(ctx.deps.db, ctx.scope)));
 
   bot.command("undo", async (ctx) => {
     await undoLast(ctx);
   });
 
-  bot.command("reminders", async (ctx) => {
-    const rows = await listOpenReminders(ctx.deps.db, ctx.scope.household.id);
-    await ctx.reply(R.remindersListText(ctx.scope, rows));
-  });
+  bot.command("reminders", async (ctx) => sendList(ctx, await remindersMessage(ctx.deps.db, ctx.scope)));
 
-  bot.command("payments", async (ctx) => {
-    const list = await listRecurring(ctx.deps.db, ctx.scope.household.id);
-    const rows = list.map((payment) => ({ payment, ...nextDue(payment, ctx.scope.tz) }));
-    await ctx.reply(R.paymentsListText(ctx.scope, rows));
-  });
+  bot.command("payments", async (ctx) => sendList(ctx, await paymentsMessage(ctx.deps.db, ctx.scope)));
 
   bot.command("report", async (ctx) => {
     const scope = ctx.scope;
@@ -124,26 +113,11 @@ export function registerCommands(bot: Bot<BotContext>): void {
     void sendReport(ctx.api, ctx.deps, scope, ctx.chat.id, period, { replyTo: ctx.message?.message_id });
   });
 
-  bot.command("plans", async (ctx) => {
-    const scope = ctx.scope;
-    const rows = await listOpenPlans(ctx.deps.db, scope.household.id);
-    const { rates } = await getRates(ctx.deps.db);
-    const months = new Set(rows.map((p) => p.plannedOn.slice(0, 7)));
-    const total = [...months].reduce((sum, m) => sum + plannedTotalForMonth(rows, m, scope.currency, rates), 0);
-    await ctx.reply(R.plansListText(scope, rows, rows.length > 1 ? total : null));
-  });
+  bot.command("plans", async (ctx) => sendList(ctx, await plansMessage(ctx.deps.db, ctx.scope)));
 
-  bot.command("budgets", async (ctx) => {
-    const scope = ctx.scope;
-    const stats = (await loadMonthlySummary(ctx.deps.db, scope.household, currentMonthKey(scope.tz))).outlook.budgets;
-    await ctx.reply(R.budgetsListText(scope, stats), stats.length ? { reply_markup: R.budgetsKeyboard(scope, stats) } : {});
-  });
+  bot.command("budgets", async (ctx) => sendList(ctx, await budgetsMessage(ctx.deps.db, ctx.scope)));
 
-  bot.command("goals", async (ctx) => {
-    const scope = ctx.scope;
-    const stats = (await loadMonthlySummary(ctx.deps.db, scope.household, currentMonthKey(scope.tz))).outlook.goals;
-    await ctx.reply(R.goalsListText(scope, stats));
-  });
+  bot.command("goals", async (ctx) => sendList(ctx, await goalsMessage(ctx.deps.db, ctx.scope)));
 
   bot.command("balance", async (ctx) => {
     const scope = ctx.scope;

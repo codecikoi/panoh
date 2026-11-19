@@ -24,7 +24,7 @@ export const uz: LocaleStrings = {
   "welcome.privacy_warning":
     "⚠️ Hozircha bu guruhdagi oddiy xabarlarni ko'ra olmayman, shuning uchun kalit so'zlar va {prefix} prefiksi ishlamaydi. @BotFather → /setprivacy → men uchun <b>Disable</b> qiling, so'ng meni guruhdan chiqarib qayta qo'shing. Belgilash va javob berish darhol ishlaydi.",
   "help":
-    "📖 <b>Men qanday ishlayman</b>\n\n<b>Xarajat va daromad</b>\n<i>{prefix} taksi 25k</i>, <i>oziq-ovqatga 150k sarfladik</i>, <i>maosh 9 mln oldim</i>\n\n<b>Eslatmalar</b>\n<i>ertaga 10 da shifokorga qo'ng'iroq qilishni eslat</i>, <i>20-sanada internet uchun to'lashni eslat</i>\n\n<b>Doimiy to'lovlar</b>\n<i>kredit 2 mln har oyning 15-sanasida</i>, <i>ijara 300$ 1-sanada</i>\n{days} kun oldin va to'lov kuni eslataman. Belgilash uchun <i>kreditni to'ladik</i> deb yozing.\n\n<b>Tuzatishlar</b>\nTasdiqlovchi xabarimga javob bering: <i>150 emas, 115</i>, <i>kategoriya transport</i> yoki ✏️ ni bosing.\n<i>bekor</i> yoki /undo oxirgi yozuvni o'chiradi.\n\n<b>Yakun</b>\n/summary — oy kategoriyalar bo'yicha, o'tgan oy bilan taqqoslash, maslahatlar.\n/last — oxirgi yozuvlar · /reminders · /payments\n\n<b>Sozlamalar</b>\n/settings — valyuta, vaqt zonasi, til · /keywords — kalit so'zlar",
+    "📖 <b>Men qanday ishlayman</b>\n\n<b>Xarajat va daromad</b>\n<i>{prefix} taksi 25k</i>, <i>oziq-ovqatga 150k sarfladik</i>, <i>maosh 9 mln oldim</i>\n\n<b>Eslatmalar</b>\n<i>ertaga 10 da shifokorga qo'ng'iroq qilishni eslat</i>, <i>20-sanada internet uchun to'lashni eslat</i>\n🔁 <i>har dushanba soat 9 da axlatni chiqarishni eslat</i>\n\n<b>Doimiy to'lovlar</b>\n<i>kredit 2 mln har oyning 15-sanasida</i>, <i>ijara 300$ 1-sanada</i>\n{days} kun oldin va to'lov kuni eslataman. Belgilash uchun <i>kreditni to'ladik</i> deb yozing.\n\n<b>Tuzatishlar</b>\nTasdiqlovchi xabarimga javob bering: <i>150 emas, 115</i>, <i>kategoriya transport</i> yoki ✏️ ni bosing.\n<i>bekor</i> yoki /undo oxirgi yozuvni o'chiradi.\n\n<b>Yakun</b>\n/summary — oy kategoriyalar bo'yicha, o'tgan oy bilan taqqoslash, maslahatlar.\n/last — oxirgi yozuvlar · /reminders · /payments\n\n<b>Sozlamalar</b>\n/settings — valyuta, vaqt zonasi, til · /keywords — kalit so'zlar",
 
   "settings.title": "⚙️ <b>Sozlamalar</b>\n\nValyuta: <b>{currency}</b>\nVaqt zonasi: <b>{timezone}</b>\nTil: <b>{language}</b>\nTo'lov eslatmasi: <b>{days} kun oldin</b>\nPrefiks: <b>{prefix}</b>",
   "settings.btn_currency": "💱 Valyuta",
@@ -368,4 +368,15 @@ export const uz: LocaleStrings = {
   "welcome.setup": "⚙️ Valyuta: <b>{currency}</b> · Vaqt zonasi: <b>{timezone}</b> · Til: <b>{language}</b>\nAgar biror narsa noto'g'ri bo'lsa, quyidagi tugmalar bilan o'zgartiring. Barcha sozlamalar: /settings.",
   "currency.offer": "💱 Asosiy valyuta {currency} bo'lsinmi? Hozir valyutasi ko'rsatilmagan summalarni {base} deb yozyapman.",
   "currency.switched": "✅ Endi asosiy valyuta — {currency}: valyutasi ko'rsatilmagan summalar shunda yoziladi. Eski yozuvlar o'z valyutasida qoladi.",
+  "confirm.series": "🔁 Eslatib turaman: <b>{rule}</b>\n{title}\nKeyingisi: {when}",
+  "confirm.series_default_time": "🔁 Eslatib turaman: <b>{rule}</b> · standart vaqt\n{title}\nKeyingisi: {when}\n\n🕒 Boshqa vaqt kerakmi? Shu xabarga javob yozing, masalan «soat 21:00», yoki tugmani bosing.",
+  "repeat.daily": "har kuni, soat {time}",
+  "repeat.workdays": "ish kunlari, soat {time}",
+  "repeat.weekends": "dam olish kunlari, soat {time}",
+  "repeat.weekly": "har hafta ({days}), soat {time}",
+  "repeat.monthly": "har oyning {day}-sanasida, soat {time}",
+  "btn.stop_series": "🔕 Eslatishni to'xtatish",
+  "series.stopped": "🔕 Endi eslatmayman: <b>{title}</b>",
+  "overview.empty": "📋 <b>{period}</b>: eslatmalar, to'lovlar va rejalar yo'q.",
+  "reminder.similar": "⚠️ O'xshash eslatma allaqachon bor:\n{list}\nAgar bu takror bo'lsa, uni 🗑 tugmasi bilan bekor qiling.",
 };
